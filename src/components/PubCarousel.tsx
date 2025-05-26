@@ -18,7 +18,7 @@ const PubCarousel: React.FC = () => {
       id: '1',
       title: 'Moov Africa',
       subtitle: "Connectez-vous à l'avenir avec Moov Africa",
-      imageUrl: 'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      imageUrl: 'https://afriqueitnews.com/wp-content/uploads/Screen-Shot-2023-05-09-at-11.27.07.png',
       link: 'https://www.moov-africa.ci',
       bgColor: 'from-blue-600 to-blue-800'
     },
@@ -26,7 +26,7 @@ const PubCarousel: React.FC = () => {
       id: '2',
       title: 'Orange Télécom',
       subtitle: 'Restez connecté avec Orange',
-      imageUrl: 'https://images.pexels.com/photos/267350/pexels-photo-267350.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      imageUrl: 'https://www.leparisien.fr/resizer/pQPmhBbYbgGrix2Wb82JrPj4O24=/arc-anglerfish-eu-central-1-prod-leparisien/public/YPAJGUUGPNABXKCPSF6HHYV6UQ.jpg',
       link: 'https://orange.com',
       bgColor: 'from-orange-500 to-orange-700'
     },
@@ -34,7 +34,7 @@ const PubCarousel: React.FC = () => {
       id: '3',
       title: 'Yango',
       subtitle: 'Déplacez-vous en toute sécurité',
-      imageUrl: 'https://images.pexels.com/photos/3806753/pexels-photo-3806753.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      imageUrl: 'https://www.afrique-sur7.fr/wp-content/uploads/2024/10/Yango.jpg',
       link: 'https://yango.com/fr_int/',
       bgColor: 'from-pink-600 to-red-600'
     },
@@ -42,7 +42,7 @@ const PubCarousel: React.FC = () => {
       id: '4',
       title: 'MTN',
       subtitle: 'Everywhere you go',
-      imageUrl: 'https://images.pexels.com/photos/2988232/pexels-photo-2988232.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      imageUrl: 'https://mir-s3-cdn-cf.behance.net/projects/404/4af007181236087.Y3JvcCw4MDgsNjMyLDAsMA.png',
       link: 'https://my.mtn.bj',
       bgColor: 'from-yellow-500 to-yellow-600'
     },
@@ -50,9 +50,17 @@ const PubCarousel: React.FC = () => {
       id: '5',
       title: 'Celtiis',
       subtitle: 'Internet haut débit pour tous',
-      imageUrl: 'https://images.pexels.com/photos/442150/pexels-photo-442150.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      imageUrl: 'https://www.afro-impact.com/wp-content/uploads/2022/10/celtiis-benin-lancement-offre-services.jpg',
       link: 'https://celtiis.bj',
       bgColor: 'from-green-600 to-green-800'
+    },
+    {
+      id: '6',
+      title: 'GoZem',
+      subtitle: 'Votre Super App de services',
+      imageUrl: 'https://gozem.co/wp-content/uploads/2020/03/gozem-logo-hq.png',
+      link: 'https://gozem.co',
+      bgColor: 'from-teal-500 to-teal-700'
     }
   ];
 
