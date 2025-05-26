@@ -2,25 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Star, Clock } from 'lucide-react';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 const CtaSection: React.FC = () => {
-  const benefits = [
-    {
-      icon: <ShieldCheck className="h-6 w-6 text-teal-600" />,
-      title: "Prestataires vérifiés",
-      description: "Tous nos prestataires sont soigneusement vérifiés"
-    },
-    {
-      icon: <Star className="h-6 w-6 text-teal-600" />,
-      title: "Service de qualité",
-      description: "Des services professionnels garantis"
-    },
-    {
-      icon: <Clock className="h-6 w-6 text-teal-600" />,
-      title: "Réservation facile",
-      description: "Réservez en quelques clics 24h/24"
-    }
-  ];
+  const intl = useIntl();
 
   return (
     <section className="py-20 bg-gradient-to-r from-teal-500 to-blue-600 relative overflow-hidden">
@@ -37,30 +22,24 @@ const CtaSection: React.FC = () => {
             className="bg-white rounded-xl p-8 shadow-xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Devenir prestataire
+              <FormattedMessage id="cta.provider.title" />
             </h3>
             <p className="text-gray-600 mb-6">
-              Rejoignez notre communauté de professionnels et développez votre activité. Accédez à des milliers de clients potentiels.
+              <FormattedMessage id="cta.provider.description" />
             </p>
             <ul className="space-y-4 mb-8">
-              <li className="flex items-center text-gray-700">
-                <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
-                Inscription gratuite
-              </li>
-              <li className="flex items-center text-gray-700">
-                <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
-                Gestion flexible de votre emploi du temps
-              </li>
-              <li className="flex items-center text-gray-700">
-                <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
-                Paiements sécurisés
-              </li>
+              {intl.messages['cta.provider.benefits'].map((benefit: string, index: number) => (
+                <li key={index} className="flex items-center text-gray-700">
+                  <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
+                  {benefit}
+                </li>
+              ))}
             </ul>
             <Link
               to="/provider-registration"
               className="inline-flex items-center justify-center w-full px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors duration-200"
             >
-              Commencer maintenant
+              <FormattedMessage id="cta.provider.button" />
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </motion.div>
@@ -74,16 +53,18 @@ const CtaSection: React.FC = () => {
             className="bg-white rounded-xl p-8 shadow-xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Réserver un service
+              <FormattedMessage id="cta.client.title" />
             </h3>
             <p className="text-gray-600 mb-6">
-              Trouvez le prestataire idéal pour tous vos besoins. Des milliers de professionnels qualifiés à votre service.
+              <FormattedMessage id="cta.client.description" />
             </p>
             <div className="grid grid-cols-1 gap-4 mb-8">
-              {benefits.map((benefit, index) => (
+              {intl.messages['cta.client.benefits'].map((benefit: any, index: number) => (
                 <div key={index} className="flex items-start">
                   <div className="flex-shrink-0 mt-1">
-                    {benefit.icon}
+                    {index === 0 && <ShieldCheck className="h-6 w-6 text-teal-600" />}
+                    {index === 1 && <Star className="h-6 w-6 text-teal-600" />}
+                    {index === 2 && <Clock className="h-6 w-6 text-teal-600" />}
                   </div>
                   <div className="ml-4">
                     <h4 className="text-base font-semibold text-gray-900">
@@ -100,7 +81,7 @@ const CtaSection: React.FC = () => {
               to="/explorer"
               className="inline-flex items-center justify-center w-full px-6 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
             >
-              Explorer les services
+              <FormattedMessage id="cta.client.button" />
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </motion.div>

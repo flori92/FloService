@@ -5,8 +5,8 @@ export type SupportedLocales = 'en' | 'fr';
 export const messages = {
   en: {
     common: {
-      login: 'Login',
-      register: 'Register',
+      login: 'Sign in',
+      register: 'Sign up',
       email: 'Email address',
       password: 'Password',
       search: 'Search',
@@ -27,6 +27,37 @@ export const messages = {
     services: {
       title: 'Browse by Category',
       viewAll: 'View all categories',
+    },
+    cta: {
+      provider: {
+        title: 'Become a Provider',
+        description: 'Join our community of professionals and grow your business. Access thousands of potential clients.',
+        benefits: [
+          'Free registration',
+          'Flexible schedule management',
+          'Secure payments'
+        ],
+        button: 'Get Started Now'
+      },
+      client: {
+        title: 'Book a Service',
+        description: 'Find the perfect provider for all your needs. Thousands of qualified professionals at your service.',
+        benefits: [
+          {
+            title: 'Verified Providers',
+            description: 'All our providers are carefully verified'
+          },
+          {
+            title: 'Quality Service',
+            description: 'Professional services guaranteed'
+          },
+          {
+            title: 'Easy Booking',
+            description: 'Book in a few clicks 24/7'
+          }
+        ],
+        button: 'Explore Services'
+      }
     }
   },
   fr: {
@@ -42,7 +73,7 @@ export const messages = {
     },
     navigation: {
       explorer: 'Explorer',
-      categories: 'Catégories', 
+      categories: 'Catégories',
       howItWorks: 'Comment ça marche',
     },
     hero: {
@@ -53,6 +84,37 @@ export const messages = {
     services: {
       title: 'Parcourir par catégorie',
       viewAll: 'Voir toutes les catégories',
+    },
+    cta: {
+      provider: {
+        title: 'Devenir prestataire',
+        description: 'Rejoignez notre communauté de professionnels et développez votre activité. Accédez à des milliers de clients potentiels.',
+        benefits: [
+          'Inscription gratuite',
+          'Gestion flexible de votre emploi du temps', 
+          'Paiements sécurisés'
+        ],
+        button: 'Commencer maintenant'
+      },
+      client: {
+        title: 'Réserver un service',
+        description: 'Trouvez le prestataire idéal pour tous vos besoins. Des milliers de professionnels qualifiés à votre service.',
+        benefits: [
+          {
+            title: 'Prestataires vérifiés',
+            description: 'Tous nos prestataires sont soigneusement vérifiés'
+          },
+          {
+            title: 'Service de qualité',
+            description: 'Des services professionnels garantis'
+          },
+          {
+            title: 'Réservation facile',
+            description: 'Réservez en quelques clics 24h/24'
+          }
+        ],
+        button: 'Explorer les services'
+      }
     }
   }
 };
