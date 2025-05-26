@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl';
 import { Search, CheckCircle, CreditCard, ThumbsUp } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import CtaSection from '../components/CtaSection';
 
 const HowItWorks: React.FC = () => {
   const intl = useIntl();
@@ -103,6 +104,9 @@ const HowItWorks: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* CTA Section */}
+        <CtaSection />
       </main>
 
       <Footer />
