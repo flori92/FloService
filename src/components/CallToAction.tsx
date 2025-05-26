@@ -1,20 +1,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Rocket, Shield, Clock } from 'lucide-react';
+import { FormattedMessage } from 'react-intl';
 
 const CallToAction: React.FC = () => {
   const benefits = [
     {
       icon: <Rocket className="h-6 w-6 text-indigo-200" />,
-      text: "Get started in minutes"
+      text: "Démarrez en quelques minutes"
     },
     {
       icon: <Shield className="h-6 w-6 text-indigo-200" />,
-      text: "Secure and reliable platform"
+      text: "Plateforme sécurisée et fiable"
     },
     {
       icon: <Clock className="h-6 w-6 text-indigo-200" />,
-      text: "24/7 expert support"
+      text: "Support expert 24/7"
     }
   ];
 
@@ -32,14 +33,14 @@ const CallToAction: React.FC = () => {
             className="text-center"
           >
             <span className="text-indigo-200 text-sm font-semibold uppercase tracking-wider">
-              Limited Time Offer
+              Offre limitée
             </span>
             <h2 className="mt-4 text-3xl md:text-4xl font-bold text-white mb-6">
-              Transform Your Business Today
+              Transformez votre activité aujourd'hui
             </h2>
             <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of successful businesses that are already growing with our platform. 
-              Start your free 30-day trial now and experience the difference.
+              Rejoignez des milliers d'entreprises qui se développent déjà grâce à notre plateforme.
+              Commencez votre essai gratuit de 30 jours maintenant et constatez la différence.
             </p>
           </motion.div>
 
@@ -51,11 +52,11 @@ const CallToAction: React.FC = () => {
             className="flex flex-col sm:flex-row justify-center gap-4 mb-12"
           >
             <button className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-indigo-700 bg-white hover:bg-indigo-50 transition-colors duration-200 shadow-lg">
-              Start Free Trial
+              Essai gratuit
               <ArrowRight className="ml-2 h-5 w-5" />
             </button>
             <button className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-lg font-medium rounded-lg text-white hover:bg-indigo-500 transition-colors duration-200">
-              Schedule Demo
+              Démonstration
             </button>
           </motion.div>
 

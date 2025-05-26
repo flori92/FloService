@@ -38,33 +38,33 @@ const Features: React.FC = () => {
   const features = [
     {
       icon: <LineChart className="h-6 w-6 text-indigo-600" />,
-      title: "Advanced Analytics",
-      description: "Get deep insights into your business performance with real-time analytics and customizable dashboards.",
+      title: "Analyses avancées",
+      description: "Obtenez des insights détaillés sur vos performances avec des analyses en temps réel et des tableaux de bord personnalisables.",
     },
     {
       icon: <Users className="h-6 w-6 text-indigo-600" />,
-      title: "Team Management",
-      description: "Streamline collaboration with integrated tools for task assignment, tracking, and communication.",
+      title: "Gestion d'équipe",
+      description: "Optimisez la collaboration avec des outils intégrés pour l'attribution des tâches, le suivi et la communication.",
     },
     {
       icon: <Zap className="h-6 w-6 text-indigo-600" />,
-      title: "Fast Integration",
-      description: "Quick and seamless integration with your existing tools and workflows. Get started in minutes.",
+      title: "Intégration rapide",
+      description: "Intégration rapide et transparente avec vos outils et flux de travail existants. Démarrez en quelques minutes.",
     },
     {
       icon: <Shield className="h-6 w-6 text-indigo-600" />,
-      title: "Enterprise Security",
-      description: "Bank-grade security with end-to-end encryption and compliance with industry standards.",
+      title: "Sécurité entreprise",
+      description: "Sécurité de niveau bancaire avec chiffrement de bout en bout et conformité aux normes de l'industrie.",
     },
     {
       icon: <MessageSquare className="h-6 w-6 text-indigo-600" />,
-      title: "24/7 Support",
-      description: "Access our dedicated support team anytime. We're here to help you succeed.",
+      title: "Support 24/7",
+      description: "Accédez à notre équipe de support dédiée à tout moment. Nous sommes là pour vous aider à réussir.",
     },
     {
       icon: <Settings className="h-6 w-6 text-indigo-600" />,
-      title: "Custom Solutions",
-      description: "Flexible and customizable features that adapt to your unique business needs.",
+      title: "Solutions personnalisées",
+      description: "Fonctionnalités flexibles et personnalisables qui s'adaptent à vos besoins professionnels uniques.",
     }
   ];
 
@@ -79,7 +79,7 @@ const Features: React.FC = () => {
             viewport={{ once: true }}
             className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
           >
-            Everything You Need to Succeed
+            Tout ce dont vous avez besoin pour réussir
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -88,7 +88,7 @@ const Features: React.FC = () => {
             viewport={{ once: true }}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            Powerful features to help you manage, optimize, and grow your business effectively.
+            Des fonctionnalités puissantes pour vous aider à gérer, optimiser et développer votre activité efficacement.
           </motion.p>
         </div>
 
