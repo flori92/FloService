@@ -1,0 +1,136 @@
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Star, MapPin, Globe, Award } from 'lucide-react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import Chat from '../components/Chat';
+import { serviceProviders } from '../data/providers';
+import { useAuthStore } from '../store/authStore';
+
+const ProviderProfile: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [showChat, setShowChat] = useState(false);
+  const { user } = useAuthStore();
+  const provider = serviceProviders.find(p => p.id === id);
+
+  if (!provider) {
+    return <div>Prestataire non trouvé</div>;
+  }
+
+  const handleContact = () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = `/login?redirect=/provider/${id}`;
+      return;
+    }
+    setShowChat(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main className="container mx-auto px-4 py-24">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="relative h-64 bg-gradient-to-r from-teal-500 to-blue-500">
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/50 to-transparent">
+              <div className="flex items-center space-x-6">
+                <img
+                  src={provider.avatar}
+                  alt={provider.name}
+                  className="w-32 h-32 rounded-full border-4 border-white object-cover"
+                />
+                <div className="text-white">
+                  <h1 className="text-3xl font-bold">{provider.name}</h1>
+                  <p className="text-xl opacity-90">{provider.profession}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="md:col-span-2">
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">À propos</h2>
+                  <p className="text-gray-600">{provider.description}</p>
+                </section>
+
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">Portfolio</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {provider.portfolio.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`Portfolio ${index + 1}`}
+                        className="rounded-lg object-cover w-full h-48"
+                      />
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              {/* Right Column */}
+              <div>
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="mb-6">
+                    <div className="flex items-center mb-2">
+                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
+                      <span className="ml-2 font-semibold">
+                        {provider.rating} ({provider.reviews} avis)
+                      </span>
+                    </div>
+                    <div className="flex items-center mb-2">
+                      <MapPin className="w-5 h-5 text-gray-500" />
+                      <span className="ml-2">{provider.city}</span>
+                    </div>
+                    <div className="flex items-center mb-2">
+                      <Globe className="w-5 h-5 text-gray-500" />
+                      <span className="ml-2">
+                        {provider.languages.join(', ')}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Award className="w-5 h-5 text-gray-500" />
+                      <span className="ml-2">
+                        Membre depuis {provider.memberSince}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Spécialités</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {provider.specialties.map((specialty, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm"
+                        >
+                          {specialty}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleContact}
+                    className="w-full mt-6 bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition-colors"
+                  >
+                    Contacter
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      {showChat && <Chat providerId={id} onClose={() => setShowChat(false)} />}
+      <Footer />
+    </div>
+  );
+};
+
+export default ProviderProfile;
