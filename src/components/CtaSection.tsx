@@ -2,11 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Star, Clock } from 'lucide-react';
-import { FormattedMessage, useIntl } from 'react-intl';
+import { FormattedMessage } from 'react-intl';
 
 const CtaSection: React.FC = () => {
-  const intl = useIntl();
-
   return (
     <section className="py-20 bg-gradient-to-r from-teal-500 to-blue-600 relative overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')] bg-cover bg-center opacity-10"></div>
@@ -28,12 +26,18 @@ const CtaSection: React.FC = () => {
               <FormattedMessage id="cta.provider.description" />
             </p>
             <ul className="space-y-4 mb-8">
-              {intl.messages['cta.provider.benefits'].map((benefit: string, index: number) => (
-                <li key={index} className="flex items-center text-gray-700">
-                  <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
-                  {benefit}
-                </li>
-              ))}
+              <li className="flex items-center text-gray-700">
+                <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
+                <FormattedMessage id="cta.provider.benefits.0" />
+              </li>
+              <li className="flex items-center text-gray-700">
+                <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
+                <FormattedMessage id="cta.provider.benefits.1" />
+              </li>
+              <li className="flex items-center text-gray-700">
+                <span className="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center mr-3">✓</span>
+                <FormattedMessage id="cta.provider.benefits.2" />
+              </li>
             </ul>
             <Link
               to="/provider-registration"
@@ -59,23 +63,45 @@ const CtaSection: React.FC = () => {
               <FormattedMessage id="cta.client.description" />
             </p>
             <div className="grid grid-cols-1 gap-4 mb-8">
-              {intl.messages['cta.client.benefits'].map((benefit: any, index: number) => (
-                <div key={index} className="flex items-start">
-                  <div className="flex-shrink-0 mt-1">
-                    {index === 0 && <ShieldCheck className="h-6 w-6 text-teal-600" />}
-                    {index === 1 && <Star className="h-6 w-6 text-teal-600" />}
-                    {index === 2 && <Clock className="h-6 w-6 text-teal-600" />}
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="text-base font-semibold text-gray-900">
-                      {benefit.title}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {benefit.description}
-                    </p>
-                  </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <ShieldCheck className="h-6 w-6 text-teal-600" />
                 </div>
-              ))}
+                <div className="ml-4">
+                  <h4 className="text-base font-semibold text-gray-900">
+                    <FormattedMessage id="cta.client.benefits.0.title" />
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    <FormattedMessage id="cta.client.benefits.0.description" />
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <Star className="h-6 w-6 text-teal-600" />
+                </div>
+                <div className="ml-4">
+                  <h4 className="text-base font-semibold text-gray-900">
+                    <FormattedMessage id="cta.client.benefits.1.title" />
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    <FormattedMessage id="cta.client.benefits.1.description" />
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <Clock className="h-6 w-6 text-teal-600" />
+                </div>
+                <div className="ml-4">
+                  <h4 className="text-base font-semibold text-gray-900">
+                    <FormattedMessage id="cta.client.benefits.2.title" />
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    <FormattedMessage id="cta.client.benefits.2.description" />
+                  </p>
+                </div>
+              </div>
             </div>
             <Link
               to="/explorer"
