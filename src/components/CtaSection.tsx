@@ -2,18 +2,16 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Star, Clock } from 'lucide-react';
-import { useIntl } from 'react-intl';
+import { FormattedMessage } from 'react-intl';
 
 const CtaSection: React.FC = () => {
-  const intl = useIntl();
-
   return (
     <section className="py-16 bg-gradient-to-r from-teal-500 to-blue-600 relative overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')] bg-cover bg-center opacity-10"></div>
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Become a Provider */}
+          {/* Provider CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -22,35 +20,35 @@ const CtaSection: React.FC = () => {
             className="bg-white rounded-xl p-6 shadow-xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Devenir prestataire
+              <FormattedMessage id="cta.provider.title" />
             </h3>
             <p className="text-gray-600 mb-4">
-              Rejoignez notre communauté de professionnels et développez votre activité
+              <FormattedMessage id="cta.provider.description" />
             </p>
             <ul className="space-y-3 mb-6">
               <li className="flex items-center text-gray-700">
                 <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                Inscription gratuite
+                <FormattedMessage id="cta.provider.benefits.0" />
               </li>
               <li className="flex items-center text-gray-700">
                 <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                Gestion flexible
+                <FormattedMessage id="cta.provider.benefits.1" />
               </li>
               <li className="flex items-center text-gray-700">
                 <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                Paiements sécurisés
+                <FormattedMessage id="cta.provider.benefits.2" />
               </li>
             </ul>
             <Link
               to="/provider-registration"
               className="inline-flex items-center justify-center w-full px-4 py-2 text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors duration-200"
             >
-              Commencer maintenant
+              <FormattedMessage id="cta.provider.button" />
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </motion.div>
 
-          {/* Book a Service */}
+          {/* Client CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -59,20 +57,20 @@ const CtaSection: React.FC = () => {
             className="bg-white rounded-xl p-6 shadow-xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Réserver un service
+              <FormattedMessage id="cta.client.title" />
             </h3>
             <p className="text-gray-600 mb-4">
-              Trouvez le prestataire idéal pour tous vos besoins
+              <FormattedMessage id="cta.client.description" />
             </p>
             <div className="grid grid-cols-1 gap-3 mb-6">
               <div className="flex items-start">
                 <ShieldCheck className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
                 <div className="ml-3">
                   <h4 className="text-sm font-semibold text-gray-900">
-                    Prestataires vérifiés
+                    <FormattedMessage id="cta.client.benefits.0.title" />
                   </h4>
                   <p className="text-xs text-gray-600">
-                    Tous nos prestataires sont soigneusement vérifiés
+                    <FormattedMessage id="cta.client.benefits.0.description" />
                   </p>
                 </div>
               </div>
@@ -80,10 +78,10 @@ const CtaSection: React.FC = () => {
                 <Star className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
                 <div className="ml-3">
                   <h4 className="text-sm font-semibold text-gray-900">
-                    Service de qualité
+                    <FormattedMessage id="cta.client.benefits.1.title" />
                   </h4>
                   <p className="text-xs text-gray-600">
-                    Des services professionnels garantis
+                    <FormattedMessage id="cta.client.benefits.1.description" />
                   </p>
                 </div>
               </div>
@@ -91,10 +89,10 @@ const CtaSection: React.FC = () => {
                 <Clock className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
                 <div className="ml-3">
                   <h4 className="text-sm font-semibold text-gray-900">
-                    Réservation facile
+                    <FormattedMessage id="cta.client.benefits.2.title" />
                   </h4>
                   <p className="text-xs text-gray-600">
-                    Réservez en quelques clics 24h/24
+                    <FormattedMessage id="cta.client.benefits.2.description" />
                   </p>
                 </div>
               </div>
@@ -103,7 +101,7 @@ const CtaSection: React.FC = () => {
               to="/explorer"
               className="inline-flex items-center justify-center w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
             >
-              Explorer les services
+              <FormattedMessage id="cta.client.button" />
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </motion.div>
