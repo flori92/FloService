@@ -1,11 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Hammer,
-  Paintbrush,
-  Heart,
-  Scissors
-} from 'lucide-react';
+import { FormattedMessage } from 'react-intl';
+import { Hammer, Paintbrush, Heart, Scissors } from 'lucide-react';
 import { categories } from '../data/providers';
 
 const ServiceCategories: React.FC = () => {
@@ -21,13 +17,13 @@ const ServiceCategories: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900">
-            Parcourir par catégorie
+            <FormattedMessage id="sections.categories.title" />
           </h2>
           <Link
             to="/categories"
             className="text-teal-600 hover:text-teal-700 font-medium flex items-center"
           >
-            Voir toutes les catégories →
+            <FormattedMessage id="sections.categories.viewAll" /> →
           </Link>
         </div>
 
