@@ -63,7 +63,7 @@ const Chat: React.FC<ChatProps> = ({ providerId, onClose }) => {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user?.id},receiver_id.eq.${user?.id}`)
+        .eq('conversation_id', providerId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -138,11 +138,10 @@ const Chat: React.FC<ChatProps> = ({ providerId, onClose }) => {
 
       const message = {
         sender_id: user.id,
-        receiver_id: providerId,
+        conversation_id: providerId,
         content,
         file_url: fileUrl,
-        file_type: fileType,
-        conversation_id: providerId // Using providerId as conversation_id for now
+        file_type: fileType
       };
 
       const { error } = await supabase
