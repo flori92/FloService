@@ -35,6 +35,37 @@ export const messages = {
         title: 'Browse by Category',
         viewAll: 'View all categories'
       }
+    },
+    cta: {
+      provider: {
+        title: 'Become a Service Provider',
+        description: 'Join our platform and grow your business by reaching more customers.',
+        benefits: [
+          'Access to thousands of potential clients',
+          'Flexible schedule management',
+          'Secure payments and support'
+        ],
+        button: 'Start Providing Services'
+      },
+      client: {
+        title: 'Find the Perfect Service',
+        description: 'Discover qualified professionals for all your needs.',
+        benefits: [
+          {
+            title: 'Verified Professionals',
+            description: 'All providers are thoroughly vetted'
+          },
+          {
+            title: 'Quality Service',
+            description: 'Rated and reviewed by our community'
+          },
+          {
+            title: 'Easy Booking',
+            description: 'Book and manage appointments online'
+          }
+        ],
+        button: 'Find a Service Provider'
+      }
     }
   },
   fr: {
@@ -68,6 +99,37 @@ export const messages = {
       categories: {
         title: 'Parcourir par catégorie',
         viewAll: 'Voir toutes les catégories'
+      }
+    },
+    cta: {
+      provider: {
+        title: 'Devenir Prestataire',
+        description: 'Rejoignez notre plateforme et développez votre activité en touchant plus de clients.',
+        benefits: [
+          'Accès à des milliers de clients potentiels',
+          'Gestion flexible des horaires',
+          'Paiements sécurisés et support'
+        ],
+        button: 'Commencer à proposer mes services'
+      },
+      client: {
+        title: 'Trouver le Service Parfait',
+        description: 'Découvrez des professionnels qualifiés pour tous vos besoins.',
+        benefits: [
+          {
+            title: 'Professionnels Vérifiés',
+            description: 'Tous les prestataires sont minutieusement contrôlés'
+          },
+          {
+            title: 'Service de Qualité',
+            description: 'Évalué et noté par notre communauté'
+          },
+          {
+            title: 'Réservation Facile',
+            description: 'Réservez et gérez vos rendez-vous en ligne'
+          }
+        ],
+        button: 'Trouver un prestataire'
       }
     }
   }

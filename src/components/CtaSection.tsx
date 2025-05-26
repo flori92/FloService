@@ -26,18 +26,12 @@ const CtaSection: React.FC = () => {
               <FormattedMessage id="cta.provider.description" />
             </p>
             <ul className="space-y-3 mb-6">
-              <li className="flex items-center text-gray-700">
-                <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                <FormattedMessage id="cta.provider.benefits.0" />
-              </li>
-              <li className="flex items-center text-gray-700">
-                <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                <FormattedMessage id="cta.provider.benefits.1" />
-              </li>
-              <li className="flex items-center text-gray-700">
-                <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                <FormattedMessage id="cta.provider.benefits.2" />
-              </li>
+              {[0, 1, 2].map((index) => (
+                <li key={index} className="flex items-center text-gray-700">
+                  <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
+                  <FormattedMessage id={`cta.provider.benefits.${index}`} />
+                </li>
+              ))}
             </ul>
             <Link
               to="/provider-registration"
@@ -63,39 +57,23 @@ const CtaSection: React.FC = () => {
               <FormattedMessage id="cta.client.description" />
             </p>
             <div className="grid grid-cols-1 gap-3 mb-6">
-              <div className="flex items-start">
-                <ShieldCheck className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    <FormattedMessage id="cta.client.benefits.0.title" />
-                  </h4>
-                  <p className="text-xs text-gray-600">
-                    <FormattedMessage id="cta.client.benefits.0.description" />
-                  </p>
+              {[
+                { icon: ShieldCheck },
+                { icon: Star },
+                { icon: Clock }
+              ].map((item, index) => (
+                <div key={index} className="flex items-start">
+                  <item.icon className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
+                  <div className="ml-3">
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      <FormattedMessage id={`cta.client.benefits.${index}.title`} />
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      <FormattedMessage id={`cta.client.benefits.${index}.description`} />
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start">
-                <Star className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    <FormattedMessage id="cta.client.benefits.1.title" />
-                  </h4>
-                  <p className="text-xs text-gray-600">
-                    <FormattedMessage id="cta.client.benefits.1.description" />
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <Clock className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    <FormattedMessage id="cta.client.benefits.2.title" />
-                  </h4>
-                  <p className="text-xs text-gray-600">
-                    <FormattedMessage id="cta.client.benefits.2.description" />
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
             <Link
               to="/explorer"
