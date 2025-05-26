@@ -5,6 +5,7 @@ import PubCarousel from '../components/PubCarousel';
 import ServiceCategories from '../components/ServiceCategories';
 import FeaturedFreelancers from '../components/FeaturedFreelancers';
 import HowItWorksSection from '../components/HowItWorksSection';
+import CtaSection from '../components/CtaSection';
 import Testimonials from '../components/Testimonials';
 import Footer from '../components/Footer';
 
@@ -20,6 +21,7 @@ const Home = () => {
         <ServiceCategories />
         <FeaturedFreelancers />
         <HowItWorksSection />
+        <CtaSection />
         <Testimonials />
       </main>
       <Footer />
