@@ -27,7 +27,7 @@ const PubCarousel: React.FC = () => {
       title: 'Orange Télécom',
       subtitle: 'Restez connecté avec Orange',
       imageUrl: 'https://www.leparisien.fr/resizer/pQPmhBbYbgGrix2Wb82JrPj4O24=/arc-anglerfish-eu-central-1-prod-leparisien/public/YPAJGUUGPNABXKCPSF6HHYV6UQ.jpg',
-      link: 'https://orange.com',
+      link: 'https://www.orange.ci',
       bgColor: 'from-orange-500 to-orange-700'
     },
     {
@@ -67,7 +67,7 @@ const PubCarousel: React.FC = () => {
       title: 'MIG MOTORS',
       subtitle: 'Découvrez nos véhicules de qualité',
       imageUrl: 'https://www.goafricaonline.com/media/cache/resolve/w1200/uploads/media/company_media/0001/91/5e4e485a37c6b-nouveau-showroom-mig-benin.JPG',
-      link: 'https://www.goafricaonline.com/bj/90187-mig-motors-import-group-sarl-cocotomey-cotonou-benin',
+      link: 'https://www.facebook.com/migmotorssa',
       bgColor: 'from-gray-700 to-gray-900'
     }
   ];
