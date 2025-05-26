@@ -10,11 +10,15 @@ import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawId } = useParams<{ id: string }>();
   const [showChat, setShowChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+
+  // Nettoyer l'ID pour enlever le suffixe ':1' si présent
+  const id = rawId?.split(':')[0];
+
   const provider = serviceProviders.find(p => p.id === id);
 
   if (!provider) {
