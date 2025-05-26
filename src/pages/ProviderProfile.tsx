@@ -1,29 +1,70 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Star, MapPin, Globe, Award } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Chat from '../components/Chat';
 import { serviceProviders } from '../data/providers';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 
 const ProviderProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [showChat, setShowChat] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const provider = serviceProviders.find(p => p.id === id);
 
   if (!provider) {
     return <div>Prestataire non trouvé</div>;
   }
 
-  const handleContact = () => {
+  const handleContact = async () => {
     if (!user) {
-      // Redirect to login if not authenticated
-      window.location.href = `/login?redirect=/provider/${id}`;
+      // Redirect to login with return URL
+      navigate(`/login?redirect=/provider/${id}`);
       return;
     }
-    setShowChat(true);
+
+    try {
+      setLoading(true);
+
+      // Check if a conversation already exists
+      const { data: existingConversation, error: fetchError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('client_id', user.id)
+        .eq('provider_id', id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw fetchError;
+      }
+
+      if (existingConversation) {
+        setShowChat(true);
+        return;
+      }
+
+      // Create a new conversation
+      const { data: newConversation, error: insertError } = await supabase
+        .from('conversations')
+        .insert({
+          client_id: user.id,
+          provider_id: id
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      setShowChat(true);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -117,9 +158,10 @@ const ProviderProfile: React.FC = () => {
 
                   <button
                     onClick={handleContact}
-                    className="w-full mt-6 bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition-colors"
+                    disabled={loading}
+                    className="w-full mt-6 bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Contacter
+                    {loading ? 'Chargement...' : 'Contacter'}
                   </button>
                 </div>
               </div>
