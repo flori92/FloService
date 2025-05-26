@@ -13,50 +13,27 @@ export const messages = {
       searchPlaceholder: 'What service are you looking for?',
       selectCountry: 'Select a country',
       selectCity: 'Select a city',
+      viewProfile: 'View Profile',
+      memberSince: 'Member since',
+      viewAll: 'View all',
+      reviews: 'reviews'
     },
     navigation: {
-      explorer: 'Explore',
+      explore: 'Explore',
       categories: 'Categories',
       howItWorks: 'How it works',
+      messages: 'Messages',
+      notifications: 'Notifications',
+      profile: 'Profile'
     },
-    hero: {
-      title: 'Find the perfect service provider',
-      subtitle: 'Connect with skilled professionals for any job',
-      cta: 'Get Started',
-    },
-    services: {
-      title: 'Browse by Category',
-      viewAll: 'View all categories',
-    },
-    cta: {
-      provider: {
-        title: 'Become a Provider',
-        description: 'Join our community of professionals and grow your business. Access thousands of potential clients.',
-        benefits: [
-          'Free registration',
-          'Flexible schedule management',
-          'Secure payments'
-        ],
-        button: 'Get Started Now'
+    sections: {
+      featuredProviders: {
+        title: 'Featured Providers',
+        viewAll: 'View all providers'
       },
-      client: {
-        title: 'Book a Service',
-        description: 'Find the perfect provider for all your needs. Thousands of qualified professionals at your service.',
-        benefits: [
-          {
-            title: 'Verified Providers',
-            description: 'All our providers are carefully verified'
-          },
-          {
-            title: 'Quality Service',
-            description: 'Professional services guaranteed'
-          },
-          {
-            title: 'Easy Booking',
-            description: 'Book in a few clicks 24/7'
-          }
-        ],
-        button: 'Explore Services'
+      categories: {
+        title: 'Browse by Category',
+        viewAll: 'View all categories'
       }
     }
   },
@@ -70,50 +47,27 @@ export const messages = {
       searchPlaceholder: 'Quel service recherchez-vous ?',
       selectCountry: 'Sélectionnez un pays',
       selectCity: 'Sélectionnez une ville',
+      viewProfile: 'Voir le profil',
+      memberSince: 'Membre depuis',
+      viewAll: 'Voir tout',
+      reviews: 'avis'
     },
     navigation: {
-      explorer: 'Explorer',
+      explore: 'Explorer',
       categories: 'Catégories',
       howItWorks: 'Comment ça marche',
+      messages: 'Messages',
+      notifications: 'Notifications',
+      profile: 'Profil'
     },
-    hero: {
-      title: 'Trouvez le prestataire parfait',
-      subtitle: 'Connectez-vous avec des professionnels qualifiés pour tout type de travail',
-      cta: 'Commencer',
-    },
-    services: {
-      title: 'Parcourir par catégorie',
-      viewAll: 'Voir toutes les catégories',
-    },
-    cta: {
-      provider: {
-        title: 'Devenir prestataire',
-        description: 'Rejoignez notre communauté de professionnels et développez votre activité. Accédez à des milliers de clients potentiels.',
-        benefits: [
-          'Inscription gratuite',
-          'Gestion flexible de votre emploi du temps', 
-          'Paiements sécurisés'
-        ],
-        button: 'Commencer maintenant'
+    sections: {
+      featuredProviders: {
+        title: 'Prestataires en vedette',
+        viewAll: 'Voir tous les prestataires'
       },
-      client: {
-        title: 'Réserver un service',
-        description: 'Trouvez le prestataire idéal pour tous vos besoins. Des milliers de professionnels qualifiés à votre service.',
-        benefits: [
-          {
-            title: 'Prestataires vérifiés',
-            description: 'Tous nos prestataires sont soigneusement vérifiés'
-          },
-          {
-            title: 'Service de qualité',
-            description: 'Des services professionnels garantis'
-          },
-          {
-            title: 'Réservation facile',
-            description: 'Réservez en quelques clics 24h/24'
-          }
-        ],
-        button: 'Explorer les services'
+      categories: {
+        title: 'Parcourir par catégorie',
+        viewAll: 'Voir toutes les catégories'
       }
     }
   }
