@@ -61,6 +61,14 @@ const PubCarousel: React.FC = () => {
       imageUrl: 'https://gozem.co/wp-content/uploads/2020/03/gozem-logo-hq.png',
       link: 'https://gozem.co',
       bgColor: 'from-teal-500 to-teal-700'
+    },
+    {
+      id: '7',
+      title: 'MIG MOTORS',
+      subtitle: 'Découvrez nos véhicules de qualité',
+      imageUrl: 'https://www.goafricaonline.com/media/cache/resolve/w1200/uploads/media/company_media/0001/91/5e4e485a37c6b-nouveau-showroom-mig-benin.JPG',
+      link: 'https://www.goafricaonline.com/bj/90187-mig-motors-import-group-sarl-cocotomey-cotonou-benin',
+      bgColor: 'from-gray-700 to-gray-900'
     }
   ];
 
