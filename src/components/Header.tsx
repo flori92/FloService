@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, MessageSquare, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { useLanguageStore } from '../store/languageStore';
 import { FormattedMessage } from 'react-intl';
 import { LanguageSwitch } from './LanguageSwitch';
 import { NotificationBell } from './NotificationBell';
