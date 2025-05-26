@@ -63,6 +63,8 @@ const Testimonials: React.FC = () => {
   useEffect(() => {
     const loadReviews = async () => {
       try {
+        setLoading(true);
+        
         const { data, error } = await supabase
           .from('reviews')
           .select(`
@@ -70,10 +72,10 @@ const Testimonials: React.FC = () => {
             rating,
             comment,
             created_at,
-            client:client_id(full_name),
-            provider:provider_id(business_name)
+            client:profiles!reviews_client_id_fkey(full_name),
+            provider:profiles!reviews_provider_id_fkey(business_name)
           `)
-          .gte('rating', 4) // Only get reviews with 4 stars or more
+          .gte('rating', 4)
           .order('created_at', { ascending: false })
           .limit(6);
 
@@ -94,7 +96,6 @@ const Testimonials: React.FC = () => {
       .on('INSERT', { event: '*', schema: 'public', table: 'reviews' }, 
         async (payload) => {
           if (payload.new.rating >= 4) {
-            // Fetch the complete review data with client and provider info
             const { data, error } = await supabase
               .from('reviews')
               .select(`
@@ -102,8 +103,8 @@ const Testimonials: React.FC = () => {
                 rating,
                 comment,
                 created_at,
-                client:client_id(full_name),
-                provider:provider_id(business_name)
+                client:profiles!reviews_client_id_fkey(full_name),
+                provider:profiles!reviews_provider_id_fkey(business_name)
               `)
               .eq('id', payload.new.id)
               .single();

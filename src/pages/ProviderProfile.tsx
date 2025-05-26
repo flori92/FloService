@@ -7,6 +7,7 @@ import Chat from '../components/Chat';
 import { serviceProviders } from '../data/providers';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +36,7 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .select('id')
         .eq('client_id', user.id)
-        .eq('provider_id', id)
+        .eq('service_id', id)
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -52,16 +53,20 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .insert({
           client_id: user.id,
-          provider_id: id
+          provider_id: provider.id,
+          service_id: id
         })
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        throw insertError;
+      }
 
       setShowChat(true);
     } catch (error) {
       console.error('Error creating conversation:', error);
+      toast.error('Une erreur est survenue lors de la création de la conversation');
     } finally {
       setLoading(false);
     }
