@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, MessageSquare, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useLanguageStore } from '../store/languageStore';
+import { FormattedMessage } from 'react-intl';
 import { LanguageSwitch } from './LanguageSwitch';
 import { NotificationBell } from './NotificationBell';
-import { FormattedMessage } from 'react-intl';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,7 +47,7 @@ const Header: React.FC = () => {
                 isScrolled || forceVisible ? 'text-gray-700 hover:text-teal-600' : 'text-white/90 hover:text-white'
               }`}
             >
-              Explorer
+              <FormattedMessage id="navigation.explore" />
             </Link>
             <Link 
               to="/categories" 
@@ -55,7 +55,7 @@ const Header: React.FC = () => {
                 isScrolled || forceVisible ? 'text-gray-700 hover:text-teal-600' : 'text-white/90 hover:text-white'
               }`}
             >
-              Catégories
+              <FormattedMessage id="navigation.categories" />
             </Link>
             <Link 
               to="/how-it-works" 
@@ -63,7 +63,7 @@ const Header: React.FC = () => {
                 isScrolled || forceVisible ? 'text-gray-700 hover:text-teal-600' : 'text-white/90 hover:text-white'
               }`}
             >
-              Comment ça marche
+              <FormattedMessage id="navigation.howItWorks" />
             </Link>
           </div>
 
@@ -116,13 +116,13 @@ const Header: React.FC = () => {
           <div className="md:hidden mt-4 pb-4 bg-white rounded-lg shadow-lg">
             <nav className="flex flex-col space-y-4 p-4">
               <Link to="/explorer" className="text-gray-700 hover:text-teal-600">
-                Explorer
+                <FormattedMessage id="navigation.explore" />
               </Link>
               <Link to="/categories" className="text-gray-700 hover:text-teal-600">
-                Catégories
+                <FormattedMessage id="navigation.categories" />
               </Link>
               <Link to="/how-it-works" className="text-gray-700 hover:text-teal-600">
-                Comment ça marche
+                <FormattedMessage id="navigation.howItWorks" />
               </Link>
               <div className="pt-2 border-t border-gray-200">
                 <LanguageSwitch />

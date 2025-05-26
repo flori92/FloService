@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
+import { FormattedMessage } from 'react-intl';
 import { serviceProviders } from '../data/providers';
 
 const FeaturedFreelancers: React.FC = () => {
-  // Filter providers with rating >= 4
   const topProviders = serviceProviders
     .filter(provider => provider.rating >= 4)
     .sort((a, b) => b.rating - a.rating)
@@ -15,13 +15,13 @@ const FeaturedFreelancers: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900">
-            Prestataires en vedette
+            <FormattedMessage id="sections.featuredProviders.title" />
           </h2>
           <Link
             to="/providers"
             className="text-teal-600 hover:text-teal-700 font-medium flex items-center"
           >
-            Voir tous les prestataires →
+            <FormattedMessage id="sections.featuredProviders.viewAll" /> →
           </Link>
         </div>
 
@@ -41,17 +41,17 @@ const FeaturedFreelancers: React.FC = () => {
                 <div className="flex items-center mb-2">
                   <Star className="w-5 h-5 text-yellow-400 fill-current" />
                   <span className="ml-1 text-gray-700">
-                    {provider.rating} ({provider.reviews})
+                    {provider.rating} ({provider.reviews} <FormattedMessage id="common.reviews" />)
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mb-4">
-                  {provider.city} • Membre depuis {provider.memberSince}
+                  {provider.city} • <FormattedMessage id="common.memberSince" /> {provider.memberSince}
                 </p>
                 <Link
                   to={`/provider/${provider.id}`}
                   className="text-teal-600 hover:text-teal-700 font-medium"
                 >
-                  Voir le profil
+                  <FormattedMessage id="common.viewProfile" />
                 </Link>
               </div>
             </div>
