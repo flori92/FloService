@@ -49,7 +49,7 @@ const ProviderProfile: React.FC = () => {
       }
 
       // Create a new conversation
-      const { data: newConversation, error: insertError } = await supabase
+      const { data: _newConversation, error: insertError } = await supabase
         .from('conversations')
         .insert({
           client_id: user.id,
