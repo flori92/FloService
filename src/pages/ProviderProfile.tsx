@@ -53,7 +53,6 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .insert({
           client_id: user.id,
-          provider_id: provider.id,
           service_id: id
         })
         .select()
@@ -174,7 +173,7 @@ const ProviderProfile: React.FC = () => {
           </div>
         </div>
       </main>
-      {showChat && <Chat providerId={id} onClose={() => setShowChat(false)} />}
+      {showChat && id && <Chat providerId={id} onClose={() => setShowChat(false)} />}
       <Footer />
     </div>
   );
