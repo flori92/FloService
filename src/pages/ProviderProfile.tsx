@@ -57,8 +57,7 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .insert({
           client_id: user.id,
-          provider_id: id,
-          service_id: id // This should be replaced with actual service ID
+          provider_id: id
         })
         .select()
         .single();

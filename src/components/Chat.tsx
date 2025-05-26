@@ -141,7 +141,8 @@ const Chat: React.FC<ChatProps> = ({ providerId, onClose }) => {
         receiver_id: providerId,
         content,
         file_url: fileUrl,
-        file_type: fileType
+        file_type: fileType,
+        conversation_id: providerId // Using providerId as conversation_id for now
       };
 
       const { error } = await supabase
