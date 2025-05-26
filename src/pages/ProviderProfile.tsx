@@ -16,7 +16,7 @@ const ProviderProfile: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
-  // Nettoyer l'ID pour enlever le suffixe ':1' si présent
+  // Clean the ID to remove ':1' suffix if present
   const id = rawId?.split(':')[0];
 
   const provider = serviceProviders.find(p => p.id === id);
@@ -40,7 +40,7 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .select('id')
         .eq('client_id', user.id)
-        .eq('service_id', id)
+        .eq('provider_id', id)
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -53,11 +53,12 @@ const ProviderProfile: React.FC = () => {
       }
 
       // Create a new conversation
-      const { data: _newConversation, error: insertError } = await supabase
+      const { data: newConversation, error: insertError } = await supabase
         .from('conversations')
         .insert({
           client_id: user.id,
-          service_id: id
+          provider_id: id,
+          service_id: id // This should be replaced with actual service ID
         })
         .select()
         .single();

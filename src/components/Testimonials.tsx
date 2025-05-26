@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -72,8 +72,8 @@ const Testimonials: React.FC = () => {
             rating,
             comment,
             created_at,
-            client:profiles!reviews_client_id_fkey(full_name),
-            provider:profiles!reviews_provider_id_fkey(business_name)
+            client:client_id (full_name),
+            provider:provider_id (business_name)
           `)
           .gte('rating', 4)
           .order('created_at', { ascending: false })
@@ -103,8 +103,8 @@ const Testimonials: React.FC = () => {
                 rating,
                 comment,
                 created_at,
-                client:profiles!reviews_client_id_fkey(full_name),
-                provider:profiles!reviews_provider_id_fkey(business_name)
+                client:client_id (full_name),
+                provider:provider_id (business_name)
               `)
               .eq('id', payload.new.id)
               .single();
