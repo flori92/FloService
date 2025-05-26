@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { LogIn } from 'lucide-react';
-import { useIntl } from 'react-intl';
+import { useTranslation } from '../hooks/useTranslation';
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const intl = useIntl();
+  const { t } = useTranslation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +26,8 @@ export default function Login() {
 
       toast.success('Connexion réussie !');
       navigate('/dashboard');
-    } catch (error) {
-      toast.error(error.message);
+    } catch (error: any) {
+      toast.error(error?.message || 'Une erreur est survenue lors de la connexion');
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ export default function Login() {
           <LogIn className="h-12 w-12 text-teal-600" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {intl.formatMessage({ id: 'common.login' })}
+          {t('common.login')}
         </h2>
       </div>
 
@@ -49,7 +49,7 @@ export default function Login() {
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                {intl.formatMessage({ id: 'common.email' })}
+                {t('common.email')}
               </label>
               <div className="mt-1">
                 <input
@@ -67,7 +67,7 @@ export default function Login() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                {intl.formatMessage({ id: 'common.password' })}
+                {t('common.password')}
               </label>
               <div className="mt-1">
                 <input
@@ -89,7 +89,7 @@ export default function Login() {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Connexion...' : intl.formatMessage({ id: 'common.login' })}
+                {loading ? 'Connexion...' : t('common.login')}
               </button>
             </div>
           </form>

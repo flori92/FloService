@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Rocket, Shield, Clock } from 'lucide-react';
-import { FormattedMessage } from 'react-intl';
 
 const CallToAction: React.FC = () => {
   const benefits = [

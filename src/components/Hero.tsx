@@ -2,9 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { HashLink as Link } from 'react-router-hash-link';
-import { i18n } from '../i18n/translations';
+import { useTranslation } from '../hooks/useTranslation';
 
 const Hero: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden bg-gradient-to-r from-indigo-50 to-blue-50">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')] bg-cover bg-center opacity-[0.03]"></div>
@@ -18,24 +19,24 @@ const Hero: React.FC = () => {
             className="text-center md:text-left"
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-              {i18n.t('home.hero.title')}
+              {t('home.hero.title')}
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-xl mx-auto md:mx-0">
-              {i18n.t('home.hero.subtitle')}
+              {t('home.hero.subtitle')}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-4">
               <Link
                 to="/#cta"
                 className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base md:text-lg font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200"
               >
-                {i18n.t('home.hero.cta')}
+                {t('home.hero.cta')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <Link
                 to="/#features"
                 className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base md:text-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
               >
-                {i18n.t('home.hero.secondary')}
+                {t('home.hero.secondary')}
               </Link>
             </div>
           </motion.div>
@@ -69,7 +70,7 @@ const Hero: React.FC = () => {
                 transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
                 className="text-center"
               >
-                <p className="text-gray-600 font-medium">{i18n.t(`home.stats.${index}`)}</p>
+                <p className="text-gray-600 font-medium">{t(`home.stats.${index}`)}</p>
               </motion.div>
             ))}
           </div>
