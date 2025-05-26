@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
+    "date-fns": "^3.3.1",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
@@ -21,8 +22,7 @@
     "react-router-dom": "^6.22.0",
     "react-router-hash-link": "^2.4.3",
     "zustand": "^4.5.2",
-    "zxcvbn": "^4.4.2",
-    "date-fns": "^3.3.1"
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",
@@ -37,6 +37,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.35",
+    "supabase": "^2.23.4",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.2.2",
     "vite": "^5.1.6"

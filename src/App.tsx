@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { IntlProvider } from 'react-intl';
 import { supabase } from './lib/supabase';
 import { useAuthStore } from './store/authStore';
-import { useLanguageStore } from './store/languageStore';
-import { messages, defaultLocale } from './i18n/translations';
+import { TranslationProvider } from './providers/TranslationProvider';
 import { AuthGuard } from './components/AuthGuard';
 
 // Pages
@@ -28,7 +26,6 @@ import NotFound from './pages/NotFound';
 
 function App() {
   const setUser = useAuthStore((state) => state.setUser);
-  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -43,11 +40,7 @@ function App() {
   }, [setUser]);
 
   return (
-    <IntlProvider
-      messages={messages[currentLanguage]}
-      locale={currentLanguage}
-      defaultLocale={defaultLocale}
-    >
+    <TranslationProvider>
       <Router>
         <Routes>
           {/* Public routes */}
@@ -90,7 +83,7 @@ function App() {
         </Routes>
         <Toaster position="top-right" />
       </Router>
-    </IntlProvider>
+    </TranslationProvider>
   );
 }
 
