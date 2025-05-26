@@ -27,10 +27,14 @@ const CtaSection: React.FC = () => {
                 <FormattedMessage id="cta.provider.description" />
               </p>
               <ul className="space-y-3">
-                {[0, 1, 2].map((index) => (
+                {[
+                  'Accès à des milliers de clients potentiels',
+                  'Gestion flexible des horaires',
+                  'Paiements sécurisés et support'
+                ].map((benefit, index) => (
                   <li key={index} className="flex items-center text-gray-700">
                     <span className="h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center mr-2">✓</span>
-                    <FormattedMessage id={`cta.provider.benefits.${index}`} />
+                    {benefit}
                   </li>
                 ))}
               </ul>
@@ -69,10 +73,18 @@ const CtaSection: React.FC = () => {
                     <item.icon className="h-5 w-5 text-teal-600 mt-1 flex-shrink-0" />
                     <div className="ml-3">
                       <h4 className="text-sm font-semibold text-gray-900">
-                        <FormattedMessage id={`cta.client.benefits.${index}.title`} />
+                        {[
+                          'Professionnels Vérifiés',
+                          'Service de Qualité',
+                          'Réservation Facile'
+                        ][index]}
                       </h4>
                       <p className="text-xs text-gray-600">
-                        <FormattedMessage id={`cta.client.benefits.${index}.description`} />
+                        {[
+                          'Tous les prestataires sont minutieusement contrôlés',
+                          'Évalué et noté par notre communauté',
+                          'Réservez et gérez vos rendez-vous en ligne'
+                        ][index]}
                       </p>
                     </div>
                   </div>

@@ -2,7 +2,60 @@ import { createIntl, createIntlCache } from 'react-intl';
 
 export type SupportedLocales = 'en' | 'fr';
 
-export const messages = {
+export interface Messages {
+  [key: string]: any;
+  common: {
+    login: string;
+    register: string;
+    email: string;
+    password: string;
+    search: string;
+    searchPlaceholder: string;
+    selectCountry: string;
+    selectCity: string;
+    viewProfile: string;
+    memberSince: string;
+    viewAll: string;
+    reviews: string;
+  };
+  navigation: {
+    explore: string;
+    categories: string;
+    howItWorks: string;
+    messages: string;
+    notifications: string;
+    profile: string;
+  };
+  sections: {
+    featuredProviders: {
+      title: string;
+      viewAll: string;
+    };
+    categories: {
+      title: string;
+      viewAll: string;
+    };
+  };
+  cta: {
+    provider: {
+      title: string;
+      description: string;
+      benefits: string[];
+      button: string;
+    };
+    client: {
+      title: string;
+      description: string;
+      benefits: Array<{
+        title: string;
+        description: string;
+      }>;
+      button: string;
+    };
+  };
+}
+
+export const messages: Record<SupportedLocales, Messages> = {
   en: {
     common: {
       login: 'Sign in',
@@ -41,9 +94,9 @@ export const messages = {
         title: 'Become a Service Provider',
         description: 'Join our platform and grow your business by reaching more customers.',
         benefits: [
-          'Access to thousands of potential clients',
-          'Flexible schedule management',
-          'Secure payments and support'
+          'cta.provider.benefits.0',
+          'cta.provider.benefits.1',
+          'cta.provider.benefits.2'
         ],
         button: 'Start Providing Services'
       },
@@ -52,16 +105,16 @@ export const messages = {
         description: 'Discover qualified professionals for all your needs.',
         benefits: [
           {
-            title: 'Verified Professionals',
-            description: 'All providers are thoroughly vetted'
+            title: 'cta.client.benefits.0.title',
+            description: 'cta.client.benefits.0.description'
           },
           {
-            title: 'Quality Service',
-            description: 'Rated and reviewed by our community'
+            title: 'cta.client.benefits.1.title',
+            description: 'cta.client.benefits.1.description'
           },
           {
-            title: 'Easy Booking',
-            description: 'Book and manage appointments online'
+            title: 'cta.client.benefits.2.title',
+            description: 'cta.client.benefits.2.description'
           }
         ],
         button: 'Find a Service Provider'
@@ -106,9 +159,9 @@ export const messages = {
         title: 'Devenir Prestataire',
         description: 'Rejoignez notre plateforme et développez votre activité en touchant plus de clients.',
         benefits: [
-          'Accès à des milliers de clients potentiels',
-          'Gestion flexible des horaires',
-          'Paiements sécurisés et support'
+          'cta.provider.benefits.0',
+          'cta.provider.benefits.1',
+          'cta.provider.benefits.2'
         ],
         button: 'Commencer à proposer mes services'
       },
@@ -117,16 +170,16 @@ export const messages = {
         description: 'Découvrez des professionnels qualifiés pour tous vos besoins.',
         benefits: [
           {
-            title: 'Professionnels Vérifiés',
-            description: 'Tous les prestataires sont minutieusement contrôlés'
+            title: 'cta.client.benefits.0.title',
+            description: 'cta.client.benefits.0.description'
           },
           {
-            title: 'Service de Qualité',
-            description: 'Évalué et noté par notre communauté'
+            title: 'cta.client.benefits.1.title',
+            description: 'cta.client.benefits.1.description'
           },
           {
-            title: 'Réservation Facile',
-            description: 'Réservez et gérez vos rendez-vous en ligne'
+            title: 'cta.client.benefits.2.title',
+            description: 'cta.client.benefits.2.description'
           }
         ],
         button: 'Trouver un prestataire'
