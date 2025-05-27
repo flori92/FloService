@@ -10,14 +10,16 @@ import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawId } = useParams<{ id: string }>();
+  const cleanedProviderId = rawId?.split(':')[0];
+
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
-  const provider = serviceProviders.find(p => p.id === id);
+  const provider = serviceProviders.find(p => p.id === cleanedProviderId);
 
   if (!provider) {
     return <div>Prestataire non trouvé</div>;
@@ -25,7 +27,7 @@ const ProviderProfile: React.FC = () => {
 
   const handleContact = async () => {
     if (!user) {
-      navigate(`/login?redirect=/provider/${id}`);
+      navigate(`/login?redirect=/provider/${rawId}`);
       return;
     }
 
@@ -37,7 +39,7 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .select('id')
         .eq('client_id', user.id)
-        .eq('provider_id', id)
+        .eq('provider_id', cleanedProviderId)
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
@@ -55,7 +57,7 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .insert({
           client_id: user.id,
-          provider_id: id,
+          provider_id: cleanedProviderId,
           last_message: '',
           last_message_time: new Date().toISOString()
         })
@@ -171,7 +173,7 @@ const ProviderProfile: React.FC = () => {
                     className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <MessageSquare className="w-5 h-5" />
-                    <span>{loading ? 'Chargement...' : 'Contacter'}</span>
+                    <span>{loading ? 'Chargement...' : `Contacter ${cleanedProviderId}`}</span>
                   </button>
                 </div>
               </div>

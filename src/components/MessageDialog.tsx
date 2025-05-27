@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Paperclip, Image as ImageIcon, File } from 'lucide-react';
+import { X, Send, Paperclip, File } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
 
 interface MessageDialogProps {
   conversationId: string;
@@ -13,6 +14,7 @@ interface MessageDialogProps {
 
 interface Message {
   id: string;
+  conversation_id: string;
   sender_id: string;
   content: string;
   created_at: string;
@@ -70,10 +72,10 @@ export const MessageDialog: React.FC<MessageDialogProps> = ({
   const subscribeToMessages = () => {
     return supabase
       .channel('messages')
-      .on('INSERT', { event: '*', schema: 'public', table: 'messages' }, 
-        payload => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, 
+        (payload: RealtimePostgresInsertPayload<Message>) => {
           if (payload.new.conversation_id === conversationId) {
-            setMessages(prev => [...prev, payload.new as Message]);
+            setMessages(prev => [...prev, payload.new]);
           }
         }
       )
