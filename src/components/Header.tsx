@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, MessageSquare, User } from 'lucide-react';
+import { Menu, X, MessageSquare, User, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { FormattedMessage } from 'react-intl';
 import { LanguageSwitch } from './LanguageSwitch';
 import { NotificationBell } from './NotificationBell';
+import { supabase } from '../lib/supabase';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isProvider, setIsProvider] = useState(false);
   const { user } = useAuthStore();
   const location = useLocation();
 
@@ -21,8 +24,30 @@ const Header: React.FC = () => {
     '/provider-registration',
     '/how-it-works',
     '/profile',
-    '/messages'
-  ].includes(location.pathname) || location.pathname.startsWith('/provider-registration');
+    '/messages',
+    '/provider-dashboard'
+  ].includes(location.pathname) || 
+    location.pathname.startsWith('/provider-registration') || 
+    location.pathname.startsWith('/provider-dashboard');
+    
+  // Vérifier si l'utilisateur est un prestataire
+  useEffect(() => {
+    if (user) {
+      const checkProviderStatus = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_provider')
+          .eq('id', user.id)
+          .single();
+          
+        if (!error && data && data.is_provider) {
+          setIsProvider(true);
+        }
+      };
+      
+      checkProviderStatus();
+    }
+  }, [user, location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,9 +109,51 @@ const Header: React.FC = () => {
                 <Link to="/messages" className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
                   <MessageSquare className="h-6 w-6" />
                 </Link>
-                <Link to="/profile" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-                  <User className="h-6 w-6" />
-                </Link>
+                
+                {/* Menu utilisateur avec dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <User className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                      <Link 
+                        to="/profile" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Mon profil
+                      </Link>
+                      
+                      {isProvider && (
+                        <Link 
+                          to="/provider-dashboard" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Espace prestataire
+                        </Link>
+                      )}
+                      
+                      <button 
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          window.location.href = '/';
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 border-t border-gray-100 flex items-center"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Déconnexion
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
