@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, MessageSquare, User, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, X, MessageSquare, User, LayoutDashboard, LogOut, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useChat } from '../contexts/ChatContext';
 import { FormattedMessage } from 'react-intl';
 import { LanguageSwitch } from './LanguageSwitch';
 import { NotificationBell } from './NotificationBell';
@@ -13,6 +14,7 @@ const Header: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isProvider, setIsProvider] = useState(false);
   const { user } = useAuthStore();
+  const { hasUnreadMessages, unreadCount } = useChat();
   const location = useLocation();
 
   // Force header to be visible on certain pages
@@ -128,6 +130,22 @@ const Header: React.FC = () => {
                         onClick={() => setUserMenuOpen(false)}
                       >
                         Mon profil
+                      </Link>
+                      
+                      <Link 
+                        to="/messages" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <div className="relative">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          {hasUnreadMessages && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                              {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        Messagerie
                       </Link>
                       
                       {isProvider && (

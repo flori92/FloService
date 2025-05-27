@@ -5,6 +5,9 @@ import { supabase } from './lib/supabase';
 import { useAuthStore } from './store/authStore';
 import { TranslationProvider } from './providers/TranslationProvider';
 import { AuthGuard } from './components/AuthGuard';
+import { ChatProvider } from './contexts/ChatContext';
+import ChatContainer from './components/chat/ChatContainer';
+import ChatFloatingButton from './components/chat/ChatFloatingButton';
 
 // Pages
 import Home from './pages/Home';
@@ -41,8 +44,10 @@ function App() {
 
   return (
     <TranslationProvider>
-      <Router>
-        <Routes>
+      <ChatProvider>
+        <Router>
+          <div className="app-container">
+            <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/categories" element={<Categories />} />
@@ -82,7 +87,12 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster position="top-right" />
-      </Router>
+            {/* Système de chat */}
+            <ChatContainer />
+            <ChatFloatingButton />
+          </div>
+        </Router>
+      </ChatProvider>
     </TranslationProvider>
   );
 }

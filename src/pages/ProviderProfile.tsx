@@ -1,35 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, MapPin, Globe, Award, MessageSquare } from 'lucide-react';
+import { Star, MapPin, Globe, Award } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { MessageDialog } from '../components/MessageDialog';
 import { serviceProviders } from '../data/providers';
 import { useAuthStore } from '../store/authStore';
-import { messagingService } from '../services/messagingService';
+import { useChat } from '../contexts/ChatContext';
+import ChatButton from '../components/chat/ChatButton';
+import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
   const cleanedProviderId = rawId?.split(':')[0];
 
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [providerData, setProviderData] = useState<any>(null);
   const { user } = useAuthStore();
+  const { openChat } = useChat();
   const navigate = useNavigate();
 
   const provider = serviceProviders.find(p => p.id === cleanedProviderId);
   
-  // Debug: Vérifier que le prestataire est correctement chargé
-  console.log('Provider chargé:', provider);
-  console.log('ID nettoyé:', cleanedProviderId);
+  // Effet pour charger les données du prestataire depuis Supabase
+  useEffect(() => {
+    if (cleanedProviderId) {
+      fetchProviderData();
+    }
+  }, [cleanedProviderId]);
+
+  // Fonction pour récupérer les données du prestataire depuis Supabase
+  const fetchProviderData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*, provider_profiles(*)')
+        .eq('id', cleanedProviderId)
+        .single();
+
+      if (error) {
+        console.error('Erreur lors de la récupération du profil prestataire:', error);
+        return;
+      }
+
+      if (data) {
+        setProviderData(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération du profil prestataire:', error);
+    }
+  };
 
   if (!provider) {
-    return <div>Prestataire non trouvé</div>;
+    return <div className="container mx-auto px-4 py-24 text-center">Prestataire non trouvé</div>;
   }
 
-  const handleContact = async () => {
+  const handleContact = () => {
     if (!user) {
       navigate(`/login?redirect=/provider/${rawId}`);
       return;
@@ -41,29 +66,18 @@ const ProviderProfile: React.FC = () => {
     }
 
     try {
-      setLoading(true);
-      console.log('Provider chargé:', provider);
-      console.log('ID nettoyé:', cleanedProviderId);
-
-      // Utiliser le service de messagerie pour créer ou récupérer une conversation
-      const { data: conversation, error } = await messagingService.getOrCreateConversation(cleanedProviderId);
-
-      if (error) {
-        console.error('Error creating conversation:', error);
-        throw error;
-      }
-
-      if (!conversation) {
-        throw new Error('Failed to create conversation');
-      }
-
-      setConversationId(conversation.id);
-      setShowMessageDialog(true);
+      // Vérifier si nous avons les données du prestataire depuis Supabase
+      const providerName = providerData?.full_name || provider.name;
+      const isProviderOnline = providerData?.is_online || false;
+      
+      // Utiliser le nouveau système de chat pour ouvrir une conversation
+      openChat(cleanedProviderId, providerName, isProviderOnline);
+      
+      // Notification de succès
+      toast.success(`Conversation ouverte avec ${providerName}`);
     } catch (error) {
-      console.error('Error creating conversation:', error);
-      toast.error('Une erreur est survenue lors de la création de la conversation');
-    } finally {
-      setLoading(false);
+      console.error('Erreur lors de l\'ouverture de la conversation:', error);
+      toast.error('Une erreur est survenue lors de l\'ouverture de la conversation');
     }
   };
 
@@ -156,30 +170,18 @@ const ProviderProfile: React.FC = () => {
                     </div>
                   </div>
 
-                  <button
+                  <ChatButton
                     onClick={handleContact}
-                    disabled={loading}
-                    className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                    <span>{loading ? 'Chargement...' : `Contacter ${provider?.name || 'le prestataire'}`}</span>
-                  </button>
+                    variant="primary"
+                    size="lg"
+                    className="w-full mt-6"
+                  />
                 </div>
               </div>
             </div>
           </div>
         </div>
       </main>
-
-      {showMessageDialog && conversationId && (
-        <MessageDialog
-          conversationId={conversationId}
-          providerName={provider.name}
-          onClose={() => setShowMessageDialog(false)}
-          isOnline={true}
-        />
-      )}
-
       <Footer />
     </div>
   );
