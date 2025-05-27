@@ -14,41 +14,65 @@ interface Message {
 }
 
 interface ChatProps {
-  providerId: string;
+  conversationId: string;
   onClose: () => void;
 }
 
-const Chat: React.FC<ChatProps> = ({ providerId, onClose }) => {
+const Chat: React.FC<ChatProps> = ({ conversationId, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); 
+  const [hasMoreMessages, setHasMoreMessages] = useState(true); 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !conversationId) return;
     
-    // Subscribe to new messages
+    // Load initial messages
+    loadMessages(true); 
+
+    // Subscribe to new messages for the current conversation
+    const channelName = `conversation-${conversationId}`;
     const subscription = supabase
-      .channel('messages')
-      .on('INSERT', { event: '*', schema: 'public', table: 'messages' }, 
-        payload => {
-          setMessages(prev => [...prev, payload.new as Message]);
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          // Vérifier si le message n'est pas déjà dans la liste pour éviter les doublons
+          setMessages(prevMessages => {
+            if (prevMessages.find(msg => msg.id === (payload.new as Message).id)) {
+              return prevMessages;
+            }
+            return [...prevMessages, payload.new as Message];
+          });
         }
       )
-      .subscribe();
-
-    // Load existing messages
-    loadMessages();
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`Subscribed to ${channelName}`);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`Subscription error on ${channelName}:`, err);
+          toast.error('Real-time connection error.');
+        }
+      });
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(subscription);
+      console.log(`Unsubscribed from ${channelName}`);
     };
-  }, [user, providerId]);
+  }, [user, conversationId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -58,18 +82,46 @@ const Chat: React.FC<ChatProps> = ({ providerId, onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const loadMessages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', providerId)
-        .order('created_at', { ascending: true });
+  const loadMessages = async (initialLoad = false) => {
+    if (!user || !conversationId || !hasMoreMessages && !initialLoad) return;
 
-      if (error) throw error;
-      setMessages(data || []);
+    try {
+      // Utilisation de la fonction RPC get_conversation_messages
+      // Pour l'instant, chargeons une page fixe. La pagination complète peut être ajoutée plus tard.
+      const pageSize = 50; 
+      const pageToLoad = initialLoad ? 1 : currentPage;
+
+      const { data, error } = await supabase.rpc('get_conversation_messages', {
+        p_conversation_id: conversationId, 
+        p_page_size: pageSize,
+        p_page_number: pageToLoad 
+      });
+
+      if (error) {
+        console.error('Error loading messages via RPC:', error);
+        throw error;
+      }
+      
+      const fetchedMessages = (data || []) as Message[];
+
+      if (initialLoad) {
+        setMessages(fetchedMessages); // Messages sont déjà ASC (oldest to newest)
+      } else {
+        // Prepend older messages. fetchedMessages sont ASC (oldest to newest for that page)
+        setMessages(prevMessages => [...fetchedMessages, ...prevMessages]);
+      }
+      
+      if (fetchedMessages.length < pageSize) {
+        setHasMoreMessages(false);
+      }
+
+      if (!initialLoad) {
+        setCurrentPage(prevPage => prevPage + 1);
+      }
+
     } catch (error) {
       toast.error('Error loading messages');
+      console.error('Detailed error loading messages:', error);
     }
   };
 
@@ -138,7 +190,7 @@ const Chat: React.FC<ChatProps> = ({ providerId, onClose }) => {
 
       const message = {
         sender_id: user.id,
-        conversation_id: providerId,
+        conversation_id: conversationId,
         content,
         file_url: fileUrl,
         file_type: fileType

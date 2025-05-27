@@ -6,14 +6,24 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import Chat from '../components/Chat';
 
+// Définition plus précise pour les participants
+interface Participant {
+  id: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
 interface Conversation {
   id: string;
   provider_id: string;
   client_id: string;
   last_message?: string;
   last_message_time?: string;
-  provider_name?: string;
-  provider_avatar?: string;
+  other_participant_name?: string;
+  other_participant_avatar?: string;
+  provider?: Participant | null; // Doit être un objet ou null, pas un tableau
+  client?: Participant | null;   // Doit être un objet ou null, pas un tableau
+  updated_at?: string; 
 }
 
 const Messages: React.FC = () => {
@@ -33,23 +43,69 @@ const Messages: React.FC = () => {
 
   const loadConversations = async () => {
     try {
+      if (!user) return;
+
+      // Type explicite pour la réponse attendue de Supabase
+      type DbConversation = {
+        id: string;
+        provider_id: string;
+        client_id: string;
+        last_message?: string | null;
+        last_message_time?: string | null;
+        updated_at?: string | null;
+        provider?: Participant | null;
+        client?: Participant | null;
+      };
+
       const { data, error } = await supabase
         .from('conversations')
         .select(`
-          *,
+          id,
+          provider_id,
+          client_id,
+          last_message,
+          last_message_time,
+          updated_at,
           provider:provider_id (
+            id,
+            full_name,
+            avatar_url
+          ),
+          client:client_id (
             id,
             full_name,
             avatar_url
           )
         `)
-        .or(`client_id.eq.${user?.id},provider_id.eq.${user?.id}`)
-        .order('updated_at', { ascending: false });
+        .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`)
+        .order('updated_at', { ascending: false })
+        .returns<DbConversation[]>(); // Indiquer à Supabase le type de retour attendu
 
-      if (error) throw error;
-      setConversations(data || []);
+      if (error) {
+        console.error('Error loading conversations:', error);
+        throw error;
+      }
+
+      const formattedConversations = (data || []).map((conv): Conversation => {
+        const otherParticipant = conv.provider_id === user.id ? conv.client : conv.provider;
+        return {
+          id: conv.id,
+          provider_id: conv.provider_id,
+          client_id: conv.client_id,
+          last_message: conv.last_message || undefined,
+          last_message_time: conv.last_message_time || undefined,
+          updated_at: conv.updated_at || undefined,
+          provider: conv.provider,
+          client: conv.client,
+          other_participant_name: otherParticipant?.full_name || 'Unknown User',
+          other_participant_avatar: otherParticipant?.avatar_url || undefined
+        };
+      });
+      
+      setConversations(formattedConversations);
     } catch (error) {
       console.error('Error loading conversations:', error);
+      // Gérer l'erreur, par exemple afficher un message à l'utilisateur
     }
   };
 
@@ -75,12 +131,12 @@ const Messages: React.FC = () => {
                   >
                     <div className="flex items-center space-x-3">
                       <img
-                        src={conversation.provider_avatar || 'https://via.placeholder.com/40'}
-                        alt={conversation.provider_name}
+                        src={conversation.other_participant_avatar || 'https://via.placeholder.com/40'} 
+                        alt={conversation.other_participant_name}
                         className="w-10 h-10 rounded-full"
                       />
                       <div>
-                        <h3 className="font-medium">{conversation.provider_name}</h3>
+                        <h3 className="font-medium">{conversation.other_participant_name}</h3> 
                         <p className="text-sm text-gray-500 truncate">
                           {conversation.last_message || 'No messages yet'}
                         </p>
@@ -95,7 +151,7 @@ const Messages: React.FC = () => {
             <div className="col-span-2 lg:col-span-3 h-[600px]">
               {selectedConversation ? (
                 <Chat
-                  providerId={selectedConversation}
+                  conversationId={selectedConversation} 
                   onClose={() => setSelectedConversation(null)}
                 />
               ) : (
