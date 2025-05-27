@@ -10,15 +10,12 @@ import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
-  const { id: rawId } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
-
-  // Clean the ID to remove ':1' suffix if present
-  const id = rawId?.split(':')[0];
 
   const provider = serviceProviders.find(p => p.id === id);
 
@@ -58,7 +55,9 @@ const ProviderProfile: React.FC = () => {
         .from('conversations')
         .insert({
           client_id: user.id,
-          provider_id: id
+          provider_id: id,
+          last_message: '',
+          last_message_time: new Date().toISOString()
         })
         .select()
         .single();
