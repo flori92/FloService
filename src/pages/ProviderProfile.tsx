@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, MapPin, Globe, Award } from 'lucide-react';
+import { Star, MapPin, Globe, Award, MessageSquare } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import Chat from '../components/Chat';
+import { MessageDialog } from '../components/MessageDialog';
 import { serviceProviders } from '../data/providers';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
-  const [showChat, setShowChat] = useState(false);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -27,7 +27,6 @@ const ProviderProfile: React.FC = () => {
 
   const handleContact = async () => {
     if (!user) {
-      // Redirect to login with return URL
       navigate(`/login?redirect=/provider/${id}`);
       return;
     }
@@ -43,17 +42,17 @@ const ProviderProfile: React.FC = () => {
         .eq('provider_id', id)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
       }
 
       if (existingConversation) {
-        setShowChat(true);
+        setShowMessageDialog(true);
         return;
       }
 
       // Create a new conversation
-      const { data: _newConversation, error: insertError } = await supabase
+      const { data: newConversation, error: insertError } = await supabase
         .from('conversations')
         .insert({
           client_id: user.id,
@@ -66,7 +65,7 @@ const ProviderProfile: React.FC = () => {
         throw insertError;
       }
 
-      setShowChat(true);
+      setShowMessageDialog(true);
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast.error('Une erreur est survenue lors de la création de la conversation');
@@ -167,9 +166,10 @@ const ProviderProfile: React.FC = () => {
                   <button
                     onClick={handleContact}
                     disabled={loading}
-                    className="w-full mt-6 bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Chargement...' : 'Contacter'}
+                    <MessageSquare className="w-5 h-5" />
+                    <span>Contacter</span>
                   </button>
                 </div>
               </div>
@@ -177,7 +177,16 @@ const ProviderProfile: React.FC = () => {
           </div>
         </div>
       </main>
-      {showChat && id && <Chat providerId={id} onClose={() => setShowChat(false)} />}
+
+      {showMessageDialog && (
+        <MessageDialog
+          providerId={id}
+          providerName={provider.name}
+          onClose={() => setShowMessageDialog(false)}
+          isOnline={true}
+        />
+      )}
+
       <Footer />
     </div>
   );
