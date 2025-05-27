@@ -20,6 +20,10 @@ const ProviderProfile: React.FC = () => {
   const navigate = useNavigate();
 
   const provider = serviceProviders.find(p => p.id === cleanedProviderId);
+  
+  // Debug: Vérifier que le prestataire est correctement chargé
+  console.log('Provider chargé:', provider);
+  console.log('ID nettoyé:', cleanedProviderId);
 
   if (!provider) {
     return <div>Prestataire non trouvé</div>;
@@ -173,7 +177,7 @@ const ProviderProfile: React.FC = () => {
                     className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <MessageSquare className="w-5 h-5" />
-                    <span>{loading ? 'Chargement...' : `Contacter ${cleanedProviderId}`}</span>
+                    <span>{loading ? 'Chargement...' : `Contacter ${provider?.name || 'le prestataire'}`}</span>
                   </button>
                 </div>
               </div>
