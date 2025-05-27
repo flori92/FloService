@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { LogIn } from 'lucide-react';
@@ -11,6 +11,8 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
   const intl = useIntl();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,7 +28,21 @@ export default function Login() {
       if (error) throw error;
 
       toast.success('Connexion réussie !');
-      navigate('/dashboard');
+      
+      // Vérifier si la redirection est une URL complète ou un chemin relatif
+      try {
+        // Si c'est une URL complète, on utilise window.location
+        if (redirectTo.startsWith('http')) {
+          window.location.href = redirectTo;
+        } else {
+          // Sinon on utilise la navigation React Router
+          navigate(redirectTo);
+        }
+      } catch (e) {
+        // En cas d'erreur, on redirige vers la page d'accueil
+        console.error('Erreur lors de la redirection:', e);
+        navigate('/');
+      }
     } catch (error: any) {
       toast.error(error?.message || 'Une erreur est survenue lors de la connexion');
     } finally {
