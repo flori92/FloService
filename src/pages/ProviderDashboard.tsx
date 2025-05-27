@@ -8,13 +8,15 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 // Composants de sections
-import ProfileSection from '../components/dashboard/ProfileSection';
-import PortfolioSection from '../components/dashboard/PortfolioSection';
-import ServicesSection from '../components/dashboard/ServicesSection';
-import BookingsSection from '../components/dashboard/BookingsSection';
-import StatsSection from '../components/dashboard/StatsSection';
-import SettingsSection from '../components/dashboard/SettingsSection';
-import AvailabilitySection from '../components/dashboard/AvailabilitySection';
+import {
+  ProfileSection,
+  PortfolioSection,
+  ServicesSection,
+  BookingsSection,
+  AvailabilitySection,
+  StatsSection,
+  SettingsSection
+} from '../components/dashboard';
 
 // Types
 type DashboardTab = 'profile' | 'portfolio' | 'services' | 'bookings' | 'availability' | 'stats' | 'settings';
