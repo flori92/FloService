@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Edit, Upload, Trash2, User, Briefcase, Image, Calendar, BarChart2, Settings } from 'lucide-react';
+import { Camera, Edit, User, Briefcase, Image, Calendar, BarChart2, Settings, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -14,9 +14,10 @@ import ServicesSection from '../components/dashboard/ServicesSection';
 import BookingsSection from '../components/dashboard/BookingsSection';
 import StatsSection from '../components/dashboard/StatsSection';
 import SettingsSection from '../components/dashboard/SettingsSection';
+import AvailabilitySection from '../components/dashboard/AvailabilitySection';
 
 // Types
-type DashboardTab = 'profile' | 'portfolio' | 'services' | 'bookings' | 'stats' | 'settings';
+type DashboardTab = 'profile' | 'portfolio' | 'services' | 'bookings' | 'availability' | 'stats' | 'settings';
 
 interface ProviderProfile {
   id: string;
@@ -136,6 +137,7 @@ const ProviderDashboard: React.FC = () => {
     { id: 'portfolio', label: 'Portfolio', icon: Image },
     { id: 'services', label: 'Services', icon: Briefcase },
     { id: 'bookings', label: 'Réservations', icon: Calendar },
+    { id: 'availability', label: 'Disponibilités', icon: Clock },
     { id: 'stats', label: 'Statistiques', icon: BarChart2 },
     { id: 'settings', label: 'Paramètres', icon: Settings }
   ];
@@ -174,7 +176,7 @@ const ProviderDashboard: React.FC = () => {
                       id="avatar-upload" 
                       className="hidden" 
                       accept="image/*"
-                      onChange={() => toast.info('Fonctionnalité à venir')}
+                      onChange={() => toast.success('Fonctionnalité à venir')}
                     />
                   </label>
                 </div>
@@ -231,6 +233,7 @@ const ProviderDashboard: React.FC = () => {
             {activeTab === 'portfolio' && <PortfolioSection userId={user?.id} />}
             {activeTab === 'services' && <ServicesSection userId={user?.id} />}
             {activeTab === 'bookings' && <BookingsSection userId={user?.id} />}
+            {activeTab === 'availability' && <AvailabilitySection userId={user?.id} />}
             {activeTab === 'stats' && <StatsSection userId={user?.id} />}
             {activeTab === 'settings' && <SettingsSection userId={user?.id} />}
           </div>
