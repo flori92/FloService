@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
+    "@types/uuid": "^10.0.0",
     "date-fns": "^3.3.1",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.344.0",
@@ -21,6 +22,7 @@
     "react-intl": "^6.6.2",
     "react-router-dom": "^6.22.0",
     "react-router-hash-link": "^2.4.3",
+    "uuid": "^11.1.0",
     "zustand": "^4.5.2",
     "zxcvbn": "^4.4.2"
   },
