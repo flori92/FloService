@@ -81,38 +81,83 @@ class MessagingService {
     error: Error | null;
   }> {
     try {
-      const { data, error } = await supabase
+      // D'abord récupérer les données de base de la conversation pour déterminer son type
+      const { data: convData, error: convError } = await supabase
         .from('conversations')
-        .select(`
-          *,
-          client:profiles!conversations_client_id_fkey(id, full_name, avatar_url, is_online),
-          provider:profiles!conversations_provider_id_fkey(id, full_name, avatar_url, is_online)
-        `)
+        .select('*')
         .eq('id', conversationId)
         .single();
 
-      if (error) throw error;
-      if (!data) throw new Error('Conversation non trouvée');
+      if (convError) throw convError;
+      if (!convData) throw new Error('Conversation non trouvée');
 
-      // Formater les données de la conversation
+      // Récupérer les détails du client (toujours présent)
+      const { data: clientData, error: clientError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, is_online')
+        .eq('id', convData.client_id)
+        .single();
+
+      if (clientError) {
+        console.warn('Erreur lors de la récupération du profil client:', clientError);
+      }
+
+      // Initialiser les données du prestataire
+      let providerData = null;
+
+      // Si provider_id existe, récupérer les informations du prestataire depuis profiles
+      if (convData.provider_id) {
+        const { data: provData, error: provError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, is_online')
+          .eq('id', convData.provider_id)
+          .single();
+
+        if (!provError) {
+          providerData = provData;
+        } else {
+          console.warn('Erreur lors de la récupération du profil prestataire:', provError);
+        }
+      }
+
+      // Déterminer quel utilisateur est l'autre utilisateur dans la conversation
       const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-      const otherUser = data.client?.id === currentUserId ? data.provider : data.client;
+      const isClient = currentUserId === convData.client_id;
+      
+      // Construire les informations de l'autre utilisateur
+      let otherUser = isClient ? providerData : clientData;
+      
+      // Si c'est un prestataire externe (provider_external_id existe mais pas provider_id)
+      if (isClient && !providerData && convData.provider_external_id) {
+        // On pourrait éventuellement chercher des informations sur le prestataire externe dans une autre table
+        otherUser = {
+          id: convData.provider_external_id,
+          full_name: `Prestataire ${convData.provider_external_id}`,
+          avatar_url: null,
+          is_online: false
+        };
+      }
 
       const conversation: Conversation = {
-        id: data.id,
-        client_id: data.client_id,
-        provider_id: data.provider_id,
-        provider_external_id: data.provider_external_id,
-        client_external_id: data.client_external_id,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        last_message: data.last_message,
-        last_message_time: data.last_message_time,
-        other_user: {
-          id: otherUser?.id || '',
-          name: otherUser?.full_name || 'Utilisateur inconnu',
-          avatar: otherUser?.avatar_url,
-          is_online: otherUser?.is_online
+        id: convData.id,
+        client_id: convData.client_id,
+        provider_id: convData.provider_id,
+        provider_external_id: convData.provider_external_id,
+        client_external_id: convData.client_external_id,
+        created_at: convData.created_at,
+        updated_at: convData.updated_at,
+        last_message: convData.last_message,
+        last_message_time: convData.last_message_time,
+        other_user: otherUser ? {
+          id: otherUser.id || '',
+          name: otherUser.full_name || 'Utilisateur inconnu',
+          avatar: otherUser.avatar_url,
+          is_online: otherUser.is_online
+        } : {
+          id: '',
+          name: 'Utilisateur inconnu',
+          avatar: null,
+          is_online: false
         }
       };
 
