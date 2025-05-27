@@ -206,15 +206,56 @@ const ProviderRegistration: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // 1. D'abord, récupérer les catégories principales
+      const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
-        .select(`id, name, subcategories (id, name)`)
+        .select('id, name')
         .order('name', { ascending: true });
-      if (error) throw error;
-      setCategories(data || []);
+      
+      if (categoriesError) {
+        console.error('Erreur lors du chargement des catégories:', categoriesError);
+        throw categoriesError;
+      }
+      
+      if (!categoriesData || categoriesData.length === 0) {
+        console.log('Aucune catégorie trouvée');
+        setCategories([]);
+        return;
+      }
+      
+      // 2. Ensuite, pour chaque catégorie, récupérer ses sous-catégories
+      const categoriesWithSubcategories = await Promise.all(
+        categoriesData.map(async (category) => {
+          try {
+            const { data: subcategoriesData, error: subcategoriesError } = await supabase
+              .from('subcategories')
+              .select('id, name')
+              .eq('category_id', category.id)
+              .order('name', { ascending: true });
+            
+            if (subcategoriesError) {
+              console.error(`Erreur lors du chargement des sous-catégories pour la catégorie ${category.id}:`, subcategoriesError);
+              return { ...category, subcategories: [] };
+            }
+            
+            return {
+              ...category,
+              subcategories: subcategoriesData || []
+            };
+          } catch (error) {
+            console.error(`Exception lors du chargement des sous-catégories pour la catégorie ${category.id}:`, error);
+            return { ...category, subcategories: [] };
+          }
+        })
+      );
+      
+      console.log('Catégories chargées avec succès:', categoriesWithSubcategories);
+      setCategories(categoriesWithSubcategories);
+      
     } catch (error: unknown) {
       console.error('Erreur lors du chargement des catégories:', error);
-      toast.error('Impossible de charger les catégories');
+      toast.error('Impossible de charger les catégories. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }

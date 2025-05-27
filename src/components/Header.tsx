@@ -13,7 +13,16 @@ const Header: React.FC = () => {
   const location = useLocation();
 
   // Force header to be visible on certain pages
-  const forceVisible = ['/login', '/register', '/categories', '/explorer'].includes(location.pathname);
+  const forceVisible = [
+    '/login', 
+    '/register', 
+    '/categories', 
+    '/explorer', 
+    '/provider-registration',
+    '/how-it-works',
+    '/profile',
+    '/messages'
+  ].includes(location.pathname) || location.pathname.startsWith('/provider-registration');
 
   useEffect(() => {
     const handleScroll = () => {

@@ -96,8 +96,8 @@ const Footer: React.FC = () => {
               <li className="flex items-start">
                 <MapPin className="h-5 w-5 text-teal-400 mr-3 mt-1 flex-shrink-0" />
                 <span className="text-gray-400">
-                  Abomey-Calavi, Bénin<br />
-                  Carré Agori
+                  Cotonou-Zogbohoue, Bénin<br />
+                  Carré 2014H
                 </span>
               </li>
               <li className="flex items-center">
