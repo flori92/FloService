@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 interface MessageDialogProps {
-  providerId: string;
+  conversationId: string;
   providerName: string;
   onClose: () => void;
   isOnline?: boolean;
@@ -21,7 +21,7 @@ interface Message {
 }
 
 export const MessageDialog: React.FC<MessageDialogProps> = ({
-  providerId,
+  conversationId,
   providerName,
   onClose,
   isOnline = false
@@ -37,7 +37,10 @@ export const MessageDialog: React.FC<MessageDialogProps> = ({
 
   useEffect(() => {
     loadMessages();
-    subscribeToMessages();
+    const subscription = subscribeToMessages();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export const MessageDialog: React.FC<MessageDialogProps> = ({
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('conversation_id', providerId)
+        .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -65,20 +68,16 @@ export const MessageDialog: React.FC<MessageDialogProps> = ({
   };
 
   const subscribeToMessages = () => {
-    const subscription = supabase
+    return supabase
       .channel('messages')
       .on('INSERT', { event: '*', schema: 'public', table: 'messages' }, 
         payload => {
-          if (payload.new.conversation_id === providerId) {
+          if (payload.new.conversation_id === conversationId) {
             setMessages(prev => [...prev, payload.new as Message]);
           }
         }
       )
       .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   };
 
   const handleFileUpload = async (file: File) => {
@@ -86,7 +85,7 @@ export const MessageDialog: React.FC<MessageDialogProps> = ({
       setUploading(true);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${providerId}/${fileName}`;
+      const filePath = `${conversationId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('message-attachments')
@@ -112,7 +111,7 @@ export const MessageDialog: React.FC<MessageDialogProps> = ({
     try {
       setLoading(true);
       const messageData = {
-        conversation_id: providerId,
+        conversation_id: conversationId,
         sender_id: user?.id,
         content: content || '',
         file_url: fileUrl,

@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 const ProviderProfile: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const ProviderProfile: React.FC = () => {
       }
 
       if (existingConversation) {
+        setConversationId(existingConversation.id);
         setShowMessageDialog(true);
         return;
       }
@@ -65,6 +67,7 @@ const ProviderProfile: React.FC = () => {
         throw insertError;
       }
 
+      setConversationId(newConversation.id);
       setShowMessageDialog(true);
     } catch (error) {
       console.error('Error creating conversation:', error);
@@ -169,7 +172,7 @@ const ProviderProfile: React.FC = () => {
                     className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <MessageSquare className="w-5 h-5" />
-                    <span>Contacter</span>
+                    <span>{loading ? 'Chargement...' : 'Contacter'}</span>
                   </button>
                 </div>
               </div>
@@ -178,9 +181,9 @@ const ProviderProfile: React.FC = () => {
         </div>
       </main>
 
-      {showMessageDialog && (
+      {showMessageDialog && conversationId && (
         <MessageDialog
-          providerId={id}
+          conversationId={conversationId}
           providerName={provider.name}
           onClose={() => setShowMessageDialog(false)}
           isOnline={true}
