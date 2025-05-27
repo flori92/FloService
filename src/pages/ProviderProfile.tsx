@@ -6,7 +6,7 @@ import Footer from '../components/Footer';
 import { MessageDialog } from '../components/MessageDialog';
 import { serviceProviders } from '../data/providers';
 import { useAuthStore } from '../store/authStore';
-import { supabase } from '../lib/supabase';
+import { messagingService } from '../services/messagingService';
 import toast from 'react-hot-toast';
 
 const ProviderProfile: React.FC = () => {
@@ -35,44 +35,29 @@ const ProviderProfile: React.FC = () => {
       return;
     }
 
+    if (!cleanedProviderId) {
+      toast.error('Identifiant du prestataire invalide');
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('Provider chargé:', provider);
+      console.log('ID nettoyé:', cleanedProviderId);
 
-      // Check if a conversation already exists
-      const { data: existingConversation, error: fetchError } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('client_id', user.id)
-        .eq('provider_id', cleanedProviderId)
-        .single();
+      // Utiliser le service de messagerie pour créer ou récupérer une conversation
+      const { data: conversation, error } = await messagingService.getOrCreateConversation(cleanedProviderId);
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
+      if (error) {
+        console.error('Error creating conversation:', error);
+        throw error;
       }
 
-      if (existingConversation) {
-        setConversationId(existingConversation.id);
-        setShowMessageDialog(true);
-        return;
+      if (!conversation) {
+        throw new Error('Failed to create conversation');
       }
 
-      // Create a new conversation
-      const { data: newConversation, error: insertError } = await supabase
-        .from('conversations')
-        .insert({
-          client_id: user.id,
-          provider_id: cleanedProviderId,
-          last_message: '',
-          last_message_time: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      setConversationId(newConversation.id);
+      setConversationId(conversation.id);
       setShowMessageDialog(true);
     } catch (error) {
       console.error('Error creating conversation:', error);
