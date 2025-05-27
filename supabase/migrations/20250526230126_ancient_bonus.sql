@@ -45,46 +45,78 @@ ON conversations(client_id, provider_id);
 -- Update or create RLS policies
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Users can view approved reviews"
-ON reviews
-FOR SELECT
-TO authenticated
-USING (status = 'approved');
-
-CREATE POLICY IF NOT EXISTS "Clients can create reviews for completed bookings"
-ON reviews
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM bookings
-    WHERE bookings.client_id = auth.uid()
-    AND bookings.provider_id = reviews.provider_id
-    AND bookings.status = 'completed'
-  )
-);
+-- Drop and recreate review policies
+DO $$
+BEGIN
+  -- Drop view policy if exists
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reviews' AND policyname = 'Users can view approved reviews') THEN
+    DROP POLICY "Users can view approved reviews" ON reviews;
+  END IF;
+  
+  -- Drop create policy if exists
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reviews' AND policyname = 'Clients can create reviews for completed bookings') THEN
+    DROP POLICY "Clients can create reviews for completed bookings" ON reviews;
+  END IF;
+  
+  -- Create view policy
+  CREATE POLICY "Users can view approved reviews"
+  ON reviews
+  FOR SELECT
+  TO authenticated
+  USING (status = 'approved');
+  
+  -- Create insert policy
+  CREATE POLICY "Clients can create reviews for completed bookings"
+  ON reviews
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM bookings
+      WHERE bookings.client_id = auth.uid()
+      AND bookings.provider_id = reviews.provider_id
+      AND bookings.status = 'completed'
+    )
+  );
+END $$;
 
 -- Update conversations policies
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Users can view their conversations"
-ON conversations
-FOR SELECT
-TO authenticated
-USING (
-  auth.uid() = client_id OR 
-  auth.uid() = provider_id
-);
-
-CREATE POLICY IF NOT EXISTS "Users can create conversations"
-ON conversations
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  auth.uid() = client_id AND
-  EXISTS (
-    SELECT 1 FROM profiles
-    WHERE id = provider_id AND
-    status = 'approved'
-  )
-);
+-- Drop and recreate conversation policies
+DO $$
+BEGIN
+  -- Drop view policy if exists
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'Users can view their conversations') THEN
+    DROP POLICY "Users can view their conversations" ON conversations;
+  END IF;
+  
+  -- Drop create policy if exists
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'Users can create conversations') THEN
+    DROP POLICY "Users can create conversations" ON conversations;
+  END IF;
+  
+  -- Create view policy
+  CREATE POLICY "Users can view their conversations"
+  ON conversations
+  FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = client_id OR 
+    auth.uid() = provider_id
+  );
+  
+  -- Create insert policy
+  CREATE POLICY "Users can create conversations"
+  ON conversations
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = client_id AND
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = provider_id AND
+      status = 'approved'
+    )
+  );
+END $$;

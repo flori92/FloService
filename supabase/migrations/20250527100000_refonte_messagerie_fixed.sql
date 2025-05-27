@@ -47,9 +47,22 @@ DECLARE
   v_provider_id UUID;
   v_client_profile_id TEXT;
 BEGIN
-  -- Vérifier si le client existe
-  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_client_id) THEN
-    RAISE EXCEPTION 'Client non trouvé';
+  -- Vérifier si le client existe via son ID externe si p_client_id n'est pas un UUID
+  IF p_client_id::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text THEN
+    -- C'est un UUID, on vérifie dans auth.users
+    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_client_id::uuid) THEN
+      RAISE EXCEPTION 'Client non trouvé';
+    END IF;
+  ELSE
+    -- C'est un ID externe, on vérifie dans profiles
+    SELECT user_id INTO p_client_id
+    FROM public.profiles 
+    WHERE provider_id = p_client_id::text
+    LIMIT 1;
+    
+    IF p_client_id IS NULL THEN
+      RAISE EXCEPTION 'Client non trouvé avec l\'ID externe fourni';
+    END IF;
   END IF;
 
   -- Récupérer l'ID du prestataire depuis la table profiles
@@ -57,6 +70,14 @@ BEGIN
   FROM public.profiles 
   WHERE provider_id = p_provider_external_id
   LIMIT 1;
+  
+  -- Si pas trouvé, essayer de trouver par ID utilisateur
+  IF v_provider_id IS NULL AND p_provider_external_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN
+    SELECT id INTO v_provider_id 
+    FROM public.profiles 
+    WHERE user_id = p_provider_external_id::uuid
+    LIMIT 1;
+  END IF;
 
   IF v_provider_id IS NULL THEN
     RAISE EXCEPTION 'Prestataire non trouvé';
