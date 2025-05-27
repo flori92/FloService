@@ -74,6 +74,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
+      // Vérifier d'abord si la table existe pour éviter les erreurs
+      const { error: tableCheckError } = await supabase
+        .from('messages')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      // Si la table n'existe pas encore (migration non appliquée), on sort silencieusement
+      if (tableCheckError) {
+        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('messages')
         .select('id')

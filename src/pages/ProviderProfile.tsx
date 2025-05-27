@@ -30,12 +30,36 @@ const ProviderProfile: React.FC = () => {
 
   // Fonction pour récupérer les données du prestataire depuis Supabase
   const fetchProviderData = async () => {
+    // Vérifier si l'ID est au format UUID valide
+    const isValidUUID = cleanedProviderId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanedProviderId);
+    
+    if (!isValidUUID) {
+      console.log('ID de prestataire non valide ou au mauvais format:', cleanedProviderId);
+      return;
+    }
+    
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*, provider_profiles(*)')
-        .eq('id', cleanedProviderId)
-        .single();
+      // Vérifier d'abord si la table provider_profiles existe
+      const { error: tableCheckError } = await supabase
+        .from('provider_profiles')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      // Si la table n'existe pas, on fait une requête plus simple
+      const hasProviderProfilesTable = !tableCheckError;
+      
+      const query = hasProviderProfilesTable
+        ? supabase
+            .from('profiles')
+            .select('*, provider_profiles(*)')
+            .eq('id', cleanedProviderId)
+            .single()
+        : supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', cleanedProviderId)
+            .single();
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error('Erreur lors de la récupération du profil prestataire:', error);

@@ -106,14 +106,36 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   }, [isOnline, recipientId]);
   
   const fetchLastActivity = async () => {
+    // Vérifier si l'ID est au format UUID valide
+    const isValidUUID = recipientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
+    
+    if (!isValidUUID) {
+      console.log('ID de destinataire non valide ou au mauvais format:', recipientId);
+      return;
+    }
+    
     try {
+      // Vérifier d'abord si la table profiles existe
+      const { error: tableError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+      
+      if (tableError) {
+        console.log('Erreur lors de la vérification de la table profiles:', tableError);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('last_seen')
         .eq('id', recipientId)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.log('Erreur lors de la récupération de la dernière activité:', error);
+        return;
+      }
       
       if (data && data.last_seen) {
         const lastSeen = new Date(data.last_seen);
@@ -140,40 +162,62 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   const fetchMessages = async () => {
     if (!user || !recipientId) return;
     
+    // Vérifier si l'ID est au format UUID valide
+    const isValidUUID = recipientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
+    
+    if (!isValidUUID) {
+      console.log('ID de destinataire non valide ou au mauvais format:', recipientId);
+      return;
+    }
+    
     setLoading(true);
     try {
-      // Récupérer les messages envoyés et reçus
+      // Vérifier d'abord si la table messages existe
+      const { error: tableCheckError } = await supabase
+        .from('messages')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      // Si la table n'existe pas encore (migration non appliquée), on sort silencieusement
+      if (tableCheckError) {
+        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
+        setLoading(false);
+        return;
+      }
+      
+      // Utiliser une approche plus robuste pour la requête
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .or(`sender_id.eq.${recipientId},recipient_id.eq.${recipientId}`)
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur lors du chargement des messages:', error);
+        setLoading(false);
+        return;
+      }
       
-      // Filtrer pour n'avoir que les messages entre ces deux utilisateurs
-      const filteredMessages = data.filter(msg => 
-        (msg.sender_id === user.id && msg.recipient_id === recipientId) || 
-        (msg.sender_id === recipientId && msg.recipient_id === user.id)
-      );
-      
-      setMessages(filteredMessages);
-      
-      // Marquer les messages non lus comme lus
-      const unreadMessages = filteredMessages.filter(
-        msg => msg.recipient_id === user.id && !msg.read
-      );
-      
-      if (unreadMessages.length > 0) {
-        await supabase
-          .from('messages')
-          .update({ read: true })
-          .in('id', unreadMessages.map(msg => msg.id));
+      if (data) {
+        setMessages(data);
+        
+        // Marquer les messages comme lus
+        const unreadMessages = data.filter(msg => 
+          msg.recipient_id === user.id && !msg.read
+        );
+        
+        if (unreadMessages.length > 0) {
+          try {
+            await supabase
+              .from('messages')
+              .update({ read: true })
+              .in('id', unreadMessages.map(msg => msg.id));
+          } catch (updateError) {
+            console.error('Erreur lors de la mise à jour des messages lus:', updateError);
+          }
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des messages:', error);
-      toast.error('Impossible de charger les messages');
     } finally {
       setLoading(false);
     }
@@ -192,7 +236,28 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !recipientId) return;
     
+    // Vérifier si l'ID est au format UUID valide
+    const isValidUUID = recipientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
+    
+    if (!isValidUUID) {
+      console.log('ID de destinataire non valide ou au mauvais format:', recipientId);
+      toast.error('Impossible d\'envoyer le message : ID de destinataire invalide');
+      return;
+    }
+    
     try {
+      // Vérifier d'abord si la table messages existe
+      const { error: tableCheckError } = await supabase
+        .from('messages')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      // Si la table n'existe pas encore (migration non appliquée), afficher un message d'erreur
+      if (tableCheckError) {
+        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
+        toast.error('Le système de messagerie n\'est pas encore disponible');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -203,10 +268,15 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         })
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur lors de l\'envoi du message:', error);
+        toast.error('Impossible d\'envoyer le message');
+        return;
+      }
       
-      if (data && data[0]) {
-        setMessages(prev => [...prev, data[0] as Message]);
+      if (data && data.length > 0) {
+        // Ajouter le message à la liste locale
+        setMessages(prev => [...prev, data[0]]);
         setNewMessage('');
         scrollToBottom();
       }

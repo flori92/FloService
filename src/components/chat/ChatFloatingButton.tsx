@@ -35,37 +35,55 @@ const ChatFloatingButton: React.FC = () => {
     try {
       setLoading(true);
       
-      // Utiliser la fonction RPC pour récupérer les conversations
-      const { data, error } = await supabase.rpc('get_user_conversations', {
-        user_id: user.id
-      });
-      
-      if (error) throw error;
-      
-      // Récupérer les statuts en ligne des participants
-      if (data && data.length > 0) {
-        const participantIds = data.map((conv: Conversation) => conv.other_participant_id);
-        
-        const { data: onlineStatus } = await supabase
-          .from('profiles')
-          .select('id, is_online')
-          .in('id', participantIds);
-        
-        // Fusionner les données
-        const conversationsWithStatus = data.map((conv: Conversation) => {
-          const participant = onlineStatus?.find(p => p.id === conv.other_participant_id);
-          return {
-            ...conv,
-            is_online: participant?.is_online || false
-          };
+      // Vérifier si la fonction RPC existe
+      try {
+        // Utiliser la fonction RPC pour récupérer les conversations
+        const { data, error } = await supabase.rpc('get_user_conversations', {
+          user_id: user.id
         });
         
-        setConversations(conversationsWithStatus);
-      } else {
+        if (error) {
+          console.log('La fonction RPC n\'existe pas encore, migration probablement non appliquée');
+          setConversations([]);
+          return;
+        }
+        
+        // Récupérer les statuts en ligne des participants
+        if (data && data.length > 0) {
+          // Filtrer les ID invalides pour éviter les erreurs 400
+          const participantIds = data
+            .map((conv: Conversation) => conv.other_participant_id)
+            .filter((id: string) => id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i));
+          
+          if (participantIds.length > 0) {
+            const { data: onlineStatus } = await supabase
+              .from('profiles')
+              .select('id, is_online')
+              .in('id', participantIds);
+            
+            // Fusionner les données
+            const conversationsWithStatus = data.map((conv: Conversation) => {
+              const participant = onlineStatus?.find(p => p.id === conv.other_participant_id);
+              return {
+                ...conv,
+                is_online: participant?.is_online || false
+              };
+            });
+            
+            setConversations(conversationsWithStatus);
+          } else {
+            setConversations(data);
+          }
+        } else {
+          setConversations([]);
+        }
+      } catch (rpcError) {
+        console.error('Erreur avec la fonction RPC:', rpcError);
         setConversations([]);
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des conversations:', error);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
