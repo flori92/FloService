@@ -30,7 +30,8 @@ const Header: React.FC = () => {
     '/provider-dashboard'
   ].includes(location.pathname) || 
     location.pathname.startsWith('/provider-registration') || 
-    location.pathname.startsWith('/provider-dashboard');
+    location.pathname.startsWith('/provider-dashboard') ||
+    location.pathname.startsWith('/provider/'); // Ajouter les pages de profil prestataire
     
   // Vérifier si l'utilisateur est un prestataire
   useEffect(() => {
@@ -71,8 +72,8 @@ const Header: React.FC = () => {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center">
-            <span className={`text-2xl font-bold ${isScrolled || forceVisible ? 'text-teal-600' : 'text-teal-500'}`}>Flo</span>
-            <span className={`text-2xl font-bold ${isScrolled || forceVisible ? 'text-gray-900' : 'text-white'}`}>Service</span>
+            <span className={`text-2xl font-bold ${isScrolled || forceVisible ? 'text-teal-600' : 'text-teal-500 drop-shadow-md'}`}>Flo</span>
+            <span className={`text-2xl font-bold ${isScrolled || forceVisible ? 'text-gray-900' : 'text-white drop-shadow-md'}`}>Service</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
