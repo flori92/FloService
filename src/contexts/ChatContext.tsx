@@ -29,18 +29,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMigrationNotice, setShowMigrationNotice] = useState(false);
   
-  // Effet pour restaurer les chats actifs depuis le localStorage
+  // Effet pour restaurer les chats actifs depuis le localStorage - désactivé
   useEffect(() => {
     if (user) {
-      const savedChats = localStorage.getItem(`floservice_active_chats_${user.id}`);
-      if (savedChats) {
-        try {
-          const parsedChats = JSON.parse(savedChats);
-          setActiveChats(parsedChats);
-        } catch (error) {
-          console.error('Erreur lors de la restauration des chats:', error);
-        }
-      }
+      // Désactivé pour éviter l'ouverture automatique des boîtes de dialogue au chargement
+      // const savedChats = localStorage.getItem(`floservice_active_chats_${user.id}`);
+      // if (savedChats) {
+      //   try {
+      //     const parsedChats = JSON.parse(savedChats);
+      //     setActiveChats(parsedChats);
+      //   } catch (error) {
+      //     console.error('Erreur lors de la restauration des chats:', error);
+      //   }
+      // }
       
       // S'abonner aux nouveaux messages
       const subscription = supabase
