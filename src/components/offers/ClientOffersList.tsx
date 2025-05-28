@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import InvoiceButton from '../billing/InvoiceButton';
 
 interface ServiceOffer {
   id: string;
@@ -12,6 +13,7 @@ interface ServiceOffer {
   payment_link: string;
   created_at: string;
   expires_at: string;
+  paid_at?: string;
   provider: {
     full_name: string;
     business_name: string;
@@ -123,6 +125,22 @@ export const ClientOffersList: React.FC = () => {
                 
                 {offer.description && (
                   <p className="text-gray-700 mb-4">{offer.description}</p>
+                )}
+                
+                {offer.status === 'paid' && (
+                  <div className="mt-4 space-y-2">
+                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs">
+                      Payé le {offer.paid_at ? new Date(offer.paid_at).toLocaleDateString() : 'récemment'}
+                    </span>
+                    
+                    {/* Bouton de facturation automatique */}
+                    <div className="mt-2">
+                      <InvoiceButton 
+                        offerId={offer.id} 
+                        className="text-xs py-1 px-2"
+                      />
+                    </div>
+                  </div>
                 )}
                 
                 {offer.status === 'pending' && (

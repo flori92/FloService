@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Maximize2, Minimize2, Send, Move } from 'lucide-react';
+import { X, Maximize2, Minimize2, Send, Move, Paperclip, Image, File } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
@@ -20,6 +20,7 @@ interface Message {
   content: string;
   created_at: string;
   read: boolean;
+  has_attachment?: boolean;
 }
 
 const ChatDialog: React.FC<ChatDialogProps> = ({
@@ -38,9 +39,12 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
   const [lastActivity, setLastActivity] = useState('');
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const chatRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Effet pour charger les messages
   useEffect(() => {
@@ -230,6 +234,115 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
     }
   };
   
+  const handleFileUpload = async (file: File) => {
+    if (!user || !recipientId) return;
+    
+    try {
+      setUploadProgress(0);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+      
+      // Vérifier si le bucket 'attachments' existe
+      const { error: bucketError } = await supabase
+        .storage
+        .getBucket('attachments');
+      
+      // Si le bucket n'existe pas, on le crée
+      if (bucketError) {
+        await supabase.storage.createBucket('attachments', {
+          public: true,
+          fileSizeLimit: 10485760 // 10MB
+        });
+      }
+      
+      // Télécharger le fichier
+      const { error } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Simuler la progression du téléchargement
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        setUploadProgress(progress);
+        if (progress >= 100) {
+          clearInterval(interval);
+        }
+      }, 100);
+      
+      // Obtenir l'URL publique du fichier
+      const { data: publicUrlData } = await supabase
+        .storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+      
+      // Déterminer le type de fichier
+      const isImage = file.type.startsWith('image/');
+      
+      // Envoyer un message avec la pièce jointe
+      const attachmentContent = isImage 
+        ? `[IMAGE]${publicUrlData.publicUrl}` 
+        : `[FICHIER]${file.name}|${publicUrlData.publicUrl}`;
+      
+      const { data: messageData, error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: recipientId,
+          content: attachmentContent,
+          read: false,
+          has_attachment: true
+        })
+        .select();
+      
+      if (messageError) {
+        throw messageError;
+      }
+      
+      if (messageData && messageData.length > 0) {
+        setMessages(prev => [...prev, messageData[0]]);
+        scrollToBottom();
+      }
+      
+      setUploadProgress(0);
+      toast.success('Fichier envoyé avec succès');
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi du fichier:', error);
+      toast.error('Impossible d\'envoyer le fichier');
+      setUploadProgress(0);
+    }
+  };
+  
+  const handleAttachmentClick = () => {
+    setShowAttachmentMenu(!showAttachmentMenu);
+  };
+  
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Vérifier la taille du fichier (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Le fichier est trop volumineux (max 10MB)');
+        return;
+      }
+      handleFileUpload(file);
+    }
+    // Réinitialiser l'input pour permettre de sélectionner le même fichier plusieurs fois
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !recipientId) return;
     
@@ -254,7 +367,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           sender_id: user.id,
           recipient_id: recipientId,
           content: newMessage.trim(),
-          read: false
+          read: false,
+          has_attachment: false
         })
         .select();
       
@@ -369,7 +483,34 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                       : 'bg-gray-200 text-gray-800 rounded-bl-none'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  {message.has_attachment ? (
+                    message.content.startsWith('[IMAGE]') ? (
+                      <div>
+                        <img 
+                          src={message.content.replace('[IMAGE]', '')} 
+                          alt="Image jointe" 
+                          className="max-w-full rounded-md mb-2" 
+                          onLoad={scrollToBottom}
+                        />
+                      </div>
+                    ) : message.content.startsWith('[FICHIER]') ? (
+                      <div className="flex items-center">
+                        <File className="h-5 w-5 mr-2" />
+                        <a 
+                          href={message.content.split('|')[1]} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm underline"
+                        >
+                          {message.content.split('|')[0].replace('[FICHIER]', '')}
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-sm">{message.content}</p>
+                    )
+                  ) : (
+                    <p className="text-sm">{message.content}</p>
+                  )}
                   <p className={`text-xs mt-1 ${
                     message.sender_id === user?.id ? 'text-teal-100' : 'text-gray-500'
                   }`}>
@@ -399,7 +540,35 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
       
       {/* Zone de saisie */}
       <div className="p-3 border-t border-gray-200 bg-white">
-        <div className="flex items-center">
+        <div className="flex items-center relative">
+          <button
+            type="button"
+            onClick={handleAttachmentClick}
+            className="p-2 text-gray-500 hover:text-teal-600 focus:outline-none"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
+          
+          {/* Menu de pièces jointes */}
+          {showAttachmentMenu && (
+            <div className="absolute bottom-full left-0 mb-2 bg-white rounded-md shadow-lg p-2 z-10">
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileSelect} 
+                className="hidden" 
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center p-2 hover:bg-gray-100 rounded w-full text-left"
+              >
+                <Image className="h-4 w-4 mr-2 text-teal-600" />
+                <span className="text-sm">Image ou fichier</span>
+              </button>
+            </div>
+          )}
+          
           <input
             type="text"
             value={newMessage}
@@ -419,6 +588,18 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           >
             <Send className="h-5 w-5" />
           </button>
+          
+          {/* Indicateur de progression */}
+          {uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="absolute top-full left-0 right-0 mt-1">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-teal-600 h-2 rounded-full" 
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

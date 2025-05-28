@@ -108,7 +108,73 @@ serve(async (req) => {
               created_at: new Date().toISOString()
             });
           
-          // 4. Notifier le prestataire et le client
+          // 4. Générer automatiquement une facture
+          const amount = offer.amount;
+          const commission = 100; // Commission fixe de 100 FCFA
+          const taxRate = 18; // TVA à 18%
+          const taxAmount = Math.round((amount * taxRate) / 100);
+          const totalAmount = amount + taxAmount;
+          const invoiceNumber = `INV-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+          
+          // Récupérer les détails du prestataire et du client
+          const { data: providerData } = await supabase
+            .from('profiles')
+            .select('id, full_name, business_name, email, phone, address')
+            .eq('id', offer.provider_id)
+            .single();
+            
+          const { data: clientData } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, phone, address')
+            .eq('id', offer.client_id)
+            .single();
+          
+          // Créer l'entrée de facture
+          const { data: invoiceData, error: invoiceError } = await supabase
+            .from('invoices')
+            .insert({
+              offer_id: offer.id,
+              provider_id: offer.provider_id,
+              client_id: offer.client_id,
+              amount: amount,
+              commission: commission,
+              tax_rate: taxRate,
+              tax_amount: taxAmount,
+              total_amount: totalAmount,
+              status: 'draft',
+              invoice_number: invoiceNumber,
+              provider_details: providerData,
+              client_details: clientData
+            })
+            .select()
+            .single();
+          
+          if (!invoiceError && invoiceData) {
+            // Générer le PDF de facture
+            const { data: pdfData, error: pdfError } = await supabase
+              .functions.invoke('generate_invoice_pdf', {
+                body: { invoice_id: invoiceData.id }
+              });
+            
+            if (!pdfError && pdfData?.url) {
+              // Mettre à jour l'URL de la facture
+              await supabase
+                .from('invoices')
+                .update({ 
+                  invoice_url: pdfData.url,
+                  status: 'paid'
+                })
+                .eq('id', invoiceData.id);
+              
+              // Envoyer la facture par email
+              await supabase
+                .functions.invoke('send_invoice_email', {
+                  body: { invoice_id: invoiceData.id }
+                });
+            }
+          }
+          
+          // 5. Notifier le prestataire et le client
           await supabase.from('notifications').insert([
             {
               user_id: offer.provider_id,
@@ -120,7 +186,7 @@ serve(async (req) => {
               user_id: offer.client_id,
               type: 'payment',
               title: 'Paiement effectué',
-              content: `Votre paiement de ${offer.amount} FCFA a été effectué avec succès.`
+              content: `Votre paiement de ${offer.amount} FCFA a été effectué avec succès. Une facture vous a été envoyée par email.`
             }
           ]);
         }
