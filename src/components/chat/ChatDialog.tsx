@@ -106,11 +106,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   }, [isOnline, recipientId]);
   
   const fetchLastActivity = async () => {
-    // Vérifier si l'ID est au format UUID valide
-    const isValidUUID = recipientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
-    
-    if (!isValidUUID) {
-      console.log('ID de destinataire non valide ou au mauvais format:', recipientId);
+    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
+    if (!recipientId) {
+      console.log('ID de destinataire manquant');
       return;
     }
     
@@ -162,11 +160,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   const fetchMessages = async () => {
     if (!user || !recipientId) return;
     
-    // Vérifier si l'ID est au format UUID valide
-    const isValidUUID = recipientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
-    
-    if (!isValidUUID) {
-      console.log('ID de destinataire non valide ou au mauvais format:', recipientId);
+    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
+    if (!recipientId) {
+      console.log('ID de destinataire manquant');
       return;
     }
     
@@ -236,14 +232,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !recipientId) return;
     
-    // Vérifier si l'ID est au format UUID valide
-    const isValidUUID = recipientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
-    
-    if (!isValidUUID) {
-      console.log('ID de destinataire non valide ou au mauvais format:', recipientId);
-      toast.error('Impossible d\'envoyer le message : ID de destinataire invalide');
-      return;
-    }
+    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
     
     try {
       // Vérifier d'abord si la table messages existe

@@ -50,10 +50,10 @@ const ChatFloatingButton: React.FC = () => {
         
         // Récupérer les statuts en ligne des participants
         if (data && data.length > 0) {
-          // Filtrer les ID invalides pour éviter les erreurs 400
+          // Accepter tous les formats d'ID, y compris les ID de test
           const participantIds = data
             .map((conv: Conversation) => conv.other_participant_id)
-            .filter((id: string) => id && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i));
+            .filter((id: string) => id && id.length > 0);
           
           if (participantIds.length > 0) {
             const { data: onlineStatus } = await supabase

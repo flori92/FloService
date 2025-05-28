@@ -30,11 +30,9 @@ const ProviderProfile: React.FC = () => {
 
   // Fonction pour récupérer les données du prestataire depuis Supabase
   const fetchProviderData = async () => {
-    // Vérifier si l'ID est au format UUID valide
-    const isValidUUID = cleanedProviderId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanedProviderId);
-    
-    if (!isValidUUID) {
-      console.log('ID de prestataire non valide ou au mauvais format:', cleanedProviderId);
+    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
+    if (!cleanedProviderId) {
+      console.log('ID de prestataire manquant');
       return;
     }
     
