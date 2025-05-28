@@ -14,8 +14,13 @@ const ChatManager: React.FC = () => {
   const { user } = useAuthStore();
   const [activeChats, setActiveChats] = useState<ActiveChat[]>([]);
   
-  // Effet pour restaurer les chats actifs depuis le localStorage
+  // Effet pour restaurer les chats actifs depuis le localStorage - désactivé par défaut
+  // Note: Nous avons désactivé la restauration automatique des chats pour éviter
+  // l'ouverture intempestive des boîtes de dialogue au chargement de la page
   useEffect(() => {
+    // Le code est commenté pour éviter l'ouverture automatique des chats
+    // Si nécessaire, cette fonctionnalité peut être réactivée avec un paramètre de configuration
+    /*
     if (user) {
       const savedChats = localStorage.getItem(`floservice_active_chats_${user.id}`);
       if (savedChats) {
@@ -27,6 +32,7 @@ const ChatManager: React.FC = () => {
         }
       }
     }
+    */
   }, [user]);
   
   // Effet pour sauvegarder les chats actifs dans le localStorage
