@@ -16,6 +16,8 @@ interface ChatContextType {
   minimizeAllChats: () => void;
   hasUnreadMessages: boolean;
   unreadCount: number;
+  showMigrationNotice: boolean;
+  hideMigrationNotice: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeChats, setActiveChats] = useState<ActiveChat[]>([]);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showMigrationNotice, setShowMigrationNotice] = useState(false);
   
   // Effet pour restaurer les chats actifs depuis le localStorage
   useEffect(() => {
@@ -166,6 +169,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
+  const hideMigrationNotice = () => {
+    setShowMigrationNotice(false);
+  };
+
   return (
     <ChatContext.Provider 
       value={{ 
@@ -174,7 +181,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeChat, 
         minimizeAllChats,
         hasUnreadMessages,
-        unreadCount
+        unreadCount,
+        showMigrationNotice,
+        hideMigrationNotice
       }}
     >
       {children}
