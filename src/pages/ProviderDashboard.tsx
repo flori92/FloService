@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { ProviderBalanceSection } from '../components/dashboard';
 
 // Composants de sections
 import {
@@ -19,7 +20,7 @@ import {
 } from '../components/dashboard';
 
 // Types
-type DashboardTab = 'profile' | 'portfolio' | 'services' | 'bookings' | 'availability' | 'stats' | 'settings';
+type DashboardTab = 'profile' | 'portfolio' | 'services' | 'bookings' | 'availability' | 'stats' | 'settings' | 'balance';
 
 interface ProviderProfile {
   id: string;
@@ -134,12 +135,15 @@ const ProviderDashboard: React.FC = () => {
     );
   }
 
-  const tabs = [
+  import { ProviderBalanceSection } from '../components/dashboard';
+
+const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'portfolio', label: 'Portfolio', icon: Image },
     { id: 'services', label: 'Services', icon: Briefcase },
     { id: 'bookings', label: 'Réservations', icon: Calendar },
     { id: 'availability', label: 'Disponibilités', icon: Clock },
+    { id: 'balance', label: 'Mon solde', icon: BarChart2 },
     { id: 'stats', label: 'Statistiques', icon: BarChart2 },
     { id: 'settings', label: 'Paramètres', icon: Settings }
   ];
@@ -236,6 +240,7 @@ const ProviderDashboard: React.FC = () => {
             {activeTab === 'services' && <ServicesSection userId={user?.id} />}
             {activeTab === 'bookings' && <BookingsSection userId={user?.id} />}
             {activeTab === 'availability' && <AvailabilitySection userId={user?.id} />}
+            {activeTab === 'balance' && <ProviderBalanceSection />}
             {activeTab === 'stats' && <StatsSection userId={user?.id} />}
             {activeTab === 'settings' && <SettingsSection userId={user?.id} />}
           </div>

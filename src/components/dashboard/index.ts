@@ -6,6 +6,7 @@ import BookingsSection from './BookingsSection';
 import AvailabilitySection from './AvailabilitySection';
 import StatsSection from './StatsSection';
 import SettingsSection from './SettingsSection';
+import ProviderBalanceSection from './ProviderBalanceSection';
 
 export {
   ProfileSection,
@@ -14,5 +15,6 @@ export {
   BookingsSection,
   AvailabilitySection,
   StatsSection,
-  SettingsSection
+  SettingsSection,
+  ProviderBalanceSection
 };

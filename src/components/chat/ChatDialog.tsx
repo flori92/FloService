@@ -3,6 +3,7 @@ import { X, Maximize2, Minimize2, Send, Move } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
+import ChatOfferButton from './ChatOfferButton';
 
 interface ChatDialogProps {
   recipientId: string;
@@ -381,6 +382,20 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Bouton de création d'offre (visible uniquement pour les prestataires) */}
+      {user?.user_metadata?.role === 'provider' && (
+        <ChatOfferButton 
+          recipientId={recipientId} 
+          onOfferSent={(message) => {
+            // Envoyer un message automatique après création de l'offre
+            if (message) {
+              setNewMessage(message);
+              handleSendMessage();
+            }
+          }} 
+        />
+      )}
       
       {/* Zone de saisie */}
       <div className="p-3 border-t border-gray-200 bg-white">
