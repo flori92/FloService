@@ -21,6 +21,7 @@ interface Message {
   created_at: string;
   read: boolean;
   has_attachment?: boolean;
+  conversation_id?: string;
 }
 
 const ChatDialog: React.FC<ChatDialogProps> = ({
@@ -41,36 +42,16 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   const [lastActivity, setLastActivity] = useState('');
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   
   const chatRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Effet pour charger les messages
+  // Effet pour initialiser la conversation et charger les messages
   useEffect(() => {
     if (user && recipientId) {
-      fetchMessages();
-      
-      // Abonnement aux nouveaux messages
-      const subscription = supabase
-        .channel('messages')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `recipient_id=eq.${user.id}`
-        }, (payload) => {
-          // Ajouter le nouveau message s'il provient du destinataire actuel
-          if (payload.new && payload.new.sender_id === recipientId) {
-            setMessages(prev => [...prev, payload.new as Message]);
-            scrollToBottom();
-          }
-        })
-        .subscribe();
-        
-      return () => {
-        subscription.unsubscribe();
-      };
+      initializeConversation();
     }
   }, [user, recipientId]);
   
@@ -110,12 +91,65 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
     }
   }, [isOnline, recipientId]);
   
-  const fetchLastActivity = async () => {
-    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
-    if (!recipientId) {
-      console.log('ID de destinataire manquant');
-      return;
+  const initializeConversation = async () => {
+    try {
+      setLoading(true);
+      
+      // Créer ou récupérer une conversation
+      const { data, error } = await supabase.rpc('get_or_create_conversation', {
+        p_client_id: user?.id,
+        p_provider_external_id: recipientId
+      });
+      
+      if (error) {
+        console.error('Error creating conversation:', error);
+        toast.error('Une erreur est survenue lors de la création de la conversation');
+        return;
+      }
+      
+      // Stocker l'ID de conversation
+      setConversationId(data);
+      
+      // Charger les messages
+      await loadMessages(data);
+      
+      // S'abonner aux nouveaux messages
+      subscribeToMessages(data);
+      
+    } catch (error) {
+      console.error('Error initializing conversation:', error);
+      toast.error('Une erreur est survenue lors de l\'initialisation de la conversation');
+    } finally {
+      setLoading(false);
     }
+  };
+  
+  const subscribeToMessages = (convId: string) => {
+    const subscription = supabase
+      .channel(`messages:${convId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${convId}`
+      }, (payload) => {
+        // Ajouter le nouveau message s'il n'est pas déjà présent
+        const newMessage = payload.new as Message;
+        setMessages(prev => {
+          if (prev.some(msg => msg.id === newMessage.id)) return prev;
+          return [...prev, newMessage];
+        });
+        scrollToBottom();
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  };
+  
+  const fetchLastActivity = async () => {
+    if (!recipientId) return;
     
     try {
       // Vérifier d'abord si la table profiles existe
@@ -129,6 +163,40 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         return;
       }
       
+      // Pour les IDs externes (comme tg-2), on vérifie dans la table de mapping
+      if (recipientId.includes('-')) {
+        const { data, error } = await supabase
+          .from('external_id_mapping')
+          .select('metadata, updated_at')
+          .eq('external_id', recipientId)
+          .single();
+          
+        if (error) {
+          console.log('Erreur lors de la récupération des données de mapping:', error);
+          return;
+        }
+        
+        if (data) {
+          const lastSeen = new Date(data.updated_at);
+          const now = new Date();
+          const diffMinutes = Math.floor((now.getTime() - lastSeen.getTime()) / (1000 * 60));
+          
+          if (diffMinutes < 1) {
+            setLastActivity('Vu à l\'instant');
+          } else if (diffMinutes < 60) {
+            setLastActivity(`Vu il y a ${diffMinutes} min`);
+          } else if (diffMinutes < 1440) {
+            const hours = Math.floor(diffMinutes / 60);
+            setLastActivity(`Vu il y a ${hours} h`);
+          } else {
+            const days = Math.floor(diffMinutes / 1440);
+            setLastActivity(`Vu il y a ${days} j`);
+          }
+        }
+        return;
+      }
+      
+      // Pour les IDs normaux (UUID), on vérifie dans profiles
       const { data, error } = await supabase
         .from('profiles')
         .select('last_seen')
@@ -162,65 +230,45 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
     }
   };
   
-  const fetchMessages = async () => {
-    if (!user || !recipientId) return;
+  const loadMessages = async (convId: string) => {
+    if (!convId) return;
     
-    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
-    if (!recipientId) {
-      console.log('ID de destinataire manquant');
-      return;
-    }
-    
-    setLoading(true);
     try {
-      // Vérifier d'abord si la table messages existe
-      const { error: tableCheckError } = await supabase
-        .from('messages')
-        .select('count(*)', { count: 'exact', head: true });
-      
-      // Si la table n'existe pas encore (migration non appliquée), on sort silencieusement
-      if (tableCheckError) {
-        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
-        setLoading(false);
-        return;
-      }
-      
-      // Utiliser une approche plus robuste pour la requête
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id})`)
-        .order('created_at', { ascending: true });
+      // Utiliser la fonction RPC pour récupérer les messages
+      const { data, error } = await supabase.rpc('get_conversation_messages', {
+        p_conversation_id: convId,
+        p_page_size: 50,
+        p_page_number: 1
+      });
       
       if (error) {
         console.error('Erreur lors du chargement des messages:', error);
-        setLoading(false);
         return;
       }
       
       if (data) {
-        setMessages(data);
+        // Trier les messages par date (du plus ancien au plus récent)
+        const sortedMessages = [...data].sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        setMessages(sortedMessages);
         
         // Marquer les messages comme lus
-        const unreadMessages = data.filter(msg => 
-          msg.recipient_id === user.id && !msg.read
+        const unreadMessages = sortedMessages.filter(msg => 
+          msg.recipient_id === user?.id && !msg.read
         );
         
         if (unreadMessages.length > 0) {
-          try {
-            await supabase
+          await Promise.all(unreadMessages.map(msg => 
+            supabase
               .from('messages')
               .update({ read: true })
-              .in('id', unreadMessages.map(msg => msg.id));
-          } catch (updateError) {
-            console.error('Erreur lors de la mise à jour des messages lus:', updateError);
-          }
+              .eq('id', msg.id)
+          ));
         }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des messages:', error);
-    } finally {
-      setLoading(false);
     }
   };
   
@@ -235,10 +283,12 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   };
   
   const handleFileUpload = async (file: File) => {
-    if (!user || !recipientId) return;
+    if (!user || !conversationId) return;
     
     try {
+      setUploading(true);
       setUploadProgress(0);
+      
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
@@ -256,27 +306,32 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         });
       }
       
+      // Simuler la progression du téléchargement
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+      
       // Télécharger le fichier
-      const { error } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('attachments')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
       
+      clearInterval(interval);
+      
       if (error) {
         throw error;
       }
       
-      // Simuler la progression du téléchargement
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-        }
-      }, 100);
+      setUploadProgress(100);
       
       // Obtenir l'URL publique du fichier
       const { data: publicUrlData } = await supabase
@@ -292,25 +347,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         ? `[IMAGE]${publicUrlData.publicUrl}` 
         : `[FICHIER]${file.name}|${publicUrlData.publicUrl}`;
       
-      const { data: messageData, error: messageError } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          recipient_id: recipientId,
-          content: attachmentContent,
-          read: false,
-          has_attachment: true
-        })
-        .select();
-      
-      if (messageError) {
-        throw messageError;
-      }
-      
-      if (messageData && messageData.length > 0) {
-        setMessages(prev => [...prev, messageData[0]]);
-        scrollToBottom();
-      }
+      await sendMessage(conversationId, attachmentContent, true);
       
       setUploadProgress(0);
       toast.success('Fichier envoyé avec succès');
@@ -318,7 +355,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
     } catch (error) {
       console.error('Erreur lors de l\'envoi du fichier:', error);
       toast.error('Impossible d\'envoyer le fichier');
+    } finally {
+      setUploading(false);
       setUploadProgress(0);
+      setSelectedFile(null);
     }
   };
   
@@ -343,32 +383,19 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
     }
   };
   
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user || !recipientId) return;
-    
-    // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
+  const sendMessage = async (convId: string, content: string, hasAttachment: boolean = false) => {
+    if (!content.trim() && !hasAttachment) return;
+    if (!user) return;
     
     try {
-      // Vérifier d'abord si la table messages existe
-      const { error: tableCheckError } = await supabase
-        .from('messages')
-        .select('count(*)', { count: 'exact', head: true });
-      
-      // Si la table n'existe pas encore (migration non appliquée), afficher un message d'erreur
-      if (tableCheckError) {
-        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
-        toast.error('Le système de messagerie n\'est pas encore disponible');
-        return;
-      }
-      
       const { data, error } = await supabase
         .from('messages')
         .insert({
+          conversation_id: convId,
           sender_id: user.id,
-          recipient_id: recipientId,
-          content: newMessage.trim(),
+          content: content,
           read: false,
-          has_attachment: false
+          has_attachment: hasAttachment
         })
         .select();
       
@@ -378,16 +405,17 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         return;
       }
       
-      if (data && data.length > 0) {
-        // Ajouter le message à la liste locale
-        setMessages(prev => [...prev, data[0]]);
-        setNewMessage('');
-        scrollToBottom();
-      }
+      // Le message sera ajouté via la souscription en temps réel
+      setNewMessage('');
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
       toast.error('Impossible d\'envoyer le message');
     }
+  };
+  
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !conversationId) return;
+    await sendMessage(conversationId, newMessage.trim());
   };
   
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -511,11 +539,11 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                   ) : (
                     <p className="text-sm">{message.content}</p>
                   )}
-                  <p className={`text-xs mt-1 ${
+                  <span className={`text-xs mt-1 block ${
                     message.sender_id === user?.id ? 'text-teal-100' : 'text-gray-500'
                   }`}>
                     {formatTime(message.created_at)}
-                  </p>
+                  </span>
                 </div>
               </div>
             ))}
@@ -530,9 +558,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           recipientId={recipientId} 
           onOfferSent={(message) => {
             // Envoyer un message automatique après création de l'offre
-            if (message) {
-              setNewMessage(message);
-              handleSendMessage();
+            if (message && conversationId) {
+              sendMessage(conversationId, message);
             }
           }} 
         />
@@ -579,9 +606,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           />
           <button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || !conversationId}
             className={`p-2 rounded-r-md ${
-              newMessage.trim() 
+              newMessage.trim() && conversationId
                 ? 'bg-teal-600 text-white hover:bg-teal-700' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
