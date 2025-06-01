@@ -225,4 +225,4 @@ if (!baseSupabaseClient) {
 const enhancedSupabase = new EnhancedSupabaseClient(baseSupabaseClient);
 
 export default enhancedSupabase;
-export { supabase }; // Exporter également le client de base pour la compatibilité (supabase est réexporté depuis supabase-secure.ts via supabase.ts)
+export { baseSupabaseClient as supabase }; // Re-export baseSupabaseClient as supabase for compatibility
