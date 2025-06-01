@@ -65,17 +65,7 @@ function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Vérifier la connexion à Supabase
-        const { data, error } = await enhancedSupabase.checkTableExists('profiles');
-        
-        if (error) {
-          console.error('Erreur lors de la vérification de la table profiles:', error);
-          setInitError(new Error('Erreur de connexion à la base de données'));
-          setIsAppReady(true);
-          return;
-        }
-        
-        // Si on arrive ici, la connexion est établie
+        // Considérer l'application comme prête sans vérification d'existence de table
         setIsAppReady(true);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'application:', error);

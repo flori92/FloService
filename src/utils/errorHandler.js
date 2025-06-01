@@ -115,27 +115,6 @@ export const useErrorHandler = () => {
   };
 };
 
-/**
- * Fonction pour vérifier si une table existe avant d'effectuer une opération
- * @param {Object} supabase - Client Supabase
- * @param {string} tableName - Nom de la table à vérifier
- * @returns {Promise<boolean>} - True si la table existe, false sinon
- */
-export const checkTableExists = async (supabase, tableName) => {
-  try {
-    const { data, error } = await supabase.rpc('check_table_exists', { table_name: tableName });
-    
-    if (error) {
-      console.error('Erreur lors de la vérification de l\'existence de la table:', error);
-      return false;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Erreur lors de la vérification de l\'existence de la table:', error);
-    return false;
-  }
-};
 
 /**
  * Fonction pour effectuer une opération sécurisée sur une table
