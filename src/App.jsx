@@ -86,11 +86,10 @@ const App = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Considérer l'application comme prête sans vérification d'existence de table
+        // Considérer l'application comme prête immédiatement
         setIsAppReady(true);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'application:', error);
-        // Même en cas d'erreur, on considère l'app comme prête pour afficher l'erreur
         setIsAppReady(true);
       }
     };

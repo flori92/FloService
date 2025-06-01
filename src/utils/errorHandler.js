@@ -115,7 +115,10 @@ export const useErrorHandler = () => {
   };
 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5c5a112 (✨ [FEAT] Ajout de la recherche par proximité géographique et mise à jour du texte de présentation)
 /**
  * Fonction pour effectuer une opération sécurisée sur une table
  * @param {Object} supabase - Client Supabase
@@ -125,12 +128,14 @@ export const useErrorHandler = () => {
  * @returns {Promise<any>} - Résultat de l'opération ou du fallback
  */
 export const safeTableOperation = async (supabase, tableName, operation, fallback = () => ({ data: null, error: null })) => {
-
-  
-  if (tableExists) {
-    return operation();
-  } else {
-    return fallback();
+  try {
+    return await operation();
+  } catch (error) {
+    // Si l'erreur indique une absence de table, utiliser le fallback
+    if (error && error.message && error.message.includes('does not exist')) {
+      return fallback();
+    }
+    throw error;
   }
 };
 
