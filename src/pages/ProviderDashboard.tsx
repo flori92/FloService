@@ -4,6 +4,7 @@ import { Camera, Edit, User, Briefcase, Image, Calendar, BarChart2, Settings, Cl
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { isValidUUID } from '../utils/validation';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { ProviderBalanceSection } from '../components/dashboard';
@@ -57,24 +58,34 @@ const ProviderDashboard: React.FC = () => {
     try {
       setLoading(true);
       
+      if (!user?.id || !isValidUUID(user.id)) {
+        toast.error("Identifiant utilisateur invalide (UUID requis)");
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
-      if (error) throw error;
-
-      if (data) {
-        // Vérifier si l'utilisateur est un prestataire
-        if (!data.is_provider && data.role !== 'provider') {
-          toast.error('Vous n\'avez pas accès au tableau de bord prestataire');
-          navigate('/');
-          return;
-        }
-        
-        setProfile(data as ProviderProfile);
+      if (error || !data || typeof data !== 'object' || !('id' in data)) {
+        toast.error("Impossible de charger votre profil prestataire");
+        setLoading(false);
+        return;
       }
+      
+      // Conversion sécurisée en deux étapes
+      const profileData = data as unknown as ProviderProfile;
+      
+      // Vérification des droits d'accès
+      if (!profileData.is_provider && profileData.role !== 'provider') {
+        toast.error("Vous n'avez pas accès au tableau de bord prestataire");
+        navigate('/');
+        return;
+      }
+      
+      setProfile(profileData);
     } catch (error) {
       console.error('Erreur lors du chargement du profil:', error);
       toast.error('Impossible de charger votre profil');
@@ -134,8 +145,6 @@ const ProviderDashboard: React.FC = () => {
       </div>
     );
   }
-
-  import { ProviderBalanceSection } from '../components/dashboard';
 
 const tabs = [
     { id: 'profile', label: 'Profil', icon: User },

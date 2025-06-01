@@ -9,6 +9,7 @@ import { useChat } from '../contexts/ChatContext';
 import ChatButton from '../components/chat/ChatButton';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { isValidUUID } from '../utils/validation';
 
 const ProviderProfile: React.FC = () => {
   const { id: rawId } = useParams<{ id: string }>();
@@ -33,6 +34,10 @@ const ProviderProfile: React.FC = () => {
     // Accepter tous les formats d'ID, y compris les ID de test comme "tg-2"
     if (!cleanedProviderId) {
       console.log('ID de prestataire manquant');
+      return;
+    }
+    if (!isValidUUID(cleanedProviderId)) {
+      toast.error("Identifiant du prestataire invalide (UUID requis)");
       return;
     }
     

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { isValidUUID } from '../utils/validation';
 
 interface Profile {
   id: string;
@@ -31,22 +32,33 @@ export default function Profile() {
     try {
       setLoading(true);
       
+      if (!user?.id || !isValidUUID(user.id)) {
+        toast.error("Identifiant utilisateur invalide (UUID requis)");
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
-      if (error) throw error;
-
-      if (data) {
-        setProfile(data);
-        setFormData({
-          full_name: data.full_name || '',
-          business_name: data.business_name || '',
-          phone: data.phone || ''
-        });
+      if (error || !data || typeof data !== 'object' || !('id' in data)) {
+        toast.error("Impossible de charger votre profil");
+        setLoading(false);
+        return;
       }
+      
+      // Conversion sécurisée en deux étapes
+      const profileData = data as unknown as Profile;
+      
+      // Maintenant nous pouvons utiliser profileData en toute sécurité
+      setProfile(profileData);
+      setFormData({
+        full_name: profileData.full_name || '',
+        business_name: profileData.business_name || '',
+        phone: profileData.phone || ''
+      });
     } catch (error) {
       toast.error('Error loading profile');
       console.error('Error loading profile:', error);
