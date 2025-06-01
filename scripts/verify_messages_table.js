@@ -123,29 +123,33 @@ async function checkMessageFunctions() {
   ];
   
   const query = `
-    SELECT proname, prosrc
+    SELECT proname, prosrc, pg_get_function_identity_arguments(pg_proc.oid) as proargs
     FROM pg_proc
     JOIN pg_namespace ON pg_proc.pronamespace = pg_namespace.oid
     WHERE nspname = 'public'
-    AND proname = ANY($1);
+    AND proname = ANY($1::name[]);
   `;
   
   const result = await pool.query(query, [functionsToCheck]);
   
-  // Vérifier quelles fonctions existent
-  const existingFunctions = result.rows.map(row => row.proname);
-  const missingFunctions = functionsToCheck.filter(fn => !existingFunctions.includes(fn));
-  
-  if (missingFunctions.length > 0) {
-    console.error(`❌ Fonctions manquantes: ${missingFunctions.join(', ')}`);
+  // Vérifier quelles fonctions existent et celles qui sont manquantes
+  const existingFunctionSignatures = result.rows.map(row => `${row.proname}(${row.proargs || ''})`);
+  console.log('📋 Fonctions trouvées en base avec leur signature:', existingFunctionSignatures.join(', ') || 'Aucune');
+
+  const missingFunctionNames = functionsToCheck.filter(fnName => 
+    !result.rows.some(dbFn => dbFn.proname === fnName)
+  );
+
+  if (missingFunctionNames.length > 0) {
+    console.error(`❌ Fonctions de la liste 'functionsToCheck' non trouvées (vérification par nom): ${missingFunctionNames.join(', ')}`);
   } else {
-    console.log('✅ Toutes les fonctions nécessaires existent.');
+    console.log('✅ Toutes les fonctions de la liste (vérification par nom) semblent exister.');
   }
   
   // Vérifier si les fonctions ont un chemin de recherche fixe
   const vulnerableFunctions = result.rows
-    .filter(row => !row.prosrc.includes('SET search_path = public'))
-    .map(row => row.proname);
+    .filter(row => !row.prosrc || !row.prosrc.includes('SET search_path = public')) // Added check for null prosrc
+    .map(row => `${row.proname}(${row.proargs || ''})`);
     
   if (vulnerableFunctions.length > 0) {
     console.warn(`⚠️ Fonctions sans chemin de recherche fixe: ${vulnerableFunctions.join(', ')}`);
@@ -184,7 +188,11 @@ async function checkRLSPolicies() {
     
     // Vérifier les politiques
     const policiesQuery = `
-      SELECT polname, polcmd, pg_get_expr(polqual, polrelid) as policy_definition
+      SELECT 
+        polname, 
+        polcmd, 
+        pg_get_expr(polqual, polrelid) as using_definition, 
+        pg_get_expr(polwithcheck, polrelid) as with_check_definition
       FROM pg_policy
       JOIN pg_class ON pg_policy.polrelid = pg_class.oid
       JOIN pg_namespace ON pg_class.relnamespace = pg_namespace.oid
@@ -198,9 +206,24 @@ async function checkRLSPolicies() {
       console.error('❌ Aucune politique RLS trouvée pour la table messages!');
     } else {
       console.log(`✅ ${policiesResult.rows.length} politiques RLS trouvées:`);
-      
       policiesResult.rows.forEach(policy => {
-        console.log(`   - ${policy.polname} (${policy.polcmd}): ${policy.policy_definition}`);
+        let cmdType = '';
+        switch(policy.polcmd) {
+          case 'r': cmdType = 'SELECT'; break;
+          case 'a': cmdType = 'INSERT'; break;
+          case 'w': cmdType = 'UPDATE'; break;
+          case 'd': cmdType = 'DELETE'; break;
+          case '*': cmdType = 'ALL'; break;
+          default: cmdType = policy.polcmd;
+        }
+        console.log(`   - Nom: ${policy.polname}`);
+        console.log(`     Commande: ${cmdType}`);
+        if (policy.using_definition) {
+          console.log(`     USING: ${policy.using_definition}`);
+        }
+        if (policy.with_check_definition) {
+          console.log(`     WITH CHECK: ${policy.with_check_definition}`);
+        }
       });
     }
   }

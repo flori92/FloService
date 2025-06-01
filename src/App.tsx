@@ -1,6 +1,6 @@
 import { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { supabase } from './lib/supabase';
+// import { supabase } from './lib/supabase'; // Supprimé pour utiliser enhancedSupabase partout
 import enhancedSupabase from './lib/supabaseClient';
 import { useAuthStore } from './store/authStore';
 import { TranslationProvider } from './providers/TranslationProvider';
@@ -36,7 +36,7 @@ import NotFound from './pages/NotFound';
 const GlobalLoadingSpinner = () => (
   <div className="flex items-center justify-center h-screen bg-gray-50">
     <LoadingSpinner 
-      size="lg" 
+      size="LG" 
       label="Chargement..." 
     />
   </div>
@@ -83,7 +83,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = enhancedSupabase.auth.onAuthStateChange(
       (_, session) => {
         setUser(session?.user ?? null);
       }
@@ -99,7 +99,7 @@ function App() {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <LoadingSpinner 
-          size="lg" 
+          size="LG" 
           label="Initialisation de l'application..." 
         />
       </div>
