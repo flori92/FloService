@@ -39,7 +39,7 @@ export interface Database {
         };
         Returns: undefined;
       };
-      check_table_exists: {
+
         Args: { table_name: string };
         Returns: boolean;
       };

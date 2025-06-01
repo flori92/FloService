@@ -38,50 +38,25 @@ export const ChatProvider = ({ children }) => {
       //   try {
       //     const parsedChats = JSON.parse(savedChats);
       //     setActiveChats(parsedChats);
-      //   } catch (error) {
-      //     console.error('Erreur lors de la restauration des chats:', error);
-      //   }
-      // }
-      
       // S'abonner aux nouveaux messages
-      const checkMessagesTable = async () => {
-        try {
-          const { data, error } = await supabase.rpc('check_table_exists', { 
-            table_name: 'messages' 
-          });
-          
-          if (error || !data) {
-            console.warn('La table messages n\'existe pas encore, migration probablement non appliquée');
-            setShowMigrationNotice(true);
-            return;
-          }
-          
-          const subscription = supabase
-            .channel('messages')
-            .on('postgres_changes', {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'messages',
-              filter: `recipient_id=eq.${user.id}`
-            }, () => {
-              // Mettre à jour le compteur de messages non lus
-              checkUnreadMessages();
-            })
-            .subscribe();
-          
-          // Vérifier les messages non lus au démarrage
+      const subscription = supabase
+        .channel('messages')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`
+        }, () => {
           checkUnreadMessages();
-          
-          return () => {
-            subscription.unsubscribe();
-          };
-        } catch (error) {
-          console.error('Erreur lors de la vérification de la table messages:', error);
-          setShowMigrationNotice(true);
-        }
+        })
+        .subscribe();
+
+      // Vérifier les messages non lus au démarrage
+      checkUnreadMessages();
+
+      return () => {
+        subscription.unsubscribe();
       };
-      
-      checkMessagesTable();
     }
   }, [user]);
   
@@ -95,27 +70,22 @@ export const ChatProvider = ({ children }) => {
   // Fonction pour vérifier les messages non lus
   const checkUnreadMessages = async () => {
     if (!user) return;
-    
     try {
-      // Vérifier d'abord si la table existe pour éviter les erreurs
-      const { data: tableExists, error: tableCheckError } = await supabase.rpc('check_table_exists', { 
-        table_name: 'messages' 
-      });
-      
-      // Si la table n'existe pas encore (migration non appliquée), on sort silencieusement
-      if (tableCheckError || !tableExists) {
-        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
-        return;
-      }
-      
       const { data, error } = await supabase
         .from('messages')
         .select('id')
         .eq('recipient_id', user.id)
         .eq('read', false);
-      
-      if (error) throw error;
-      
+
+      if (error) {
+        // Si l'erreur indique une absence de table, loguer et sortir silencieusement
+        if (error.code === '42P01') {
+          console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
+          return;
+        }
+        throw error;
+      }
+
       const count = data?.length || 0;
       setUnreadCount(count);
       setHasUnreadMessages(count > 0);
