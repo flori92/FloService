@@ -115,10 +115,7 @@ export const useErrorHandler = () => {
   };
 };
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 5c5a112 (✨ [FEAT] Ajout de la recherche par proximité géographique et mise à jour du texte de présentation)
 /**
  * Fonction pour effectuer une opération sécurisée sur une table
  * @param {Object} supabase - Client Supabase
