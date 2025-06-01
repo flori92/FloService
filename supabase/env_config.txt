@@ -1,0 +1,16 @@
+# Variables d'environnement pour les fonctions Edge
+
+# Configuration Supabase
+SUPABASE_URL=https://sxrofrdhpzpjqkplgoij.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=votre_cle_service_role_ici
+
+# Configuration Kkiapay
+KKIAPAY_PRIVATE_KEY=votre_cle_privee_kkiapay_ici
+KKIAPAY_WEBHOOK_SECRET=votre_secret_webhook_kkiapay_ici
+
+# Configuration SMTP pour l'envoi d'emails
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=votre_email@gmail.com
+SMTP_PASSWORD=votre_mot_de_passe_app_gmail
+SMTP_FROM=facturation@floservice.com
