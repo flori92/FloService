@@ -225,4 +225,4 @@ if (!baseSupabaseClient) {
 const enhancedSupabase = new EnhancedSupabaseClient(baseSupabaseClient);
 
 export default enhancedSupabase;
-export { baseSupabaseClient as supabase }; // Re-export baseSupabaseClient as supabase for compatibility
+export { baseSupabaseClient as supabase }; // Exporter également le client de base pour la compatibilité
