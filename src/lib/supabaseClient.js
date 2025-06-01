@@ -5,6 +5,7 @@
 
 // import { createClient } from '@supabase/supabase-js'; // Supprimé car nous utilisons l'instance de supabase-secure
 import { supabase as baseSupabaseClient } from './supabase-secure';
+import { safeTableOperation, getErrorMessage } from '../utils/errorHandler';
 
 // Configuration de base
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -39,14 +40,7 @@ class EnhancedSupabaseClient {
   async safeOperation(tableName, operation, fallback) {
     try {
       // Vérifier si la table existe
-      const { data: exists, error: checkError } = await this.rpc('check_table_exists', { 
-        table_name: tableName 
-      });
-      
-      if (checkError) {
-        console.warn(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, checkError);
-        return fallback();
-      }
+      const exists = await this.checkTableExists(tableName);
       
       if (!exists) {
         console.warn(`La table ${tableName} n'existe pas encore, migration probablement non appliquée`);
@@ -57,6 +51,33 @@ class EnhancedSupabaseClient {
     } catch (error) {
       console.error(`Erreur lors de l'opération sur la table ${tableName}:`, error);
       return fallback();
+    }
+  }
+  
+  /**
+   * Vérifie si une table existe
+   * @param {string} tableName - Nom de la table à vérifier
+   * @returns {Promise<boolean>} - True si la table existe, false sinon
+   */
+  async checkTableExists(tableName) {
+    try {
+      // Utiliser une requête directe plutôt que RPC pour éviter les erreurs
+      const { data, error } = await this.client
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', tableName)
+        .maybeSingle();
+      
+      if (error) {
+        console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
+      return false;
     }
   }
   
@@ -236,29 +257,6 @@ class EnhancedSupabaseClient {
     } catch (error) {
       console.error('Erreur lors du marquage des messages comme lus:', error);
       return { data: 0, error };
-    }
-  }
-  
-  /**
-   * Vérifie si une table existe
-   * @param {string} tableName - Nom de la table à vérifier
-   * @returns {Promise<boolean>} - True si la table existe, false sinon
-   */
-  async checkTableExists(tableName) {
-    try {
-      const { data, error } = await this.client.rpc('check_table_exists', { 
-        table_name: tableName 
-      });
-      
-      if (error) {
-        console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
-        return false;
-      }
-      
-      return !!data;
-    } catch (error) {
-      console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
-      return false;
     }
   }
 }
