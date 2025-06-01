@@ -29,3 +29,8 @@ dist-ssr
 
 # Fichiers de modèles de détection faciale
 public/models/
+
+# Fichiers sensibles
+.env.secure
+*.bak
+
