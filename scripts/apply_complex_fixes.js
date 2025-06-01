@@ -8,6 +8,7 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { paysAfrique } from '../data/paysAfrique.js';
 
 const { Pool } = pg;
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +25,36 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
+
+// --- Seed automatique des pays et villes Afrique de l'Ouest et centrale ---
+
+// Insère un pays et retourne son id (ou récupère l'id si déjà existant)
+async function insertOrGetPaysId(pool, nomPays) {
+  const res = await pool.query(
+    'INSERT INTO pays (nom) VALUES ($1) ON CONFLICT (nom) DO UPDATE SET nom = EXCLUDED.nom RETURNING id;',
+    [nomPays]
+  );
+  return res.rows[0].id;
+}
+
+// Insère une ville pour un pays donné (évite les doublons)
+async function insertVille(pool, nomVille, paysId) {
+  await pool.query(
+    'INSERT INTO villes (nom, pays_id) VALUES ($1, $2) ON CONFLICT (nom, pays_id) DO NOTHING;',
+    [nomVille, paysId]
+  );
+}
+
+// Seed principal
+async function seedPaysEtVilles(pool) {
+  for (const pays of paysAfrique) {
+    const paysId = await insertOrGetPaysId(pool, pays.nom);
+    for (const ville of pays.villes) {
+      await insertVille(pool, ville, paysId);
+    }
+    console.log(`✅ Pays inséré : ${pays.nom} (id=${paysId}), ${pays.villes.length} villes`);
+  }
+}
 
 // Fonction principale
 async function main() {
@@ -126,7 +157,12 @@ async function main() {
     
     // Vérifier les résultats
     console.log('\n🔍 Vérification des fonctions corrigées...');
-    
+
+    // --- Seed pays/villes ---
+    console.log('\n🌍 Début du seed des pays et villes Afrique de l\'Ouest et centrale...');
+    await seedPaysEtVilles(pool);
+    console.log('✅ Seed pays/villes terminé !');
+
     const functionsToCheck = [
       'safe_message_count',
       'find_nearby_providers',
@@ -157,12 +193,15 @@ async function main() {
       }
     }
     
-    console.log('\n✅ Processus de correction des fonctions complexes terminé!');
+    try {
+      await seedPaysEtVilles(pool);
+    } catch (error) {
+      console.error('Erreur lors de l\'application des corrections complexes :', error);
+    } finally {
+      await pool.end();
+    }
   } catch (error) {
     console.error('❌ Erreur lors de l\'application des corrections:', error);
-  } finally {
-    // Fermer la connexion à la base de données
-    await pool.end();
   }
 }
 

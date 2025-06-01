@@ -40,9 +40,7 @@ export interface Database {
         Returns: undefined;
       };
 
-        Args: { table_name: string };
-        Returns: boolean;
-      };
+
       [key: string]: any;
     };
   };

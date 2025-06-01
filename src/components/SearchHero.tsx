@@ -49,7 +49,7 @@ const SearchHero: React.FC = () => {
       <div className="container relative z-10 mx-auto px-4 pt-32 pb-20">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg">
-            Une plateforme de services professionnels qui connecte des millions de prestataires qualifiés
+            Une plateforme de services qui connecte des millions de prestataires qualifiés, prêts à répondre à vos besoins.
           </h1>
           <p className="text-xl text-white opacity-90 mb-8 drop-shadow-md">
             Trouvez des experts locaux pour tous vos besoins : plomberie, électricité, services à domicile et plus encore
