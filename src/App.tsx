@@ -1,13 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import { supabase } from './lib/supabase';
+import enhancedSupabase from './lib/supabaseClient';
 import { useAuthStore } from './store/authStore';
 import { TranslationProvider } from './providers/TranslationProvider';
 import { AuthGuard } from './components/AuthGuard';
 import { ChatProvider } from './contexts/ChatContext';
 import ChatContainer from './components/chat/ChatContainer';
 import ChatFloatingButton from './components/chat/ChatFloatingButton';
+
+// Nouveaux composants d'amélioration UX
+import { NotifierProvider } from './components/ui/Notifier';
+import LoadingSpinner from './components/ui/LoadingSpinner';
+import { ConnectionError } from './components/ui/EmptyState';
 
 // Pages
 import Home from './pages/Home';
@@ -27,8 +32,55 @@ import Blog from './pages/Blog';
 import HelpCenter from './pages/HelpCenter';
 import NotFound from './pages/NotFound';
 
+// Composant de chargement global
+const GlobalLoadingSpinner = () => (
+  <div className="flex items-center justify-center h-screen bg-gray-50">
+    <LoadingSpinner 
+      size="lg" 
+      label="Chargement..." 
+    />
+  </div>
+);
+
 function App() {
   const setUser = useAuthStore((state) => state.setUser);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isAppReady, setIsAppReady] = useState(false);
+
+  // Vérifier la connexion internet
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Initialiser l'application
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        // Vérifier la connexion à Supabase
+        await enhancedSupabase.rpc('check_table_exists', { 
+          table_name: 'profiles' 
+        });
+        
+        // Si on arrive ici, la connexion est établie
+        setIsAppReady(true);
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de l\'application:', error);
+        // Même en cas d'erreur, on considère l'app comme prête pour afficher l'erreur
+        setIsAppReady(true);
+      }
+    };
+
+    initApp();
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -42,12 +94,37 @@ function App() {
     };
   }, [setUser]);
 
+  // Afficher un écran de chargement pendant l'initialisation
+  if (!isAppReady) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <LoadingSpinner 
+          size="lg" 
+          label="Initialisation de l'application..." 
+        />
+      </div>
+    );
+  }
+
+  // Afficher une erreur si l'utilisateur est hors ligne
+  if (!isOnline) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <ConnectionError 
+          onRetry={() => window.location.reload()} 
+        />
+      </div>
+    );
+  }
+
   return (
-    <TranslationProvider>
-      <ChatProvider>
-        <Router>
-          <div className="app-container">
-            <Routes>
+    <NotifierProvider>
+      <TranslationProvider>
+        <ChatProvider>
+          <Router>
+            <div className="app-container">
+              <Suspense fallback={<GlobalLoadingSpinner />}>
+                <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/categories" element={<Categories />} />
@@ -85,15 +162,17 @@ function App() {
 
           {/* 404 page */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster position="top-right" />
-            {/* Système de chat */}
-            <ChatContainer />
-            <ChatFloatingButton />
-          </div>
-        </Router>
-      </ChatProvider>
-    </TranslationProvider>
+                </Routes>
+              </Suspense>
+              {/* Système de chat */}
+              <ChatContainer />
+              <ChatFloatingButton />
+              {/* Le Toaster est remplacé par le NotifierProvider */}
+            </div>
+          </Router>
+        </ChatProvider>
+      </TranslationProvider>
+    </NotifierProvider>
   );
 }
 

@@ -2,9 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { supabase } from '../lib/supabase';
+import enhancedSupabase from '../lib/supabaseClient';
 import { useAuthStore } from '../store/authStore';
 import Chat from '../components/Chat';
+
+// Composants d'amélioration UX
+import { useNotifier } from '../components/ui/Notifier';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { EmptyMessages, ConnectionError } from '../components/ui/EmptyState';
+
+// Hooks personnalisés
+import { useSupabaseRpc } from '../utils/hooks/useSupabaseQuery';
+import { useConversationSubscription } from '../utils/hooks/useRealtimeSubscription';
+import useErrorHandler from '../utils/hooks/useErrorHandler';
 
 // Définition plus précise pour les participants
 interface Participant {
@@ -29,8 +39,11 @@ interface Conversation {
 const Messages: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const notifier = useNotifier();
+  const { handleError } = useErrorHandler();
 
   useEffect(() => {
     if (!user) {
@@ -40,50 +53,36 @@ const Messages: React.FC = () => {
 
     loadConversations();
   }, [user, navigate]);
+  
+  // Abonnement en temps réel aux conversations
+  useConversationSubscription(
+    user?.id,
+    (payload) => {
+      // Rafraîchir les conversations quand il y a un changement
+      loadConversations();
+      
+      // Notification pour les nouvelles conversations
+      if (payload.eventType === 'INSERT') {
+        notifier.info('Nouvelle conversation créée');
+      }
+    }
+  );
 
   const loadConversations = async () => {
     try {
+      setIsLoading(true);
       if (!user) return;
 
-      // Type explicite pour la réponse attendue de Supabase
-      type DbConversation = {
-        id: string;
-        provider_id: string;
-        client_id: string;
-        last_message?: string | null;
-        last_message_time?: string | null;
-        updated_at?: string | null;
-        provider?: Participant | null;
-        client?: Participant | null;
-      };
-
-      const { data, error } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          provider_id,
-          client_id,
-          last_message,
-          last_message_time,
-          updated_at,
-          provider:provider_id (
-            id,
-            full_name,
-            avatar_url
-          ),
-          client:client_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
-        .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false })
-        .returns<DbConversation[]>(); // Indiquer à Supabase le type de retour attendu
+      // Utilisation de la fonction RPC sécurisée au lieu d'une requête directe
+      const { data, error } = await enhancedSupabase.rpc('get_user_conversations', {
+        p_user_id: user.id
+      });
 
       if (error) {
-        console.error('Error loading conversations:', error);
-        throw error;
+        handleError(error, {
+          customMessage: 'Impossible de charger vos conversations'
+        });
+        return;
       }
 
       const formattedConversations = (data || []).map((conv): Conversation => {
@@ -97,15 +96,19 @@ const Messages: React.FC = () => {
           updated_at: conv.updated_at || undefined,
           provider: conv.provider,
           client: conv.client,
-          other_participant_name: otherParticipant?.full_name || 'Unknown User',
+          other_participant_name: otherParticipant?.full_name || 'Utilisateur inconnu',
           other_participant_avatar: otherParticipant?.avatar_url || undefined
         };
       });
       
       setConversations(formattedConversations);
+      notifier.success('Conversations chargées avec succès', 2000);
     } catch (error) {
-      console.error('Error loading conversations:', error);
-      // Gérer l'erreur, par exemple afficher un message à l'utilisateur
+      handleError(error, {
+        customMessage: 'Erreur lors du chargement des conversations'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,11 +120,28 @@ const Messages: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4">
             {/* Conversations List */}
             <div className="border-r border-gray-200">
-              <div className="p-4 border-b">
+              <div className="p-4 border-b flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Messages</h2>
+                <button 
+                  onClick={() => loadConversations()} 
+                  className="text-indigo-600 hover:text-indigo-800 text-sm"
+                  disabled={isLoading}
+                >
+                  Actualiser
+                </button>
               </div>
-              <div className="divide-y">
-                {conversations.map((conversation) => (
+              
+              {isLoading ? (
+                <div className="p-8 flex justify-center">
+                  <LoadingSpinner size="MD" label="Chargement des conversations..." />
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="p-4">
+                  <EmptyMessages onAction={() => navigate('/providers')} />
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {conversations.map((conversation) => (
                   <button
                     key={conversation.id}
                     onClick={() => setSelectedConversation(conversation.id)}
@@ -143,8 +163,9 @@ const Messages: React.FC = () => {
                       </div>
                     </div>
                   </button>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Chat Area */}
@@ -156,7 +177,10 @@ const Messages: React.FC = () => {
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-500">
-                  Select a conversation to start messaging
+                  <div className="text-center p-8">
+                    <h3 className="text-xl font-medium mb-2">Sélectionnez une conversation</h3>
+                    <p className="text-gray-500 mb-4">Choisissez une conversation dans la liste pour commencer à échanger des messages</p>
+                  </div>
                 </div>
               )}
             </div>
