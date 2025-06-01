@@ -42,35 +42,64 @@ const ProviderProfile: React.FC = () => {
     }
     
     try {
-      // Vérifier d'abord si la table provider_profiles existe
-      const { error: tableCheckError } = await supabase
-        .from('provider_profiles')
-        .select('count(*)', { count: 'exact', head: true });
+      // Vérifier si l'utilisateur est un prestataire (requête simplifiée)
+      const { data: isProviderData, error: isProviderError } = await supabase
+        .rpc('is_provider', { user_id: cleanedProviderId })
+        .single();
       
-      // Si la table n'existe pas, on fait une requête plus simple
-      const hasProviderProfilesTable = !tableCheckError;
-      
-      const query = hasProviderProfilesTable
-        ? supabase
+      // Si la fonction RPC échoue, on utilise une approche alternative
+      if (isProviderError) {
+        console.log('Utilisation de la méthode alternative pour vérifier le statut prestataire');
+        
+        // Approche alternative: vérifier directement dans la table profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, business_name, bio, is_provider, role')
+          .eq('id', cleanedProviderId)
+          .single();
+        
+        if (profileError) {
+          console.error('Erreur lors de la récupération du profil:', profileError);
+          toast.error('Impossible de charger le profil du prestataire');
+          return;
+        }
+        
+        if (profileData) {
+          setProviderData(profileData);
+        }
+      } else {
+        // La fonction RPC a fonctionné, récupérons les données complètes
+        try {
+          const { data: providerFullData, error: providerDataError } = await supabase
             .from('profiles')
             .select('*, provider_profiles(*)')
             .eq('id', cleanedProviderId)
-            .single()
-        : supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', cleanedProviderId)
             .single();
-      
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Erreur lors de la récupération du profil prestataire:', error);
-        return;
-      }
-
-      if (data) {
-        setProviderData(data);
+          
+          if (providerDataError) {
+            console.error('Erreur lors de la récupération des données complètes:', providerDataError);
+            // Essayons une requête plus simple
+            const { data: simpleData, error: simpleError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', cleanedProviderId)
+              .single();
+              
+            if (simpleError) {
+              toast.error('Impossible de charger les données du prestataire');
+              return;
+            }
+            
+            if (simpleData) {
+              setProviderData(simpleData);
+            }
+          } else if (providerFullData) {
+            setProviderData(providerFullData);
+          }
+        } catch (innerError) {
+          console.error('Erreur interne lors de la récupération des données:', innerError);
+          toast.error('Une erreur est survenue lors du chargement des données');
+        }
       }
     } catch (error) {
       console.error('Erreur lors de la récupération du profil prestataire:', error);
