@@ -1,6 +1,5 @@
 import { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// import { supabase } from './lib/supabase'; // Supprimé pour utiliser enhancedSupabase partout
 import enhancedSupabase from './lib/supabaseClient';
 import { useAuthStore } from './store/authStore';
 import { TranslationProvider } from './providers/TranslationProvider';
@@ -46,6 +45,7 @@ function App() {
   const setUser = useAuthStore((state) => state.setUser);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isAppReady, setIsAppReady] = useState(false);
+  const [initError, setInitError] = useState<Error | null>(null);
 
   // Vérifier la connexion internet
   useEffect(() => {
@@ -66,14 +66,20 @@ function App() {
     const initApp = async () => {
       try {
         // Vérifier la connexion à Supabase
-        await enhancedSupabase.rpc('check_table_exists', { 
-          table_name: 'profiles' 
-        });
+        const { data, error } = await enhancedSupabase.checkTableExists('profiles');
+        
+        if (error) {
+          console.error('Erreur lors de la vérification de la table profiles:', error);
+          setInitError(new Error('Erreur de connexion à la base de données'));
+          setIsAppReady(true);
+          return;
+        }
         
         // Si on arrive ici, la connexion est établie
         setIsAppReady(true);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'application:', error);
+        setInitError(error instanceof Error ? error : new Error('Erreur inconnue'));
         // Même en cas d'erreur, on considère l'app comme prête pour afficher l'erreur
         setIsAppReady(true);
       }
@@ -106,6 +112,25 @@ function App() {
     );
   }
 
+  // Afficher une erreur si l'initialisation a échoué
+  if (initError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Erreur d'initialisation</h2>
+          <p className="text-gray-700 mb-4">{initError.message}</p>
+          <p className="text-gray-600 mb-6">Veuillez vérifier votre connexion internet et réessayer.</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Afficher une erreur si l'utilisateur est hors ligne
   if (!isOnline) {
     return (
@@ -125,43 +150,43 @@ function App() {
             <div className="app-container">
               <Suspense fallback={<GlobalLoadingSpinner />}>
                 <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/category/:category" element={<CategoryPage />} />
-          <Route path="/provider/:id" element={<ProviderProfile />} />
-          <Route path="/providers" element={<AllProviders />} />
-          <Route path="/explorer" element={<Explorer />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/help" element={<HelpCenter />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+                  {/* Public routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/category/:category" element={<CategoryPage />} />
+                  <Route path="/provider/:id" element={<ProviderProfile />} />
+                  <Route path="/providers" element={<AllProviders />} />
+                  <Route path="/explorer" element={<Explorer />} />
+                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/help" element={<HelpCenter />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
 
-          {/* Protected routes */}
-          <Route path="/dashboard" element={
-            <AuthGuard>
-              <Dashboard />
-            </AuthGuard>
-          } />
-          <Route path="/profile" element={
-            <AuthGuard>
-              <Profile />
-            </AuthGuard>
-          } />
-          <Route path="/messages" element={
-            <AuthGuard>
-              <Messages />
-            </AuthGuard>
-          } />
-          <Route path="/provider-registration" element={
-            <AuthGuard>
-              <ProviderRegistration />
-            </AuthGuard>
-          } />
+                  {/* Protected routes */}
+                  <Route path="/dashboard" element={
+                    <AuthGuard>
+                      <Dashboard />
+                    </AuthGuard>
+                  } />
+                  <Route path="/profile" element={
+                    <AuthGuard>
+                      <Profile />
+                    </AuthGuard>
+                  } />
+                  <Route path="/messages" element={
+                    <AuthGuard>
+                      <Messages />
+                    </AuthGuard>
+                  } />
+                  <Route path="/provider-registration" element={
+                    <AuthGuard>
+                      <ProviderRegistration />
+                    </AuthGuard>
+                  } />
 
-          {/* 404 page */}
-          <Route path="*" element={<NotFound />} />
+                  {/* 404 page */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
               {/* Système de chat */}
