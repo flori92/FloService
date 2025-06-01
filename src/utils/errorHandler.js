@@ -125,7 +125,7 @@ export const useErrorHandler = () => {
  * @returns {Promise<any>} - Résultat de l'opération ou du fallback
  */
 export const safeTableOperation = async (supabase, tableName, operation, fallback = () => ({ data: null, error: null })) => {
-  const tableExists = await checkTableExists(supabase, tableName);
+
   
   if (tableExists) {
     return operation();
@@ -138,6 +138,6 @@ export default {
   getErrorMessage,
   handleSupabaseError,
   useErrorHandler,
-  checkTableExists,
+
   safeTableOperation
 };

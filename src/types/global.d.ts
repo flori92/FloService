@@ -15,7 +15,7 @@ declare module './lib/supabaseClient' {
   
   interface EnhancedSupabaseClient extends SupabaseClient {
     // Méthodes de vérification
-    checkTableExists: (tableName: string) => Promise<boolean>;
+
     isProvider: (userId: string) => Promise<boolean>;
     
     // Méthodes de récupération de données

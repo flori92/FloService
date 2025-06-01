@@ -39,14 +39,6 @@ class EnhancedSupabaseClient {
    */
   async safeOperation(tableName, operation, fallback) {
     try {
-      // Vérifier si la table existe
-      const exists = await this.checkTableExists(tableName);
-      
-      if (!exists) {
-        console.warn(`La table ${tableName} n'existe pas encore, migration probablement non appliquée`);
-        return fallback();
-      }
-      
       return operation();
     } catch (error) {
       console.error(`Erreur lors de l'opération sur la table ${tableName}:`, error);
@@ -55,18 +47,6 @@ class EnhancedSupabaseClient {
   }
   
   /**
-   * Vérifie si une table existe
-   * @param {string} tableName - Nom de la table à vérifier
-   * @returns {Promise<boolean>} - True si la table existe, false sinon
-   */
-  async checkTableExists(tableName) {
-    try {
-      // Utiliser une requête directe plutôt que RPC pour éviter les erreurs
-      const { data, error } = await this.client
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', tableName)
         .maybeSingle();
       
       if (error) {
