@@ -68,31 +68,59 @@ const useRealtimeSubscription = ({
   // S'abonner aux changements
   const subscribe = useCallback(() => {
     try {
-      // Créer un canal de communication
-      const channel = supabase.channel(`${schema}:${table}`);
-      
-      // Configurer les événements à écouter
-      const subscription = channel.on(
-        'postgres_changes',
-        {
-          event: events,
-          schema,
-          table,
-          ...filter
-        },
-        handleEvent
-      );
-      
-      // S'abonner au canal
-      subscription.subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsSubscribed(true);
-          setError(null);
+      // Vérifier d'abord si la table existe
+      const checkTableExists = async () => {
+        try {
+          const { data, error } = await supabase.rpc('check_table_exists', { 
+            table_name: table 
+          });
+          
+          if (error || !data) {
+            console.warn(`La table ${table} n'existe pas encore, abonnement impossible`);
+            return false;
+          }
+          
+          return true;
+        } catch (err) {
+          console.warn(`Erreur lors de la vérification de l'existence de la table ${table}:`, err);
+          return false;
         }
-      });
+      };
       
-      // Stocker la référence à l'abonnement
-      subscriptionRef.current = { channel, subscription };
+      // Créer un canal de communication seulement si la table existe
+      checkTableExists().then(tableExists => {
+        if (!tableExists) {
+          setError(new Error(`La table ${table} n'existe pas encore`));
+          setIsSubscribed(false);
+          return;
+        }
+        
+        // Créer le canal
+        const channel = supabase.channel(`${schema}:${table}`);
+        
+        // Configurer les événements à écouter
+        const subscription = channel.on(
+          'postgres_changes',
+          {
+            event: events,
+            schema,
+            table,
+            ...filter
+          },
+          handleEvent
+        );
+        
+        // S'abonner au canal
+        subscription.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            setIsSubscribed(true);
+            setError(null);
+          }
+        });
+        
+        // Stocker la référence à l'abonnement
+        subscriptionRef.current = { channel, subscription };
+      });
       
       return () => {
         if (subscriptionRef.current) {
@@ -139,11 +167,37 @@ const useRealtimeSubscription = ({
  * @param {Function} onNewMessage - Callback appelé lors de la réception d'un nouveau message
  */
 export const useMessageSubscription = (userId, onNewMessage) => {
+  // Vérifier d'abord si la table messages existe
+  const [tableExists, setTableExists] = useState(false);
+  
+  useEffect(() => {
+    const checkMessagesTable = async () => {
+      try {
+        const { data, error } = await supabase.rpc('check_table_exists', { 
+          table_name: 'messages' 
+        });
+        
+        if (!error && data) {
+          setTableExists(true);
+        }
+      } catch (err) {
+        console.warn('Erreur lors de la vérification de l\'existence de la table messages:', err);
+      }
+    };
+    
+    checkMessagesTable();
+  }, []);
+  
+  // Ne s'abonner que si la table existe
+  if (!tableExists) {
+    return { isSubscribed: false, error: new Error('La table messages n\'existe pas encore') };
+  }
+  
   return useRealtimeSubscription({
     table: 'messages',
     events: ['INSERT'],
     filter: {
-      filter: `recipient_id=eq.${userId}`
+      filter: userId ? `recipient_id=eq.${userId}` : undefined
     },
     onInsert: (message) => {
       if (onNewMessage) onNewMessage(message);
@@ -162,7 +216,7 @@ export const useProfileSubscription = (userId, onProfileUpdate) => {
     table: 'profiles',
     events: ['UPDATE'],
     filter: {
-      filter: `id=eq.${userId}`
+      filter: userId ? `id=eq.${userId}` : undefined
     },
     onUpdate: (newProfile, oldProfile) => {
       if (onProfileUpdate) onProfileUpdate(newProfile, oldProfile);
@@ -176,17 +230,50 @@ export const useProfileSubscription = (userId, onProfileUpdate) => {
  * @param {Function} onConversationUpdate - Callback appelé lors de la mise à jour d'une conversation
  */
 export const useConversationSubscription = (userId, onConversationUpdate) => {
+  // Vérifier d'abord si la table conversations existe
+  const [tableExists, setTableExists] = useState(false);
+  
+  useEffect(() => {
+    const checkConversationsTable = async () => {
+      try {
+        const { data, error } = await supabase.rpc('check_table_exists', { 
+          table_name: 'conversations' 
+        });
+        
+        if (!error && data) {
+          setTableExists(true);
+        }
+      } catch (err) {
+        console.warn('Erreur lors de la vérification de l\'existence de la table conversations:', err);
+      }
+    };
+    
+    checkConversationsTable();
+  }, []);
+  
+  // Ne s'abonner que si la table existe
+  if (!tableExists) {
+    return { isSubscribed: false, error: new Error('La table conversations n\'existe pas encore') };
+  }
+  
   return useRealtimeSubscription({
     table: 'conversations',
     events: ['UPDATE', 'INSERT'],
     filter: {
-      filter: `or(client_id.eq.${userId},provider_id.eq.${userId})`
+      filter: userId ? `or(client_id.eq.${userId},provider_id.eq.${userId})` : undefined
     },
     onUpdate: (newConversation, oldConversation) => {
-      if (onConversationUpdate) onConversationUpdate(newConversation, oldConversation);
+      if (onConversationUpdate) onConversationUpdate({
+        ...newConversation,
+        eventType: 'UPDATE',
+        oldData: oldConversation
+      });
     },
     onInsert: (newConversation) => {
-      if (onConversationUpdate) onConversationUpdate(newConversation);
+      if (onConversationUpdate) onConversationUpdate({
+        ...newConversation,
+        eventType: 'INSERT'
+      });
     }
   });
 };

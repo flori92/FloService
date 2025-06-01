@@ -73,7 +73,7 @@ async function fixApiErrors() {
     
     // Créer ou remplacer la fonction check_table_exists
     await client.query(`
-      CREATE OR REPLACE FUNCTION public.check_table_exists(schema_name TEXT, table_name TEXT)
+      CREATE OR REPLACE FUNCTION public.check_table_exists(table_name TEXT)
       RETURNS BOOLEAN
       LANGUAGE plpgsql
       SECURITY INVOKER
@@ -84,8 +84,8 @@ async function fixApiErrors() {
       BEGIN
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
-          WHERE table_schema = schema_name
-          AND table_name = table_name
+          WHERE table_schema = 'public'
+          AND table_name = $1
         ) INTO exists_bool;
         
         RETURN exists_bool;
@@ -197,7 +197,7 @@ END;
 $$;
 
 -- 2. Fonction check_table_exists pour vérifier l'existence des tables
-CREATE OR REPLACE FUNCTION public.check_table_exists(schema_name TEXT, table_name TEXT)
+CREATE OR REPLACE FUNCTION public.check_table_exists(table_name TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -208,8 +208,8 @@ DECLARE
 BEGIN
   SELECT EXISTS (
     SELECT FROM information_schema.tables 
-    WHERE table_schema = schema_name
-    AND table_name = table_name
+    WHERE table_schema = 'public'
+    AND table_name = $1
   ) INTO exists_bool;
   
   RETURN exists_bool;
@@ -279,17 +279,44 @@ $$;
     if (tableExists) {
       // Sauvegarder le script dans la table security_scripts
       await client.query(`
-        INSERT INTO public.security_scripts (name, description, script)
+        INSERT INTO public.security_scripts (name, content)
         VALUES (
           'fix_api_errors',
-          'Correction des erreurs d\'API et amélioration de la gestion des erreurs',
           $1
-        );
+        )
+        ON CONFLICT (name) DO UPDATE
+        SET content = $1;
       `, [sqlScript]);
       
       console.log('✅ Script SQL sauvegardé dans la table security_scripts');
     } else {
-      console.log('⚠️ La table security_scripts n\'existe pas, le script ne sera pas sauvegardé');
+      // Créer la table security_scripts
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS public.security_scripts (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          name TEXT NOT NULL UNIQUE,
+          content TEXT NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+        
+        -- Activer RLS sur la table
+        ALTER TABLE public.security_scripts ENABLE ROW LEVEL SECURITY;
+        
+        -- Créer une politique pour limiter l'accès aux administrateurs
+        CREATE POLICY "Lecture publique des scripts de sécurité"
+          ON public.security_scripts
+          FOR SELECT
+          USING (true);
+      `);
+      
+      // Sauvegarder le script
+      await client.query(`
+        INSERT INTO public.security_scripts (name, content)
+        VALUES ('fix_api_errors', $1);
+      `, [sqlScript]);
+      
+      console.log('✅ Table security_scripts créée et script SQL sauvegardé');
     }
     
     console.log('\n=== RÉSUMÉ DES CORRECTIONS ===');

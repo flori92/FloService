@@ -5,7 +5,6 @@
 
 // import { createClient } from '@supabase/supabase-js'; // Supprimé car nous utilisons l'instance de supabase-secure
 import { supabase as baseSupabaseClient } from './supabase-secure';
-import { safeTableOperation, getErrorMessage } from '../utils/errorHandler';
 
 // Configuration de base
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -27,6 +26,7 @@ class EnhancedSupabaseClient {
     this.storage = this.client.storage;
     this.channel = this.client.channel;
     this.removeChannel = this.client.removeChannel;
+    this.functions = this.client.functions;
   }
   
   /**
@@ -37,7 +37,27 @@ class EnhancedSupabaseClient {
    * @returns {Promise<any>} - Résultat de l'opération ou du fallback
    */
   async safeOperation(tableName, operation, fallback) {
-    return safeTableOperation(this.client, tableName, operation, fallback);
+    try {
+      // Vérifier si la table existe
+      const { data: exists, error: checkError } = await this.rpc('check_table_exists', { 
+        table_name: tableName 
+      });
+      
+      if (checkError) {
+        console.warn(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, checkError);
+        return fallback();
+      }
+      
+      if (!exists) {
+        console.warn(`La table ${tableName} n'existe pas encore, migration probablement non appliquée`);
+        return fallback();
+      }
+      
+      return operation();
+    } catch (error) {
+      console.error(`Erreur lors de l'opération sur la table ${tableName}:`, error);
+      return fallback();
+    }
   }
   
   /**
@@ -48,7 +68,7 @@ class EnhancedSupabaseClient {
   async getMessageCount(conversationId) {
     try {
       const { data, error } = await this.client.rpc('safe_message_count', { 
-        p_conversation_id: conversationId 
+        user_id: (await this.auth.getUser()).data.user?.id
       });
       
       if (error) throw error;
@@ -67,9 +87,12 @@ class EnhancedSupabaseClient {
    */
   async getUserProfile(userId) {
     try {
-      const { data, error } = await this.client.rpc('get_user_profile', { 
-        user_id: userId 
-      });
+      // Utiliser une requête simple pour éviter les erreurs 406
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
       
       if (error) throw error;
       
@@ -87,13 +110,16 @@ class EnhancedSupabaseClient {
    */
   async isProvider(userId) {
     try {
-      const { data, error } = await this.client.rpc('is_provider', { 
-        user_id: userId 
-      });
+      // Utiliser une requête simple pour éviter les erreurs 406
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('is_provider')
+        .eq('id', userId)
+        .single();
       
       if (error) throw error;
       
-      return !!data;
+      return !!data?.is_provider;
     } catch (error) {
       console.error('Erreur lors de la vérification du statut de prestataire:', error);
       return false;
@@ -102,47 +128,59 @@ class EnhancedSupabaseClient {
   
   /**
    * Crée ou récupère une conversation entre deux utilisateurs
-   * @param {string} participant1Id - ID du premier participant
-   * @param {string} participant2Id - ID du second participant
+   * @param {string} userId1 - ID du premier participant
+   * @param {string} userId2 - ID du second participant
    * @returns {Promise<Object>} - Conversation créée ou existante
    */
-  async getOrCreateConversation(participant1Id, participant2Id) {
+  async getOrCreateConversation(userId1, userId2) {
     try {
-      const { data, error } = await this.client.rpc('get_or_create_conversation', {
-        p_participant1_id: participant1Id,
-        p_participant2_id: participant2Id
-      });
-      
-      if (error) throw error;
-      
-      return data;
+      return await this.safeOperation(
+        'conversations',
+        async () => {
+          const { data, error } = await this.client.rpc('get_or_create_conversation', {
+            p_client_id: userId1,
+            p_provider_external_id: userId2
+          });
+          
+          if (error) throw error;
+          
+          return { data, error: null };
+        },
+        () => ({ data: null, error: new Error('La table conversations n\'existe pas encore') })
+      );
     } catch (error) {
       console.error('Erreur lors de la création/récupération de la conversation:', error);
-      throw new Error(getErrorMessage(error));
+      return { data: null, error };
     }
   }
   
   /**
    * Envoie un message dans une conversation
    * @param {string} conversationId - ID de la conversation
+   * @param {string} senderId - ID de l'expéditeur
    * @param {string} recipientId - ID du destinataire
    * @param {string} content - Contenu du message
    * @returns {Promise<Object>} - Message créé
    */
-  async sendMessage(conversationId, recipientId, content) {
+  async sendMessage(conversationId, senderId, recipientId, content) {
     try {
-      const { data, error } = await this.client.rpc('send_message', {
-        p_conversation_id: conversationId,
-        p_recipient_id: recipientId,
-        p_content: content
-      });
-      
-      if (error) throw error;
-      
-      return data;
+      return await this.safeOperation(
+        'messages',
+        async () => {
+          const { data, error } = await this.client.from('messages').insert({
+            conversation_id: conversationId,
+            sender_id: senderId,
+            recipient_id: recipientId,
+            content
+          }).select();
+          
+          return { data, error };
+        },
+        () => ({ data: null, error: new Error('La table messages n\'existe pas encore') })
+      );
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
-      throw new Error(getErrorMessage(error));
+      return { data: null, error };
     }
   }
   
@@ -155,18 +193,23 @@ class EnhancedSupabaseClient {
    */
   async getMessages(conversationId, limit = 50, offset = 0) {
     try {
-      const { data, error } = await this.client.rpc('get_messages', {
-        p_conversation_id: conversationId,
-        p_limit: limit,
-        p_offset: offset
-      });
-      
-      if (error) throw error;
-      
-      return data || [];
+      return await this.safeOperation(
+        'messages',
+        async () => {
+          const { data, error } = await this.client
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+          
+          return { data, error };
+        },
+        () => ({ data: [], error: null })
+      );
     } catch (error) {
       console.error('Erreur lors de la récupération des messages:', error);
-      throw new Error(getErrorMessage(error));
+      return { data: [], error };
     }
   }
   
@@ -178,41 +221,44 @@ class EnhancedSupabaseClient {
    */
   async markMessagesAsRead(conversationId, userId) {
     try {
-      const { data, error } = await this.client.rpc('mark_messages_as_read', {
-        p_conversation_id: conversationId,
-        p_user_id: userId
-      });
-      
-      if (error) throw error;
-      
-      return data || 0;
+      return await this.safeOperation(
+        'messages',
+        async () => {
+          const { data, error } = await this.client.rpc('mark_messages_as_read', {
+            p_conversation_id: conversationId,
+            p_user_id: userId
+          });
+          
+          return { data, error };
+        },
+        () => ({ data: 0, error: null })
+      );
     } catch (error) {
       console.error('Erreur lors du marquage des messages comme lus:', error);
-      return 0;
+      return { data: 0, error };
     }
   }
   
   /**
-   * Récupère les conversations d'un utilisateur
-   * @param {string} userId - ID de l'utilisateur
-   * @param {number} limit - Nombre maximum de conversations à récupérer
-   * @param {number} offset - Décalage pour la pagination
-   * @returns {Promise<Array>} - Liste des conversations
+   * Vérifie si une table existe
+   * @param {string} tableName - Nom de la table à vérifier
+   * @returns {Promise<boolean>} - True si la table existe, false sinon
    */
-  async getUserConversations(userId, limit = 20, offset = 0) {
+  async checkTableExists(tableName) {
     try {
-      const { data, error } = await this.client.rpc('get_user_conversations', {
-        p_user_id: userId,
-        p_limit: limit,
-        p_offset: offset
+      const { data, error } = await this.client.rpc('check_table_exists', { 
+        table_name: tableName 
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
+        return false;
+      }
       
-      return data || [];
+      return !!data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des conversations:', error);
-      return [];
+      console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
+      return false;
     }
   }
 }

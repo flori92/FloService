@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNotifier } from '../../components/ui/Notifier';
+import useErrorHandler from './useErrorHandler';
 
 /**
  * Hook pour effectuer des requêtes Supabase avec gestion d'état
@@ -32,6 +33,7 @@ const useSupabaseQuery = (queryFn, {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefetching, setIsRefetching] = useState(false);
   const notifier = useNotifier();
+  const { getErrorMessage } = useErrorHandler();
 
   // Fonction pour exécuter la requête
   const fetchData = useCallback(async (showLoading = true) => {
@@ -59,7 +61,7 @@ const useSupabaseQuery = (queryFn, {
       
       if (showErrorNotification) {
         notifier.error(
-          err.message || 'Une erreur est survenue lors de la récupération des données'
+          getErrorMessage(err) || 'Une erreur est survenue lors de la récupération des données'
         );
       }
       
@@ -71,7 +73,7 @@ const useSupabaseQuery = (queryFn, {
         setIsRefetching(false);
       }
     }
-  }, [queryFn, onSuccess, onError, showErrorNotification, notifier]);
+  }, [queryFn, onSuccess, onError, showErrorNotification, notifier, getErrorMessage]);
 
   // Fonction pour rafraîchir les données
   const refetch = useCallback(() => {
@@ -115,7 +117,12 @@ const useSupabaseQuery = (queryFn, {
  */
 export const useSupabaseRpc = (functionName, params = {}, options = {}) => {
   const queryFn = useCallback(() => {
-    return supabase.rpc(functionName, params);
+    try {
+      return supabase.rpc(functionName, params);
+    } catch (error) {
+      console.error(`Erreur lors de l'appel RPC ${functionName}:`, error);
+      return { data: null, error };
+    }
   }, [functionName, params]);
   
   return useSupabaseQuery(queryFn, options);
@@ -139,38 +146,43 @@ export const useSupabaseSelect = (table, queryOptions = {}, options = {}) => {
   } = queryOptions;
   
   const queryFn = useCallback(() => {
-    let query = supabase.from(table).select(select);
-    
-    // Appliquer les filtres d'égalité
-    if (eq) {
-      Object.entries(eq).forEach(([column, value]) => {
-        query = query.eq(column, value);
-      });
+    try {
+      let query = supabase.from(table).select(select);
+      
+      // Appliquer les filtres d'égalité
+      if (eq) {
+        Object.entries(eq).forEach(([column, value]) => {
+          query = query.eq(column, value);
+        });
+      }
+      
+      // Appliquer l'ordre
+      if (order) {
+        const { column, ascending = true } = order;
+        query = query.order(column, { ascending });
+      }
+      
+      // Appliquer la limite
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      // Appliquer la plage
+      if (range) {
+        const { from, to } = range;
+        query = query.range(from, to);
+      }
+      
+      // Appliquer un filtre personnalisé
+      if (filter && typeof filter === 'function') {
+        query = filter(query);
+      }
+      
+      return query;
+    } catch (error) {
+      console.error(`Erreur lors de la requête SELECT sur ${table}:`, error);
+      return { data: null, error };
     }
-    
-    // Appliquer l'ordre
-    if (order) {
-      const { column, ascending = true } = order;
-      query = query.order(column, { ascending });
-    }
-    
-    // Appliquer la limite
-    if (limit) {
-      query = query.limit(limit);
-    }
-    
-    // Appliquer la plage
-    if (range) {
-      const { from, to } = range;
-      query = query.range(from, to);
-    }
-    
-    // Appliquer un filtre personnalisé
-    if (filter && typeof filter === 'function') {
-      query = filter(query);
-    }
-    
-    return query;
   }, [table, select, eq, order, limit, range, filter, otherOptions]);
   
   return useSupabaseQuery(queryFn, options);
@@ -187,6 +199,7 @@ export const useSupabaseMutation = (table, operation, options = {}) => {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const notifier = useNotifier();
+  const { getErrorMessage } = useErrorHandler();
   
   const {
     onSuccess = () => {},
@@ -251,7 +264,7 @@ export const useSupabaseMutation = (table, operation, options = {}) => {
       
       if (showErrorNotification) {
         notifier.error(
-          err.message || 'Une erreur est survenue lors de l\'opération'
+          getErrorMessage(err) || 'Une erreur est survenue lors de l\'opération'
         );
       }
       
@@ -259,7 +272,7 @@ export const useSupabaseMutation = (table, operation, options = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [table, operation, onSuccess, onError, showSuccessNotification, showErrorNotification, successMessage, notifier]);
+  }, [table, operation, onSuccess, onError, showSuccessNotification, showErrorNotification, successMessage, notifier, getErrorMessage]);
   
   return {
     mutate,
