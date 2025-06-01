@@ -3,37 +3,22 @@
  * Centralise la configuration et améliore l'expérience utilisateur
  */
 
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js'; // Supprimé car nous utilisons l'instance de supabase-secure
+import { supabase as baseSupabaseClient } from './supabase-secure';
 import { safeTableOperation, getErrorMessage } from '../utils/errorHandler';
 
 // Configuration de base
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-// Création du client Supabase de base
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  },
-  global: {
-    headers: {
-      'x-application-name': 'FloService'
-    }
-  }
-});
+// La création du client Supabase de base est maintenant gérée dans supabase-secure.ts
 
 /**
  * Client Supabase amélioré avec méthodes supplémentaires
  */
 class EnhancedSupabaseClient {
-  constructor(baseClient) {
-    this.client = baseClient;
+  constructor(clientInstance) {
+    this.client = clientInstance; // Utilise l'instance fournie
     
     // Exposer les méthodes de base du client Supabase
     this.auth = this.client.auth;
@@ -233,7 +218,11 @@ class EnhancedSupabaseClient {
 }
 
 // Créer et exporter l'instance améliorée
-const enhancedSupabase = new EnhancedSupabaseClient(supabase);
+if (!baseSupabaseClient) {
+  console.error("ERREUR CRITIQUE: baseSupabaseClient (depuis supabase-secure.ts) est undefined lors de l'initialisation de EnhancedSupabaseClient. Vérifiez l'ordre d'importation/exécution des modules.");
+  throw new Error("Échec de l'initialisation du client Supabase de base.");
+}
+const enhancedSupabase = new EnhancedSupabaseClient(baseSupabaseClient);
 
 export default enhancedSupabase;
-export { supabase }; // Exporter également le client de base pour la compatibilité
+export { supabase }; // Exporter également le client de base pour la compatibilité (supabase est réexporté depuis supabase-secure.ts via supabase.ts)
