@@ -1,0 +1,3 @@
+[submodule "FloService"]
+    path = FloService
+    url = https://github.com/flori92/FloService.git
