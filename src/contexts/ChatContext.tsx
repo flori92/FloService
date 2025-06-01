@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import MigrationNotice from '../components/ui/MigrationNotice';
 
 interface ActiveChat {
   id: string;
@@ -28,6 +29,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMigrationNotice, setShowMigrationNotice] = useState(false);
+  const [migrationChecked, setMigrationChecked] = useState(false);
   
   // Effet pour restaurer les chats actifs depuis le localStorage - désactivé
   useEffect(() => {
@@ -42,6 +44,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       //     console.error('Erreur lors de la restauration des chats:', error);
       //   }
       // }
+      
+      // Vérifier si la migration est nécessaire
+      checkMigrationStatus();
       
       // S'abonner aux nouveaux messages
       const subscription = supabase
@@ -72,6 +77,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(`floservice_active_chats_${user.id}`, JSON.stringify(activeChats));
     }
   }, [activeChats, user]);
+  
+  // Fonction pour vérifier si la migration est nécessaire
+  const checkMigrationStatus = async () => {
+    if (migrationChecked) return;
+    
+    try {
+      // Vérifier si la table messages existe
+      const { error } = await supabase
+        .from('messages')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      // Si une erreur se produit, c'est probablement que la table n'existe pas
+      if (error) {
+        console.log('La table messages n\'existe pas encore, migration probablement non appliquée');
+        setShowMigrationNotice(true);
+      } else {
+        setShowMigrationNotice(false);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de la migration:', error);
+      setShowMigrationNotice(true);
+    } finally {
+      setMigrationChecked(true);
+    }
+  };
   
   // Fonction pour vérifier les messages non lus
   const checkUnreadMessages = async () => {
@@ -188,6 +218,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }}
     >
       {children}
+      {showMigrationNotice && <MigrationNotice onClose={hideMigrationNotice} />}
     </ChatContext.Provider>
   );
 };

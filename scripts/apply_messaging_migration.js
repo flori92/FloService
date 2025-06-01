@@ -1,6 +1,6 @@
 /**
  * Script pour appliquer la migration du système de messagerie
- * Ce script vérifie d'abord si les tables existent déjà avant de les créer
+ * Ce script exécute la migration SQL pour créer les tables et fonctions nécessaires
  */
 
 import pg from 'pg';
@@ -24,87 +24,122 @@ const pool = new Pool({
   }
 });
 
+// Fonction principale
 async function applyMessagingMigration() {
   console.log('🔧 Application de la migration du système de messagerie...');
   
   try {
     // Lire le fichier SQL
-    const sqlFilePath = path.join(__dirname, '..', 'supabase', 'migrations', '20250600000000_messaging_system.sql');
+    const sqlFilePath = path.join(__dirname, '..', 'supabase', 'migrations', '20250601160800_dark_hat.sql');
     const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
     
     // Diviser le script en instructions individuelles
-    const sqlStatements = sqlContent
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+    const sqlInstructions = sqlContent.split(';')
+      .map(instruction => instruction.trim())
+      .filter(instruction => instruction.length > 0)
+      .map(instruction => instruction + ';');
     
-    console.log(`📋 Exécution de ${sqlStatements.length} instructions SQL...`);
+    console.log(`📋 Exécution de ${sqlInstructions.length} instructions SQL...`);
     
-    // Connexion à la base de données
-    const client = await pool.connect();
+    // Exécuter chaque instruction séparément
+    let successCount = 0;
+    let errorCount = 0;
     
-    try {
-      // Commencer une transaction
-      await client.query('BEGIN');
+    for (let i = 0; i < sqlInstructions.length; i++) {
+      const instruction = sqlInstructions[i];
+      const instructionPreview = instruction.substring(0, 50).replace(/\n/g, ' ') + '...';
       
-      // Exécuter chaque instruction séparément
-      for (let i = 0; i < sqlStatements.length; i++) {
-        const statement = sqlStatements[i];
-        try {
-          await client.query(statement);
-          console.log(`✅ Instruction ${i + 1}/${sqlStatements.length} exécutée avec succès`);
-        } catch (error) {
-          // Si l'erreur est due à une table ou fonction qui existe déjà, on continue
-          if (error.message.includes('already exists')) {
-            console.log(`⚠️ Instruction ${i + 1}/${sqlStatements.length}: ${error.message}`);
-          } else {
-            throw error;
-          }
-        }
+      try {
+        await pool.query(instruction);
+        console.log(`✅ Instruction ${i + 1}/${sqlInstructions.length}: ${instructionPreview}`);
+        successCount++;
+      } catch (error) {
+        console.error(`❌ Erreur dans l'instruction ${i + 1}/${sqlInstructions.length}: ${instructionPreview}`);
+        console.error(`   ${error.message}`);
+        errorCount++;
       }
-      
-      // Valider la transaction
-      await client.query('COMMIT');
-      console.log('✅ Migration appliquée avec succès !');
-      
-      // Vérifier que les tables ont été créées
-      const tablesResult = await client.query(`
-        SELECT tablename 
-        FROM pg_tables 
-        WHERE schemaname = 'public' 
-        AND tablename IN ('conversations', 'messages', 'external_id_mapping', 'message_attachments')
-      `);
-      
-      console.log(`📊 Tables créées: ${tablesResult.rows.map(row => row.tablename).join(', ')}`);
-      
-      // Vérifier que les fonctions ont été créées
-      const functionsResult = await client.query(`
-        SELECT proname 
-        FROM pg_proc 
-        JOIN pg_namespace ON pg_proc.pronamespace = pg_namespace.oid 
-        WHERE nspname = 'public' 
-        AND proname IN ('check_table_exists', 'safe_message_count', 'get_or_create_conversation', 'send_message', 'mark_message_as_read', 'mark_messages_as_read', 'count_messages', 'get_messages', 'update_read_at')
-      `);
-      
-      console.log(`📊 Fonctions créées: ${functionsResult.rows.map(row => row.proname).join(', ')}`);
-      
-    } catch (error) {
-      // Annuler la transaction en cas d'erreur
-      await client.query('ROLLBACK');
-      console.error('❌ Erreur lors de l\'application de la migration:', error);
-    } finally {
-      // Libérer le client
-      client.release();
     }
+    
+    console.log(`\n📊 Résumé: ${successCount} instructions réussies, ${errorCount} instructions échouées sur ${sqlInstructions.length} total`);
+    
+    // Vérifier les résultats
+    await verifyMigration();
+    
+    console.log('\n✅ Migration du système de messagerie terminée!');
   } catch (error) {
-    console.error('❌ Erreur lors de la lecture du fichier SQL:', error);
+    console.error('❌ Erreur lors de l\'application de la migration:', error);
   } finally {
     // Fermer la connexion à la base de données
     await pool.end();
   }
 }
 
-// Exécuter la fonction
+// Fonction pour vérifier que la migration a été appliquée correctement
+async function verifyMigration() {
+  console.log('\n🔍 Vérification de la migration...');
+  
+  // Vérifier que les tables ont été créées
+  const tables = ['conversations', 'messages', 'external_id_mapping', 'message_attachments'];
+  for (const table of tables) {
+    const { rows } = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      );
+    `, [table]);
+    
+    if (rows[0].exists) {
+      console.log(`✅ Table ${table} créée avec succès`);
+    } else {
+      console.error(`❌ La table ${table} n'a pas été créée`);
+    }
+  }
+  
+  // Vérifier que les fonctions ont été créées
+  const functions = [
+    'check_table_exists', 
+    'safe_message_count', 
+    'get_or_create_conversation', 
+    'send_message',
+    'mark_message_as_read',
+    'mark_messages_as_read',
+    'count_messages',
+    'get_messages',
+    'update_read_at'
+  ];
+  
+  for (const func of functions) {
+    const { rows } = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM pg_proc
+        WHERE proname = $1
+        AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+      );
+    `, [func]);
+    
+    if (rows[0].exists) {
+      console.log(`✅ Fonction ${func} créée avec succès`);
+    } else {
+      console.error(`❌ La fonction ${func} n'a pas été créée`);
+    }
+  }
+  
+  // Vérifier que les politiques RLS ont été créées
+  const { rows: policies } = await pool.query(`
+    SELECT tablename, policyname
+    FROM pg_policies
+    WHERE schemaname = 'public'
+    AND tablename IN ('conversations', 'messages', 'external_id_mapping', 'message_attachments');
+  `);
+  
+  console.log(`\n✅ ${policies.length} politiques RLS créées:`);
+  policies.forEach(policy => {
+    console.log(`   - ${policy.policyname} (${policy.tablename})`);
+  });
+}
+
+// Exécuter la fonction principale
 applyMessagingMigration().catch(err => {
   console.error('Erreur non gérée:', err);
   process.exit(1);
