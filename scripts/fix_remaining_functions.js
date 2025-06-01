@@ -44,8 +44,16 @@ async function fixRemainingFunctions() {
 
 `;
     
-    // Liste des fonctions problématiques
+    // Liste des fonctions problématiques identifiées lors de notre dernière vérification
     const problematicFunctions = [
+      'count_messages',
+      'mark_message_as_read',
+      'mark_messages_as_read',
+      'send_message',
+      // Autres fonctions identifiées dans le Security Advisor de Supabase
+      'safe_message_count',
+      'check_table_exists',
+      'get_or_create_conversation',
       'find_nearby_providers',
       'get_available_slots',
       'get_provider_availability_slots'

@@ -1,5 +1,43 @@
 -- Script de correction manuelle des fonctions problématiques
--- Généré automatiquement le 2025-06-01T09:52:42.469Z
+-- Généré automatiquement le 2025-06-01T14:51:06.454Z
+
+-- Correction de la fonction count_messages
+
+ALTER FUNCTION public.count_messages(p_user_id uuid)
+SET search_path = public;
+
+
+-- Correction de la fonction mark_message_as_read
+
+ALTER FUNCTION public.mark_message_as_read(p_message_id uuid)
+SET search_path = public;
+
+
+-- Correction de la fonction mark_messages_as_read
+
+ALTER FUNCTION public.mark_messages_as_read(p_conversation_id uuid)
+SET search_path = public;
+
+
+-- Correction de la fonction send_message
+
+ALTER FUNCTION public.send_message(p_conversation_id uuid, p_content text)
+SET search_path = public;
+
+
+-- ERREUR lors de la correction de la fonction safe_message_count: syntax error at or near "DEFAULT"
+-- ÉCHEC de la correction via ALTER FUNCTION pour safe_message_count: syntax error at or near "DEFAULT"
+-- Correction de la fonction check_table_exists
+
+ALTER FUNCTION public.check_table_exists(table_name text)
+SET search_path = public;
+
+
+-- Correction de la fonction get_or_create_conversation
+
+ALTER FUNCTION public.get_or_create_conversation(p_client_id uuid, p_provider_external_id text)
+SET search_path = public;
+
 
 -- ERREUR lors de la correction de la fonction find_nearby_providers: syntax error at or near "DEFAULT"
 -- ÉCHEC de la correction via ALTER FUNCTION pour find_nearby_providers: syntax error at or near "DEFAULT"
