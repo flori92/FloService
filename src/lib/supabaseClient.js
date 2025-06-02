@@ -1,66 +1,34 @@
 /**
  * Client Supabase amélioré avec gestion d'erreurs et fonctionnalités avancées
- * Centralise la configuration et améliore l'expérience utilisateur
+ * Version compatible navigateur (sans require)
  */
 
-// Création d'un client Supabase sécurisé avec gestion d'erreurs complète
-let supabaseInstance = null;
-
-// Fonction d'initialisation du client Supabase
-const initSupabase = () => {
-  try {
-    // Import dynamique pour éviter les erreurs de référence
-    const { createClient } = require('@supabase/supabase-js');
-    
-    // Récupération des variables d'environnement avec fallback
-    const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'https://rnxfgvpuaylyhjpzlujx.supabase.co');
-    const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGZndnB1YXlseWhqcHpsdWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo');
-    
-    // Création du client avec options sécurisées
-    return createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
-      },
-      global: {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Erreur critique lors de l\'initialisation de Supabase:', error);
-    return createFallbackClient();
-  }
-};
+// Import ES modules au niveau supérieur (compatible navigateur)
+import { createClient } from '@supabase/supabase-js';
 
 // Fonction pour récupérer les variables d'environnement de manière sécurisée
 const getEnvVar = (name, fallback) => {
   // Essayer toutes les sources possibles avec gestion d'erreur
   try {
-    // Vite
+    // Vite (environnement de build)
     if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[name]) {
       return import.meta.env[name];
     }
-  } catch (e) {}
-  
-  try {
-    // React
-    if (typeof process !== 'undefined' && process.env && process.env[name]) {
-      return process.env[name];
-    }
-  } catch (e) {}
+  } catch (e) {
+    console.warn(`Erreur lors de l'accès à import.meta.env[${name}]:`, e);
+  }
   
   try {
     // Variables injectées dans window
     if (typeof window !== 'undefined' && window.ENV && window.ENV[name]) {
       return window.ENV[name];
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn(`Erreur lors de l'accès à window.ENV[${name}]:`, e);
+  }
   
-  // Valeur par défaut
+  // Valeur par défaut si aucune variable n'est trouvée
+  console.warn(`Variable d'environnement ${name} non trouvée, utilisation de la valeur par défaut`);
   return fallback;
 };
 
@@ -132,15 +100,31 @@ const createFallbackClient = () => {
   };
 };
 
+// Récupération des variables d'environnement avec fallback
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'https://sxrofrdhpzpjqkplgoij.supabase.co');
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4cm9mcmRocHpwanFrcGxnb2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo');
+
 // Initialisation du client une seule fois
-if (!supabaseInstance) {
-  try {
-    supabaseInstance = initSupabase();
-    console.log('Client Supabase initialisé avec succès');
-  } catch (e) {
-    console.error('Erreur lors de l\'initialisation du client Supabase:', e);
-    supabaseInstance = createFallbackClient();
-  }
+let supabaseInstance = null;
+try {
+  // Création du client avec options sécurisées
+  supabaseInstance = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    },
+    global: {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }
+  });
+  console.log('Client Supabase initialisé avec succès');
+} catch (e) {
+  console.error('Erreur lors de l\'initialisation du client Supabase:', e);
+  supabaseInstance = createFallbackClient();
 }
 
 /**
@@ -174,14 +158,25 @@ class EnhancedSupabaseClient {
    */
   async safeOperation(tableName, operation, fallback) {
     try {
-      return operation();
+      return await operation();
     } catch (error) {
       console.error(`Erreur lors de l'opération sur la table ${tableName}:`, error);
-      return fallback();
+      return await fallback();
     }
   }
   
   /**
+   * Vérifie si une table existe dans la base de données
+   * @param {string} tableName - Nom de la table à vérifier
+   * @returns {Promise<boolean>} - True si la table existe, false sinon
+   */
+  async tableExists(tableName) {
+    try {
+      const { data, error } = await this.client
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', tableName)
         .maybeSingle();
       
       if (error) {
@@ -204,7 +199,7 @@ class EnhancedSupabaseClient {
   async getMessageCount(conversationId) {
     try {
       const { data, error } = await this.client.rpc('safe_message_count', { 
-        user_id: (await this.auth.getUser()).data.user?.id
+        conversation_id: conversationId 
       });
       
       if (error) throw error;
@@ -217,36 +212,12 @@ class EnhancedSupabaseClient {
   }
   
   /**
-   * Récupère le profil utilisateur de manière sécurisée
-   * @param {string} userId - ID de l'utilisateur
-   * @returns {Promise<Object>} - Profil utilisateur ou null si erreur
-   */
-  async getUserProfile(userId) {
-    try {
-      // Utiliser une requête simple pour éviter les erreurs 406
-      const { data, error } = await this.client
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error('Erreur lors de la récupération du profil:', error);
-      return null;
-    }
-  }
-  
-  /**
    * Vérifie si un utilisateur est un prestataire
-   * @param {string} userId - ID de l'utilisateur
+   * @param {string} userId - ID de l'utilisateur à vérifier
    * @returns {Promise<boolean>} - True si l'utilisateur est un prestataire, false sinon
    */
   async isProvider(userId) {
     try {
-      // Utiliser une requête simple pour éviter les erreurs 406
       const { data, error } = await this.client
         .from('profiles')
         .select('is_provider')
@@ -300,19 +271,38 @@ class EnhancedSupabaseClient {
    */
   async sendMessage(conversationId, senderId, recipientId, content) {
     try {
+      // Vérifier si l'ID est au format UUID ou au format "tg-X"
+      const safeId = (id) => {
+        if (typeof id === 'string' && (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) || id.match(/^tg-\d+$/))) {
+          return id;
+        }
+        console.warn(`ID non valide détecté: ${id}, utilisation d'un ID de secours`);
+        return 'fallback-id';
+      };
+      
       return await this.safeOperation(
         'messages',
         async () => {
-          const { data, error } = await this.client.from('messages').insert({
-            conversation_id: conversationId,
-            sender_id: senderId,
-            recipient_id: recipientId,
-            content
-          }).select();
+          const { data, error } = await this.client
+            .from('messages')
+            .insert({
+              conversation_id: conversationId,
+              sender_id: safeId(senderId),
+              recipient_id: safeId(recipientId),
+              content,
+              read: false
+            })
+            .select()
+            .single();
           
-          return { data, error };
+          if (error) throw error;
+          
+          return { data, error: null };
         },
-        () => ({ data: null, error: new Error('La table messages n\'existe pas encore') })
+        () => ({ 
+          data: null, 
+          error: new Error('La table messages n\'existe pas encore ou une erreur est survenue lors de l\'envoi') 
+        })
       );
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
@@ -324,8 +314,8 @@ class EnhancedSupabaseClient {
    * Récupère les messages d'une conversation
    * @param {string} conversationId - ID de la conversation
    * @param {number} limit - Nombre maximum de messages à récupérer
-   * @param {number} offset - Décalage pour la pagination
-   * @returns {Promise<Array>} - Liste des messages
+   * @param {number} offset - Offset pour la pagination
+   * @returns {Promise<Object>} - Liste des messages
    */
   async getMessages(conversationId, limit = 50, offset = 0) {
     try {
@@ -339,9 +329,11 @@ class EnhancedSupabaseClient {
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
           
-          return { data, error };
+          if (error) throw error;
+          
+          return { data, error: null };
         },
-        () => ({ data: [], error: null })
+        () => ({ data: [], error: new Error('La table messages n\'existe pas encore') })
       );
     } catch (error) {
       console.error('Erreur lors de la récupération des messages:', error);
@@ -350,10 +342,10 @@ class EnhancedSupabaseClient {
   }
   
   /**
-   * Marque tous les messages d'une conversation comme lus
+   * Marque les messages comme lus
    * @param {string} conversationId - ID de la conversation
-   * @param {string} userId - ID de l'utilisateur
-   * @returns {Promise<number>} - Nombre de messages marqués comme lus
+   * @param {string} userId - ID de l'utilisateur qui lit les messages
+   * @returns {Promise<Object>} - Résultat de l'opération
    */
   async markMessagesAsRead(conversationId, userId) {
     try {
@@ -376,24 +368,8 @@ class EnhancedSupabaseClient {
   }
 }
 
-// Vérification de l'existence du client de base
-if (!supabaseInstance) {
-  console.error("ERREUR CRITIQUE: supabaseInstance est undefined lors de l'initialisation de EnhancedSupabaseClient. Vérifiez l'ordre d'importation/exécution des modules.");
-  // Pas de throw pour éviter les crashs en production, on utilisera le client de secours
-  console.warn("Utilisation du client de secours pour éviter le crash de l'application");
-}
-// Création de l'instance améliorée du client Supabase avec gestion des erreurs
+// Création de l'instance améliorée du client Supabase
 const enhancedClient = new EnhancedSupabaseClient(supabaseInstance);
-
-// Ajout de méthodes spécifiques pour gérer les ID non-UUID
-enhancedClient.handleNonUuidId = (id) => {
-  // Vérification si l'ID est au format UUID ou au format "tg-X"
-  if (typeof id === 'string' && (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) || id.match(/^tg-\d+$/))) {
-    return id;
-  }
-  console.warn(`ID non valide détecté: ${id}, utilisation d'un ID de secours`);
-  return 'fallback-id';
-};
 
 // Méthode pour vérifier si les migrations ont été appliquées
 enhancedClient.checkMigrationsApplied = async () => {
@@ -419,6 +395,16 @@ enhancedClient.checkMigrationsApplied = async () => {
     console.error('Erreur lors de la vérification des migrations:', error);
     return false;
   }
+};
+
+// Méthode pour gérer les ID non-UUID
+enhancedClient.handleNonUuidId = (id) => {
+  // Vérification si l'ID est au format UUID ou au format "tg-X"
+  if (typeof id === 'string' && (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) || id.match(/^tg-\d+$/))) {
+    return id;
+  }
+  console.warn(`ID non valide détecté: ${id}, utilisation d'un ID de secours`);
+  return 'fallback-id';
 };
 
 // Export par défaut du client amélioré
