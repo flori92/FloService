@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { MapPin, Star, Briefcase, Clock, Award, Mail, Phone } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
 import { Alert } from '../components/ui/Alert';
-import ChatButton from '../components/ui/ChatButton';
+import ChatButton from '../components/chat/ChatButton';
 
 // Interface pour les données du profil prestataire
 interface ProviderProfileData {
