@@ -71,21 +71,41 @@ function App() {
           throw new Error('Client Supabase non initialisé correctement. Vérifiez les variables d\'environnement.');
         }
         
-        // Vérification de la connexion à Supabase avec plus de détails en cas d'erreur
+        // Vérification de la connexion à Supabase avec gestion des erreurs améliorée
         console.log('Tentative de connexion à Supabase...');
-        const { error } = await enhancedSupabase.from('profiles').select('id').limit(1);
         
-        if (error) {
+        try {
+          // Vérification simple de la connexion sans dépendre de méthodes spécifiques
+          const query = enhancedSupabase.from('profiles').select('id');
+          
+          // Vérifier si la méthode limit est disponible avant de l'utiliser
+          const result = 'limit' in query 
+            ? await query.limit(1)
+            : await query;
+            
+          if ('error' in result && result.error) {
+            console.warn('Erreur lors de la vérification de la connexion à Supabase:', {
+              message: result.error.message,
+              code: result.error.code,
+              details: result.error.details,
+              hint: result.error.hint
+            });
+          } else {
+            console.log('✅ Connexion à Supabase établie avec succès');
+          }
+        } catch (err) {
+          // Gestion des erreurs avec typage sûr
+          const error = err as Error & { code?: string; details?: string; hint?: string };
           console.warn('Erreur lors de la vérification de la connexion à Supabase:', {
-            message: error.message,
+            message: error.message || 'Erreur inconnue',
             code: error.code,
             details: error.details,
             hint: error.hint
           });
           // On continue malgré l'erreur pour permettre l'affichage des notifications
-        } else {
-          console.log('✅ Connexion à Supabase établie avec succès');
         }
+        
+        console.log('✅ Vérification de la connexion à Supabase terminée');
         
         setIsAppReady(true);
       } catch (error) {
