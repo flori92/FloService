@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import supabase from '../lib/supabaseClient';
 import { handleSupabaseError, checkTableExists, isTestId, isValidUUID, cleanIdForSupabase } from '../utils/migrationChecker';
 import { toast } from 'react-hot-toast';
 import { MapPin, Star, Briefcase, Clock, Award, Mail, Phone } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
-import Alert from '../components/ui/Alert';
+import { Alert } from '../components/ui/Alert';
 import ChatButton from '../components/ui/ChatButton';
 
 // Interface pour les données du profil prestataire
