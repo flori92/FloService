@@ -43,14 +43,31 @@ export default function Profile() {
         .eq('id', user.id)
         .single();
 
-      if (error || !data || typeof data !== 'object' || !('id' in data)) {
+      if (error) {
+        console.error('Erreur lors du chargement du profil:', error.message, error.code);
         toast.error("Impossible de charger votre profil");
         setLoading(false);
         return;
       }
       
-      // Conversion sécurisée en deux étapes
-      const profileData = data as unknown as Profile;
+      // Vérification et création sécurisée du profil
+      if (!data) {
+        console.warn('Données de profil manquantes');
+        toast.error("Impossible de charger votre profil: données manquantes");
+        setLoading(false);
+        return;
+      }
+      
+      // Création sécurisée du profil à partir des données
+      // Utilisation d'une assertion de type pour contourner les limitations du typage Supabase
+      const rawData = data as any;
+      const profileData: Profile = {
+        id: rawData.id || user.id,
+        full_name: rawData.full_name || null,
+        business_name: rawData.business_name || null,
+        phone: rawData.phone || null,
+        avatar_url: rawData.avatar_url || null
+      };
       
       // Maintenant nous pouvons utiliser profileData en toute sécurité
       setProfile(profileData);
