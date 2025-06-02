@@ -131,26 +131,29 @@ export const createSupabaseClient = () => {
       throw new Error('Configuration Supabase incomplète');
     }
 
+    // Configuration du client Supabase avec typage correct
     const supabaseOptions = {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-  // Désactiver les requêtes de télémétrie
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
-  global: {
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Accept-Profile': 'public',
-    },
-  },
-};
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+      // Désactiver les requêtes de télémétrie
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+      global: {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Accept-Profile': 'public',
+          'Content-Profile': 'public',
+        },
+      },
+      // Le schéma est défini directement dans le type Database
+    } as const; // Utilisation de 'as const' pour le typage littéral
 
     // Vérification de la connexion au démarrage
     const checkInitialConnection = async () => {
@@ -212,23 +215,76 @@ export function safeSearchTerm(term: string): string {
 // Fonction utilitaire pour vérifier si l'utilisateur est un prestataire
 export const isProvider = async (userId?: string): Promise<boolean> => {
   try {
-    if (!supabase || !('rpc' in supabase)) {
-      console.error('Client Supabase non initialisé ou méthode rpc non disponible');
+    // Vérification du client Supabase
+    if (!supabase) {
+      console.error('❌ Client Supabase non initialisé');
       return false;
     }
 
-    const { data, error } = await supabase.rpc('is_provider', 
-      userId ? { user_id: userId } : {}
-    );
-    
-    if (error) {
-      console.error('Erreur lors de la vérification du statut prestataire:', error);
+    // Si aucun userId n'est fourni, vérifier l'utilisateur connecté
+    if (!userId) {
+      try {
+        // Essayer d'abord avec getSession() si disponible
+        if ('getSession' in supabase.auth) {
+          const { data: { session } } = await (supabase.auth as any).getSession();
+          if (session?.user) {
+            userId = session.user.id;
+          }
+        } 
+        // Sinon essayer avec user()
+        else if ('user' in supabase.auth) {
+          const user = (supabase.auth as any).user();
+          if (user) {
+            userId = user.id;
+          }
+        }
+
+        if (!userId) {
+          console.error('❌ Aucun utilisateur connecté et aucun userId fourni');
+          return false;
+        }
+      } catch (err) {
+        console.error('❌ Erreur lors de la récupération de l\'utilisateur:', err);
+        return false;
+      }
+    }
+
+    try {
+      // Essayer d'abord d'utiliser la méthode RPC si elle est disponible
+      if ('rpc' in supabase) {
+        try {
+          const { data: rpcCheck, error: rpcError } = await (supabase as any).rpc('is_provider', { user_id: userId });
+          if (!rpcError) {
+            return rpcCheck === true;
+          }
+          console.warn('La fonction RPC a échoué, utilisation de la méthode alternative');
+        } catch (rpcErr) {
+          console.warn('Erreur lors de l\'appel RPC is_provider:', rpcErr);
+        }
+      }
+      
+      // Méthode alternative : requête directe sur la table profiles
+      console.log('Utilisation de la méthode alternative pour vérifier le statut prestataire');
+      
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .select('is_provider')
+        .eq('id', userId);
+      
+      if (error || !data || data.length === 0) {
+        console.error('❌ Erreur lors de la vérification du statut prestataire:', error || 'Aucune donnée retournée');
+        return false;
+      }
+      
+      // Retourner la valeur de is_provider ou false si non défini
+      return data[0]?.is_provider === true;
+      
+    } catch (err) {
+      console.error('❌ Exception lors de la vérification du statut prestataire:', err);
       return false;
     }
-    
-    return data === true;
   } catch (err) {
-    console.error('Exception lors de la vérification du statut prestataire:', err);
+    console.error('❌ Erreur critique dans isProvider:', err);
     return false;
   }
 };
