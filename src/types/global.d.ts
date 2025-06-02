@@ -2,6 +2,26 @@
  * Déclarations de types globales pour les composants d'amélioration UX
  */
 
+// Déclaration pour les variables d'environnement globales
+interface Window {
+  ENV?: {
+    SUPABASE_URL?: string;
+    SUPABASE_ANON_KEY?: string;
+    [key: string]: string | undefined;
+  };
+}
+
+// Déclaration pour process.env en environnement non-Node
+declare namespace NodeJS {
+  interface ProcessEnv {
+    VITE_SUPABASE_URL?: string;
+    VITE_SUPABASE_ANON_KEY?: string;
+    REACT_APP_SUPABASE_URL?: string;
+    REACT_APP_SUPABASE_ANON_KEY?: string;
+    [key: string]: string | undefined;
+  }
+}
+
 // Déclaration pour les fichiers JSX
 declare module '*.jsx' {
   import React from 'react';

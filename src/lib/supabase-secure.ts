@@ -46,14 +46,39 @@ export interface Database {
   };
 }
 
-// Récupération des variables d'environnement
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Fonction sécurisée pour récupérer les variables d'environnement
+const getEnvVariable = (key: string, defaultValue: string): string => {
+  // Vérifier d'abord import.meta.env (Vite)
+  const viteValue = (import.meta as any).env?.[key];
+  if (viteValue) return viteValue;
+  
+  // Vérifier ensuite process.env (Node.js/React)
+  const processValue = typeof process !== 'undefined' && process.env && (process.env as any)[key];
+  if (processValue) return processValue;
+  
+  // Vérifier window.ENV (injection runtime)
+  const windowValue = typeof window !== 'undefined' && window.ENV && window.ENV[key];
+  if (windowValue) return windowValue;
+  
+  // Retourner la valeur par défaut
+  console.warn(`Variable d'environnement ${key} non trouvée, utilisation de la valeur par défaut`);
+  return defaultValue;
+};
+
+// Récupération des variables d'environnement avec fallback
+const supabaseUrl = getEnvVariable(
+  'VITE_SUPABASE_URL',
+  'https://rnxfgvpuaylyhjpzlujx.supabase.co'
+);
+
+const supabaseAnonKey = getEnvVariable(
+  'VITE_SUPABASE_ANON_KEY',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGZndnB1YXlseWhqcHpsdWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo'
+);
 
 // Vérification de la présence des variables d'environnement
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Les variables d'environnement Supabase sont manquantes");
-  throw new Error("Configuration Supabase incomplète");
+  console.error("Les variables d'environnement Supabase sont manquantes, utilisation des valeurs par défaut");
 }
 
 // Options de configuration sécurisées
