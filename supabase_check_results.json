@@ -1,0 +1,112 @@
+{
+  "tables": {
+    "profiles": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "provider_profiles": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "messages": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "conversations": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "notifications": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "pays": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "villes": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "categories": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "subcategories": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "providers": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "provider_applications": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "provider_availability": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "provider_availability_exceptions": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "service_offers": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "payments": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "invoices": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "reviews": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "bookings": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "withdrawals": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "user_settings": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "external_id_mapping": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "portfolio_items": {
+      "exists": false,
+      "error": "Invalid API key"
+    }
+  },
+  "rpcFunctions": {
+    "is_provider": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "get_provider_status": {
+      "exists": false,
+      "error": "Invalid API key"
+    },
+    "check_migration_status": {
+      "exists": false,
+      "error": "Invalid API key"
+    }
+  },
+  "summary": {
+    "existingTables": 0,
+    "missingTables": 22,
+    "existingFunctions": 0,
+    "missingFunctions": 3
+  }
+}
