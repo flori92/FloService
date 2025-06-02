@@ -102,7 +102,7 @@ const createFallbackClient = () => {
 
 // Récupération des variables d'environnement avec fallback
 const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'https://sxrofrdhpzpjqkplgoij.supabase.co');
-const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4cm9mcmRocHpwanFrcGxnb2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo');
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4cm9mcmRocHpwanFrcGxnb2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxNjY2NzksImV4cCI6MjA2Mzc0MjY3OX0.ddLsIbp814amozono-gIhjNPWYE4Lgo20dJmG3Q-Cww');
 
 // Initialisation du client une seule fois
 let supabaseInstance = null;

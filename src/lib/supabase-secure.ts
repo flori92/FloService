@@ -68,12 +68,12 @@ const getEnvVariable = (key: string, defaultValue: string): string => {
 // Récupération des variables d'environnement avec fallback
 const supabaseUrl = getEnvVariable(
   'VITE_SUPABASE_URL',
-  'https://rnxfgvpuaylyhjpzlujx.supabase.co'
+  'https://sxrofrdhpzpjqkplgoij.supabase.co'
 );
 
 const supabaseAnonKey = getEnvVariable(
   'VITE_SUPABASE_ANON_KEY',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGZndnB1YXlseWhqcHpsdWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4cm9mcmRocHpwanFrcGxnb2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxNjY2NzksImV4cCI6MjA2Mzc0MjY3OX0.ddLsIbp814amozono-gIhjNPWYE4Lgo20dJmG3Q-Cww'
 );
 
 // Vérification de la présence des variables d'environnement
