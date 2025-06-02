@@ -12,7 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const redirectTo = searchParams.get('redirect') || '/';
   const intl = useIntl();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -20,7 +20,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // Utilisation de la méthode d'authentification par email/mot de passe
+      const { error } = await (supabase.auth as any).signIn({
         email,
         password,
       });
@@ -29,22 +30,14 @@ export default function Login() {
 
       toast.success('Connexion réussie !');
       
-      // Vérifier si la redirection est une URL complète ou un chemin relatif
-      try {
-        // Si c'est une URL complète, on utilise window.location
-        if (redirectTo.startsWith('http')) {
-          window.location.href = redirectTo;
-        } else {
-          // Sinon on utilise la navigation React Router
-          navigate(redirectTo);
-        }
-      } catch (e) {
-        // En cas d'erreur, on redirige vers la page d'accueil
-        console.error('Erreur lors de la redirection:', e);
-        navigate('/');
-      }
+      // Redirection vers la page d'accueil après connexion réussie
+      navigate(redirectTo);
+      
     } catch (error: any) {
-      toast.error(error?.message || 'Une erreur est survenue lors de la connexion');
+      // Gestion des erreurs d'authentification
+      console.error('Erreur de connexion:', error);
+      const errorMessage = error?.message || 'Identifiants incorrects';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

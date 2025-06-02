@@ -35,6 +35,7 @@ const GlobalLoadingSpinner = () => (
 const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const Header = React.lazy(() => import('./components/Header'));
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -60,7 +61,14 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  return children;
+  return (
+    <>
+      <Header />
+      <div className="pt-20">
+        {children}
+      </div>
+    </>
+  );
 };
 
 // Composant principal de l'application
