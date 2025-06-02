@@ -1,96 +1,141 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, Star, MapPin, Clock, Phone, Mail, Award, Globe } from 'lucide-react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import { useAuthStore } from '../store/authStore';
+import { supabase } from '../supabaseClient';
+import { handleSupabaseError, checkTableExists, isTestId, isValidUUID, cleanIdForSupabase } from '../utils/migrationChecker';
+import { toast } from 'react-hot-toast';
+import { MapPin, Star, Briefcase, Clock, Award, Mail, Phone } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
-import ChatButton from '../components/chat/ChatButton';
-import { supabase } from '../lib/supabase';
-import toast from 'react-hot-toast';
-import { isValidUUID } from '../utils/validation';
-import { fetchProviderData as fetchProviderDataHelper } from '../utils/supabaseHelpers';
+import Alert from '../components/ui/Alert';
+import ChatButton from '../components/ui/ChatButton';
 
-interface ProviderProfile {
+// Interface pour les données du profil prestataire
+interface ProviderProfileData {
   id: string;
   full_name: string;
   avatar_url?: string;
   business_name?: string;
   bio?: string;
-  is_provider: boolean;
-  role?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
+  is_provider?: boolean;
   city?: string;
-  country?: string;
   provider_profiles?: {
     specialization?: string;
     experience_years?: number;
     hourly_rate?: number;
-    availability?: string[];
     rating?: number;
     reviews_count?: number;
   };
 }
 
-const defaultProfile: ProviderProfile = {
+// Profil par défaut pour éviter les erreurs de données manquantes
+const defaultProfile: ProviderProfileData = {
   id: '',
-  full_name: 'Utilisateur',
+  full_name: 'Prestataire',
+  avatar_url: '/default-avatar.png',
+  business_name: '',
+  bio: 'Informations non disponibles',
   is_provider: true,
-  avatar_url: '',
-  bio: '',
-  city: ''
+  city: '',
+  provider_profiles: {
+    specialization: '',
+    experience_years: 0,
+    hourly_rate: 0,
+    rating: 0,
+    reviews_count: 0
+  }
 };
 
+// Composant principal de la page de profil prestataire
 const ProviderProfile: React.FC = () => {
+  // Récupération de l'ID du prestataire depuis l'URL
   const { id: rawId } = useParams<{ id: string }>();
-  const cleanedProviderId = rawId?.split(':')[0];
-
-  const [providerData, setProviderData] = useState<ProviderProfile>(defaultProfile);
-  const [loading, setLoading] = useState(true);
+  const cleanedProviderId = rawId ? rawId.split(':')[0] : null;
+  
+  // États pour gérer le chargement, les erreurs et les données
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [migrationRequired, setMigrationRequired] = useState(false);
-  const { user } = useAuthStore();
+  const [migrationRequired, setMigrationRequired] = useState<boolean>(false);
+  const [providerData, setProviderData] = useState<ProviderProfileData>(defaultProfile);
+  
+  // Hooks pour la navigation et le chat
   const { openChat } = useChat();
   const navigate = useNavigate();
   
   // Fonction utilitaire pour créer un profil sécurisé à partir des données
-  const createSafeProfileFromData = (data: any, includeProviderProfiles = false): ProviderProfile => {
-    // Si data n'est pas un objet valide, retourner le profil par défaut
-    if (!data || typeof data !== 'object' || ('error' in data)) {
-      return defaultProfile;
-    }
+  const createSafeProfileFromData = (data: any, isProvider = false): ProviderProfileData => {
+    // Si les données sont nulles ou undefined, retourner le profil par défaut
+    if (!data) return defaultProfile;
 
-    // Construire un profil sécurisé avec des valeurs par défaut
-    const safeProfile: ProviderProfile = {
-      ...defaultProfile,
-      id: 'id' in data ? String(data.id || defaultProfile.id) : defaultProfile.id,
-      full_name: 'full_name' in data ? String(data.full_name || defaultProfile.full_name) : defaultProfile.full_name,
-      avatar_url: 'avatar_url' in data ? String(data.avatar_url || '') : '',
-      bio: 'bio' in data ? String(data.bio || '') : '',
-      city: 'city' in data ? String(data.city || '') : '',
-      is_provider: defaultProfile.is_provider
+    // Créer un profil de base avec les données disponibles
+    const profile: ProviderProfileData = {
+      id: data.id || defaultProfile.id,
+      full_name: data.full_name || defaultProfile.full_name,
+      avatar_url: data.avatar_url || defaultProfile.avatar_url,
+      business_name: data.business_name || defaultProfile.business_name,
+      bio: data.bio || defaultProfile.bio,
+      is_provider: isProvider || data.is_provider || defaultProfile.is_provider,
+      city: data.city || defaultProfile.city,
     };
 
-    // Ajouter les champs optionnels s'ils existent
-    if ('business_name' in data && data.business_name) {
-      safeProfile.business_name = String(data.business_name);
+    // Ajouter les données du profil prestataire si disponibles
+    if (data.provider_profiles) {
+      const providerData = Array.isArray(data.provider_profiles) 
+        ? data.provider_profiles[0] 
+        : data.provider_profiles;
+      
+      profile.provider_profiles = {
+        specialization: providerData?.specialization || defaultProfile.provider_profiles?.specialization,
+        experience_years: providerData?.experience_years || defaultProfile.provider_profiles?.experience_years,
+        hourly_rate: providerData?.hourly_rate || defaultProfile.provider_profiles?.hourly_rate,
+        rating: providerData?.rating || defaultProfile.provider_profiles?.rating,
+        reviews_count: providerData?.reviews_count || defaultProfile.provider_profiles?.reviews_count,
+      };
+    } else {
+      profile.provider_profiles = defaultProfile.provider_profiles;
     }
 
-    if ('role' in data && data.role) {
-      safeProfile.role = String(data.role);
-    }
-
-    // Ajouter provider_profiles si nécessaire
-    if (includeProviderProfiles && 'provider_profiles' in data) {
-      safeProfile.provider_profiles = data.provider_profiles;
-    }
-
-    return safeProfile;
+    return profile;
   };
 
-  // Fonction pour récupérer les données du prestataire - complètement refactorisée
+  // Fonction pour récupérer les données du prestataire via une méthode alternative
+  const fetchProviderDataHelper = async (providerId: string) => {
+    try {
+      // Essayer d'utiliser une requête RPC si disponible
+      const { data, error } = await supabase
+        .rpc('get_provider_profile', { provider_id: providerId });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erreur dans fetchProviderDataHelper:', error);
+      return null;
+    }
+  };
+
+  // Vérifier si les tables nécessaires existent
+  const checkRequiredTables = async () => {
+    try {
+      // Vérifier si les tables profiles et provider_profiles existent
+      const profilesExist = await checkTableExists('profiles');
+      const providerProfilesExist = await checkTableExists('provider_profiles');
+      
+      if (!profilesExist || !providerProfilesExist) {
+        console.warn('Tables requises manquantes:', 
+          !profilesExist ? 'profiles' : '', 
+          !providerProfilesExist ? 'provider_profiles' : ''
+        );
+        setMigrationRequired(true);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la vérification des tables:', error);
+      setMigrationRequired(true);
+      return false;
+    }
+  };
+
+  // Fonction pour récupérer les données du prestataire avec gestion améliorée des erreurs
   const loadProviderData = async () => {
     if (!cleanedProviderId) {
       setError('Identifiant du prestataire manquant');
@@ -98,330 +143,309 @@ const ProviderProfile: React.FC = () => {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      // Vérification de la validité de l'UUID avec exception pour les ID de test
-      const isTestId = cleanedProviderId.startsWith('tg-');
-      if (!isValidUUID(cleanedProviderId) && !isTestId) {
-        console.error('ID de prestataire invalide:', cleanedProviderId);
-        toast.error('Identifiant de prestataire invalide');
-        setError('Identifiant de prestataire invalide');
+      // Vérifier d'abord si les tables nécessaires existent
+      const tablesExist = await checkRequiredTables();
+      
+      if (!tablesExist) {
+        // Si les tables n'existent pas, utiliser le fallback
+        console.warn('Tables nécessaires manquantes, utilisation du fallback');
+        await fetchProviderDataFallback();
+        return;
+      }
+
+      // Nettoyer l'ID pour Supabase (gestion des UUID et des ID de test)
+      const validId = cleanIdForSupabase(cleanedProviderId);
+      
+      if (!validId) {
+        setError(`Identifiant invalide: ${cleanedProviderId}`);
         setLoading(false);
         return;
       }
 
-      // Vérifier d'abord si l'utilisateur est un prestataire
-      const { data: isProviderData, error: isProviderError } = await supabase
-        .rpc('is_provider', { user_id: cleanedProviderId })
+      // Récupérer les données du prestataire
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          provider_profiles(*)
+        `)
+        .eq('id', validId)
         .single();
 
-      if (isProviderError) {
-        // Gestion des erreurs spécifiques
-        if (isProviderError.code === '406') {
-          console.error('Erreur 406 Not Acceptable - Format de requête incorrect:', isProviderError);
-          toast.error('Erreur de format de requête. Vérifiez les en-têtes HTTP.');
-          setMigrationRequired(true);
-        } else if (isProviderError.code === '400') {
-          console.error('Erreur 400 Bad Request - Paramètres invalides:', isProviderError);
-          toast.error('Paramètres de requête invalides. Contactez l\'administrateur.');
-          setMigrationRequired(true);
-        } else if (isProviderError.code === '42P01') { // Table inexistante
-          console.error('Table manquante, migrations requises:', isProviderError);
-          toast.error('La base de données nécessite des migrations. Contactez l\'administrateur.');
-          setMigrationRequired(true);
-        } else {
-          console.error('Erreur lors de la vérification du statut prestataire:', isProviderError);
-          toast.error('Erreur lors de la vérification du statut prestataire');
-        }
+      if (error) {
+        // Utiliser la nouvelle fonction handleSupabaseError qui retourne un objet
+        const errorResult = handleSupabaseError(error);
         
-        // Fallback: utiliser les données par défaut
-        setProviderData(defaultProfile);
-      } else {
-        // Récupérer les données du profil de base
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', cleanedProviderId)
-          .single();
-
-        if (profileError) {
-          console.error('Erreur lors de la récupération du profil:', profileError);
-          setError('Erreur lors de la récupération des données du prestataire');
-          setProviderData(defaultProfile);
+        if (errorResult.isMigrationError) {
+          setMigrationRequired(true);
+          // Essayer le fallback si c'est une erreur de migration
+          await fetchProviderDataFallback();
         } else {
-          // Récupérer les données spécifiques au prestataire
-          const { data: providerProfileData, error: providerProfileError } = await supabase
-            .from('provider_profiles')
-            .select('*')
-            .eq('id', cleanedProviderId)
-            .single();
-
-          if (providerProfileError) {
-            console.error('Erreur lors de la récupération du profil prestataire:', providerProfileError);
-            // Utiliser uniquement les données de profil de base
-            setProviderData(createSafeProfileFromData(profileData));
-          } else {
-            // Combiner les données de profil de base et de prestataire
-            setProviderData(createSafeProfileFromData(profileData, true));
-          }
+          setError(errorResult.message);
+          setLoading(false);
         }
+        return;
       }
+
+      if (!data) {
+        setError('Prestataire non trouvé');
+        setLoading(false);
+        return;
+      }
+
+      // Vérifier si l'utilisateur est bien un prestataire
+      if (!data.is_provider && !data.provider_profiles) {
+        setError('Ce profil n\'est pas un prestataire');
+        setLoading(false);
+        return;
+      }
+
+      // Créer un profil sécurisé à partir des données
+      const profile = createSafeProfileFromData(data, true);
+      setProviderData(profile);
+      setLoading(false);
     } catch (error) {
-      console.error('Exception lors de la récupération des données:', error);
-      toast.error('Une erreur est survenue lors de la récupération des données');
-      setProviderData(defaultProfile);
-    } finally {
+      console.error('Erreur lors du chargement du profil:', error);
+      setError('Une erreur est survenue lors du chargement du profil');
       setLoading(false);
     }
   };
 
-  // Fonction de fallback pour récupérer les données du prestataire - complètement refactorisée
+  // Fonction de fallback pour récupérer les données du prestataire
   const fetchProviderDataFallback = async () => {
+    if (!cleanedProviderId) {
+      setError('Identifiant du prestataire manquant');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Étape 1: Vérification si l'utilisateur est un prestataire
-      let isProvider = false;
-      try {
-        // Vérification si l'utilisateur est un prestataire
-        const response = await supabase
-          .rpc('is_provider', { user_id: cleanedProviderId })
-          .single();
-          
-        const { data: isProviderData, error: isProviderError } = response;
-
-        if (isProviderError) {
-          // Détection des erreurs spécifiques
-          if (isProviderError.code === '406') {
-            console.error('Erreur 406 Not Acceptable - Format de requête incorrect:', isProviderError);
-            toast.error('Erreur de format de requête. Vérifiez les en-têtes HTTP.');
-            setMigrationRequired(true);
-          } else if (isProviderError.code === '400') {
-            console.error('Erreur 400 Bad Request - Paramètres invalides:', isProviderError);
-            toast.error('Paramètres de requête invalides. Contactez l\'administrateur.');
-            setMigrationRequired(true);
-          } else if (isProviderError.code === '42P01') { // Table inexistante
-            console.error('Table manquante, migrations requises:', isProviderError);
-            toast.error('La base de données nécessite des migrations. Contactez l\'administrateur.');
-            setMigrationRequired(true);
-          }
-        }
+      // Pour les ID de test (ex: tg-2), on utilise des données simulées
+      if (isTestId(cleanedProviderId)) {
+        console.log('Utilisation de données simulées pour ID de test:', cleanedProviderId);
         
-        if (!isProviderError && isProviderData !== null) {
-          isProvider = true;
-        }
-      } catch (rpcError) {
-        console.error('Erreur RPC is_provider:', rpcError);
-        // Continuons avec les autres méthodes
+        // Simuler un délai réseau
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Créer un profil de test
+        const testProfile: ProviderProfileData = {
+          id: cleanedProviderId,
+          full_name: `Prestataire Test ${cleanedProviderId.split('-')[1]}`,
+          avatar_url: '/default-avatar.png',
+          business_name: 'Entreprise Test',
+          bio: 'Ceci est un profil de test généré automatiquement car les migrations Supabase n\'ont pas été appliquées.',
+          is_provider: true,
+          city: 'Paris',
+          provider_profiles: {
+            specialization: 'Test',
+            experience_years: 5,
+            hourly_rate: 50,
+            rating: 4.5,
+            reviews_count: 10
+          }
+        };
+        
+        setProviderData(testProfile);
+        setLoading(false);
+        return;
       }
-
-      // Étape 2: Récupération des données complètes si c'est un prestataire
-      if (isProvider) {
+      
+      // Pour les UUID valides, on essaie d'utiliser le helper de récupération
+      if (isValidUUID(cleanedProviderId)) {
         try {
-          const response = await supabase
-            .from('profiles')
-            .select('*, provider_profiles(*)')
-            .eq('id', cleanedProviderId)
-            .single();
-            
-          const { data, error } = response;
-
-          if (!error) {
-            // Utilisation de la fonction utilitaire pour créer un profil sécurisé
-            const safeProfile = createSafeProfileFromData(data, true); // true pour inclure provider_profiles
-            setProviderData(safeProfile);
+          const data = await fetchProviderDataHelper(cleanedProviderId);
+          if (data) {
+            const profile = createSafeProfileFromData(data, true);
+            setProviderData(profile);
+            setLoading(false);
             return;
           }
-        } catch (fullDataError) {
-          console.error('Erreur récupération données complètes:', fullDataError);
-          // Continuons avec les autres méthodes
+        } catch (helperError) {
+          console.warn('Erreur avec fetchProviderDataHelper:', helperError);
+          // Continuer avec la méthode de fallback ci-dessous
         }
       }
-
-      // Étape 3: Récupération des données de base
-      try {
-        const response = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', cleanedProviderId)
-          .single();
-          
-        const { data, error } = response;
-
-        if (!error && data !== null) {
-          // Utilisation de la fonction utilitaire pour créer un profil sécurisé
-          const safeProfile = createSafeProfileFromData(data);
-          setProviderData(safeProfile);
-          return;
-        } else if (error) {
-          // Notification pour informer l'utilisateur que les migrations doivent être appliquées
-          if (error.code === '42P01') { // Code pour table inexistante
-            setMigrationRequired(true);
-            toast.error('La base de données nécessite des migrations. Contactez l\'administrateur.');
-            console.error('Table manquante, migrations requises:', error);
-          }
-        }
-      } catch (basicDataError) {
-        console.error('Erreur récupération données de base:', basicDataError);
-      }
-
-      // Étape 4: Dernier recours - utiliser le profil par défaut
-      toast.error('Impossible de récupérer les données du prestataire, utilisation d\'un profil par défaut');
-      console.warn('Utilisation du profil par défaut pour le prestataire:', cleanedProviderId);
-      setProviderData(defaultProfile);
-      toast.error('Profil limité disponible');
+      
+      // Fallback ultime: profil par défaut avec l'ID fourni
+      const fallbackProfile = {
+        ...defaultProfile,
+        id: cleanedProviderId,
+        full_name: `Prestataire ${cleanedProviderId.substring(0, 8)}`,
+        bio: 'Les informations complètes de ce prestataire ne sont pas disponibles actuellement.'
+      };
+      
+      setProviderData(fallbackProfile);
+      setLoading(false);
     } catch (error) {
-      console.error('Exception lors du fallback:', error);
-      toast.error('Erreur lors de la récupération des données du prestataire');
+      console.error('Erreur dans le fallback:', error);
+      setError('Impossible de récupérer les données du prestataire');
+      setLoading(false);
     }
   };
 
-  // Effet pour charger les données du prestataire depuis Supabase
+  // Charger les données au montage du composant
   useEffect(() => {
     if (cleanedProviderId) {
       loadProviderData();
+    } else {
+      setError('Identifiant du prestataire manquant');
+      setLoading(false);
     }
   }, [cleanedProviderId]);
 
-  if (loading) {
-    return <div className="container mx-auto px-4 py-24 text-center">Chargement des données...</div>;
-  }
-
-  if (error || !providerData) {
-    return <div className="container mx-auto px-4 py-24 text-center">{error || 'Prestataire non trouvé'}</div>;
-  }
-
-  const handleContact = () => {
-    if (!user) {
-      navigate(`/login?redirect=/provider/${rawId}`);
-      return;
-    }
-
-    if (!cleanedProviderId) {
-      toast.error('Identifiant du prestataire invalide');
-      return;
-    }
-
-    try {
-      // Utiliser les données du prestataire depuis Supabase
-      const providerName = providerData?.full_name || 'Prestataire';
-      // Nous n'avons pas cette propriété dans notre interface, donc on utilise false par défaut
-      const isProviderOnline = false;
-      
-      // Utiliser le nouveau système de chat pour ouvrir une conversation
-      openChat(cleanedProviderId, providerName, isProviderOnline);
-      
-      // Notification de succès
-      toast.success(`Conversation ouverte avec ${providerName}`);
-    } catch (error) {
-      console.error('Erreur lors de l\'ouverture de la conversation:', error);
-      toast.error('Une erreur est survenue lors de l\'ouverture de la conversation');
+  // Gérer le clic sur le bouton de chat
+  const handleChatClick = () => {
+    if (cleanedProviderId && openChat) {
+      openChat(cleanedProviderId);
     }
   };
 
+  // Rendu du composant
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-24">
-        {migrationRequired && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-            <p className="font-bold">Attention - Migrations requises</p>
-            <p>
-              Certaines fonctionnalités ne sont pas disponibles car la base de données nécessite des migrations.
-              Veuillez contacter l'administrateur du système pour résoudre ce problème.
-            </p>
+    <div className="provider-profile-container">
+      <main className="provider-profile-main">
+        {/* Affichage pendant le chargement */}
+        {loading && (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Chargement du profil...</p>
           </div>
         )}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="relative h-64 bg-gradient-to-r from-teal-500 to-blue-500">
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/50 to-transparent">
-              <div className="flex items-center space-x-6">
-                <img
-                  src={providerData.avatar_url || '/default-avatar.png'}
-                  alt={providerData.full_name}
-                  className="w-32 h-32 rounded-full border-4 border-white object-cover"
+
+        {/* Affichage en cas d'erreur */}
+        {!loading && error && (
+          <div className="error-container">
+            <Alert 
+              type="error" 
+              title="Erreur" 
+              message={error} 
+            />
+            <button 
+              className="btn btn-primary mt-4" 
+              onClick={() => navigate(-1)}
+            >
+              Retour
+            </button>
+          </div>
+        )}
+
+        {/* Affichage si migration requise */}
+        {!loading && migrationRequired && (
+          <div className="migration-required-container">
+            <Alert 
+              type="warning" 
+              title="Migration requise" 
+              message="La base de données nécessite une mise à jour. Veuillez contacter l'administrateur pour appliquer les migrations." 
+            />
+            {providerData && !error && (
+              <div className="mt-4">
+                <p>Affichage des informations limitées disponibles :</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Affichage du profil */}
+        {!loading && providerData && !error && (
+          <div className="profile-content">
+            {/* En-tête du profil */}
+            <div className="profile-header">
+              <div className="profile-avatar">
+                <img 
+                  src={providerData.avatar_url || '/default-avatar.png'} 
+                  alt={`Avatar de ${providerData.full_name}`} 
+                  className="avatar-image"
                 />
-                <div className="text-white">
-                  <h1 className="text-3xl font-bold">{providerData.full_name}</h1>
-                  <p className="text-xl opacity-90">{providerData.provider_profiles?.specialization || providerData.business_name || 'Prestataire de services'}</p>
+              </div>
+              
+              <div className="profile-header-info">
+                <h1 className="profile-name">{providerData.full_name}</h1>
+                
+                {providerData.business_name && (
+                  <h2 className="business-name">{providerData.business_name}</h2>
+                )}
+                
+                {providerData.provider_profiles?.rating && (
+                  <div className="rating">
+                    <Star className="icon" />
+                    <span>{providerData.provider_profiles.rating.toFixed(1)}</span>
+                    {providerData.provider_profiles.reviews_count && (
+                      <span className="reviews-count">
+                        ({providerData.provider_profiles.reviews_count} avis)
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {providerData.city && (
+                  <div className="location">
+                    <MapPin className="icon" />
+                    <span>{providerData.city}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="profile-actions">
+                <ChatButton onClick={handleChatClick} />
+              </div>
+            </div>
+            
+            {/* Corps du profil */}
+            <div className="profile-body">
+              {/* Bio */}
+              {providerData.bio && (
+                <div className="bio-section section">
+                  <h3 className="section-title">À propos</h3>
+                  <p className="bio-text">{providerData.bio}</p>
+                </div>
+              )}
+              
+              {/* Informations professionnelles */}
+              <div className="professional-info section">
+                <h3 className="section-title">Informations professionnelles</h3>
+                
+                <div className="info-grid">
+                  {providerData.provider_profiles?.specialization && (
+                    <div className="info-item">
+                      <Briefcase className="icon" />
+                      <div className="info-content">
+                        <span className="info-label">Spécialité</span>
+                        <span className="info-value">{providerData.provider_profiles.specialization}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {providerData.provider_profiles?.experience_years && (
+                    <div className="info-item">
+                      <Clock className="icon" />
+                      <div className="info-content">
+                        <span className="info-label">Expérience</span>
+                        <span className="info-value">
+                          {providerData.provider_profiles.experience_years} an{providerData.provider_profiles.experience_years > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {providerData.provider_profiles?.hourly_rate && (
+                    <div className="info-item">
+                      <Award className="icon" />
+                      <div className="info-content">
+                        <span className="info-label">Tarif horaire</span>
+                        <span className="info-value">{providerData.provider_profiles.hourly_rate}€/h</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Content */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Left Column */}
-              <div className="md:col-span-2">
-                <section className="mb-8">
-                  <h2 className="text-2xl font-semibold mb-4">À propos</h2>
-                  <p className="text-gray-600">{providerData.bio || 'Aucune description disponible pour ce prestataire.'}</p>
-                </section>
-
-                {/* Note: Nous n'avons pas de portfolio dans les données Supabase, donc on affiche un message */}
-                <section className="mb-8">
-                  <h2 className="text-2xl font-semibold mb-4">Portfolio</h2>
-                  <div className="bg-gray-100 p-4 rounded-lg text-center">
-                    <p className="text-gray-600">Le portfolio de ce prestataire n'est pas encore disponible.</p>
-                  </div>
-                </section>
-              </div>
-
-              {/* Right Column */}
-              <div>
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="mb-6">
-                    <div className="flex items-center mb-2">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="ml-2 font-semibold">
-                        {providerData.provider_profiles?.rating || '5.0'} ({providerData.provider_profiles?.reviews_count || '0'} avis)
-                      </span>
-                    </div>
-                    <div className="flex items-center mb-2">
-                      <MapPin className="w-5 h-5 text-gray-500" />
-                      <span className="ml-2">{providerData.city || 'Non renseigné'}</span>
-                    </div>
-                    <div className="flex items-center mb-2">
-                      <Globe className="w-5 h-5 text-gray-500" />
-                      <span className="ml-2">
-                        Français
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Award className="w-5 h-5 text-gray-500" />
-                      <span className="ml-2">
-                        Membre depuis {new Date().getFullYear()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Spécialités</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {providerData.provider_profiles?.specialization ? (
-                        <span className="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm">
-                          {providerData.provider_profiles.specialization}
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                          Aucune spécialité renseignée
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <ChatButton
-                    onClick={handleContact}
-                    variant="primary"
-                    size="lg"
-                    className="w-full mt-6"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </main>
-      <Footer />
     </div>
   );
 };
