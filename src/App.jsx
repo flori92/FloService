@@ -8,7 +8,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { NotifierProvider } from './components/ui/Notifier';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import { ConnectionError } from './components/ui/EmptyState';
-import enhancedSupabase from './lib/supabaseClient';
+import { supabase as enhancedSupabase } from './lib/supabase-secure';
 
 // Import des pages avec chargement différé pour optimiser les performances
 const HomePage = React.lazy(() => import('./pages/HomePage'));

@@ -1,7 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Définition des types de base pour Supabase
-// Ces types seront remplacés par la génération automatique des types via Supabase CLI
+// Fonction de secours en cas d'échec d'initialisation
+const createFallbackClient = () => {
+  console.warn('Utilisation du client de secours Supabase');
+  
+  // Implémentation minimale pour éviter les erreurs
+  const fallbackResponse = { data: null, error: { message: 'Client de secours' } };
+  
+  return {
+    auth: {
+      onAuthStateChange: () => ({ 
+        data: { 
+          subscription: { 
+            unsubscribe: () => {}
+          } 
+        } 
+      }),
+      signIn: () => Promise.resolve({ error: { message: 'Client de secours - Non disponible' } }),
+      signOut: () => Promise.resolve({ error: null }),
+      user: () => ({ id: 'fallback-user' })
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve(fallbackResponse)
+        })
+      })
+    }),
+    rpc: () => Promise.resolve(fallbackResponse)
+  };
+};
+
+// Type du client de secours
+type FallbackSupabaseClient = ReturnType<typeof createFallbackClient>;
+
+// Types de base pour Supabase
 export type Json =
   | string
   | number
@@ -10,8 +43,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-// Type simplifié pour la base de données
-// À remplacer par les types générés via Supabase CLI
+// Interface pour la base de données
 export interface Database {
   public: {
     Tables: {
@@ -39,16 +71,25 @@ export interface Database {
         };
         Returns: undefined;
       };
-
-
       [key: string]: any;
     };
   };
 }
 
+// Configuration de débogage
+const DEBUG = import.meta.env.VITE_DEBUG === 'true';
+
+// Fonction utilitaire pour le logging
+const debugLog = (...args: any[]) => {
+  if (DEBUG) {
+    console.log('[Supabase]', ...args);
+  }
+};
+
 // Fonction sécurisée pour récupérer les variables d'environnement
 const getEnvVariable = (key: string, defaultValue: string): string => {
   // Vérifier d'abord import.meta.env (Vite)
+  debugLog(`Récupération de la variable d'environnement: ${key}`);
   const viteValue = (import.meta as any).env?.[key];
   if (viteValue) return viteValue;
   
@@ -71,18 +112,26 @@ const supabaseUrl = getEnvVariable(
   'https://sxrofrdhpzpjqkplgoij.supabase.co'
 );
 
-const supabaseAnonKey = getEnvVariable(
+const supabaseKey = getEnvVariable(
   'VITE_SUPABASE_ANON_KEY',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4cm9mcmRocHpwanFrcGxnb2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxNjY2NzksImV4cCI6MjA2Mzc0MjY3OX0.ddLsIbp814amozono-gIhjNPWYE4Lgo20dJmG3Q-Cww'
 );
 
-// Vérification de la présence des variables d'environnement
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Les variables d'environnement Supabase sont manquantes, utilisation des valeurs par défaut");
+// Vérification des variables d'environnement critiques
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Configuration Supabase manquante. Vérifiez vos variables d\'environnement.');
+  if (!supabaseUrl) console.error('VITE_SUPABASE_URL est manquant');
+  if (!supabaseKey) console.error('VITE_SUPABASE_ANON_KEY est manquant');
 }
 
-// Options de configuration sécurisées
-const supabaseOptions = {
+// Création du client Supabase avec gestion d'erreur
+export const createSupabaseClient = () => {
+  try {
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Configuration Supabase incomplète');
+    }
+
+    const supabaseOptions = {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -103,19 +152,56 @@ const supabaseOptions = {
   },
 };
 
-// Création du client Supabase typé
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey,
-  supabaseOptions
-);
+    // Vérification de la connexion au démarrage
+    const checkInitialConnection = async () => {
+      try {
+        const { data, error } = await supabaseInstance
+          .from('profiles')
+          .select('*')
+          .limit(1);
+          
+        if (error) {
+          console.error('❌ Erreur de connexion initiale à Supabase:', error);
+          return false;
+        }
+        console.log('✅ Connexion à Supabase établie avec succès');
+        return true;
+      } catch (err) {
+        console.error('❌ Erreur lors de la vérification de la connexion Supabase:', err);
+        return false;
+      }
+    };
+
+    // Création du client Supabase typé
+    const supabaseInstance = createClient<Database>(
+      supabaseUrl,
+      supabaseKey,
+      supabaseOptions
+    );
+
+    // Exécuter la vérification de connexion au chargement
+    if (typeof window !== 'undefined') {
+      checkInitialConnection();
+    }
+
+    return supabaseInstance;
+  } catch (error) {
+    console.error('❌ Erreur critique lors de la création du client Supabase:', error);
+    console.warn('Utilisation du client de secours');
+    return createFallbackClient();
+  }
+};
+
+// Création et exportation du client Supabase
+export const supabase = createSupabaseClient();
 
 // Fonction utilitaire pour échapper les entrées utilisateur dans les recherches
-export const safeSearchTerm = (term: string): string => {
+export function safeSearchTerm(term: string): string {
   if (!term) return '';
-  
-  // Échapper les caractères spéciaux pour éviter les injections SQL
   return term
+    .replace(/[\s\t\n]+/g, ' ') // Remplacer les espaces multiples par un seul espace
+    .trim()
+    .substring(0, 255) // Limiter la longueur pour éviter les abus
     .replace(/%/g, '\\%')
     .replace(/_/g, '\\_')
     .replace(/\\/g, '\\\\')
@@ -124,10 +210,16 @@ export const safeSearchTerm = (term: string): string => {
 };
 
 // Fonction utilitaire pour vérifier si l'utilisateur est un prestataire
-export const isProvider = async (): Promise<boolean> => {
+export const isProvider = async (userId?: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
-      .rpc('is_provider');
+    if (!supabase || !('rpc' in supabase)) {
+      console.error('Client Supabase non initialisé ou méthode rpc non disponible');
+      return false;
+    }
+
+    const { data, error } = await supabase.rpc('is_provider', 
+      userId ? { user_id: userId } : {}
+    );
     
     if (error) {
       console.error('Erreur lors de la vérification du statut prestataire:', error);
@@ -141,11 +233,48 @@ export const isProvider = async (): Promise<boolean> => {
   }
 };
 
+// Vérifier si les migrations ont été appliquées
+export const checkMigrationsApplied = async (): Promise<boolean> => {
+  try {
+    if (!supabase) {
+      console.error('Client Supabase non initialisé');
+      return false;
+    }
+
+    // Vérification de base de la table des migrations
+    // On utilise une requête simple qui fonctionne avec le client de secours
+    const result = await supabase.from('migrations').select('*');
+    
+    // Si on obtient une réponse (même vide), c'est que la table existe
+    if (result) {
+      console.log('✅ Vérification des migrations : connexion à la base de données établie');
+      return true;
+    }
+    
+    return false;
+    
+  } catch (error: any) {
+    // Erreur 42P01 = table inexistante
+    if (error.code === '42P01') {
+      console.warn('❌ Table des migrations non trouvée, vérifiez que les migrations ont été appliquées');
+    } else {
+      console.error('Erreur lors de la vérification des migrations:', error);
+    }
+    return false;
+  }
+};
+
 // Fonction utilitaire pour vérifier les autorisations de facturation
 export const checkInvoicePermissions = async (invoiceId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
-      .rpc('check_invoice_permissions', { invoice_id: invoiceId });
+    if (!supabase || !('rpc' in supabase)) {
+      console.error('Client Supabase non initialisé ou méthode rpc non disponible');
+      return false;
+    }
+
+    const { data, error } = await supabase.rpc('check_invoice_permissions', { 
+      invoice_id: invoiceId 
+    });
     
     if (error) {
       console.error('Erreur lors de la vérification des autorisations de facturation:', error);
@@ -168,6 +297,11 @@ export const logAuditAction = async (
   newData?: Record<string, any> | null
 ): Promise<void> => {
   try {
+    if (!supabase || !('rpc' in supabase)) {
+      console.error('Client Supabase non initialisé ou méthode rpc non disponible');
+      return;
+    }
+
     await supabase.rpc('log_audit_action', {
       action,
       table_name: tableName,

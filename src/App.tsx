@@ -1,6 +1,6 @@
 import { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import enhancedSupabase from './lib/supabaseClient';
+import { supabase as enhancedSupabase } from './lib/supabase-secure';
 import { useAuthStore } from './store/authStore';
 import { TranslationProvider } from './providers/TranslationProvider';
 import { AuthGuard } from './components/AuthGuard';
