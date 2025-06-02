@@ -7,6 +7,7 @@ import { AuthGuard } from './components/AuthGuard';
 import { ChatProvider } from './contexts/ChatContext';
 import ChatContainer from './components/chat/ChatContainer';
 import ChatFloatingButton from './components/chat/ChatFloatingButton';
+import MigrationChecker from './components/MigrationChecker';
 
 // Nouveaux composants d'amélioration UX
 import { NotifierProvider } from './components/ui/Notifier';
@@ -65,7 +66,14 @@ function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Considérer l'application comme prête sans vérification d'existence de table
+        // Vérification de la connexion à Supabase
+        const { error } = await enhancedSupabase.from('profiles').select('id').limit(1);
+        
+        if (error) {
+          console.warn('Erreur lors de la vérification de la connexion à Supabase:', error.message);
+          // On continue malgré l'erreur pour permettre l'affichage des notifications
+        }
+        
         setIsAppReady(true);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'application:', error);
@@ -138,6 +146,11 @@ function App() {
         <ChatProvider>
           <Router>
             <div className="app-container">
+              {/* Vérification des migrations Supabase */}
+              <div className="container mx-auto px-4 mt-4">
+                <MigrationChecker />
+              </div>
+              
               <Suspense fallback={<GlobalLoadingSpinner />}>
                 <Routes>
                   {/* Public routes */}
