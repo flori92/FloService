@@ -3,15 +3,89 @@
  * Centralise la configuration et améliore l'expérience utilisateur
  */
 
-// import { createClient } from '@supabase/supabase-js'; // Supprimé car nous utilisons l'instance de supabase-secure
-import { supabase as baseSupabaseClient } from './supabase-secure';
+import { createClient } from '@supabase/supabase-js';
 import { safeTableOperation, getErrorMessage } from '../utils/errorHandler';
 
-// Configuration de base
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+// Fonction sécurisée pour récupérer les variables d'environnement
+const getEnvVariable = (key, defaultValue) => {
+  // Vérifier d'abord import.meta.env (Vite)
+  try {
+    const viteValue = import.meta?.env?.[key];
+    if (viteValue) return viteValue;
+  } catch (e) {
+    console.warn(`Erreur lors de l'accès à import.meta.env.${key}:`, e.message);
+  }
+  
+  // Vérifier ensuite process.env (Node.js/React)
+  try {
+    const processValue = typeof process !== 'undefined' && process.env && process.env[key];
+    if (processValue) return processValue;
+  } catch (e) {
+    console.warn(`Erreur lors de l'accès à process.env.${key}:`, e.message);
+  }
+  
+  // Vérifier window.ENV (injection runtime)
+  try {
+    const windowValue = typeof window !== 'undefined' && window.ENV && window.ENV[key];
+    if (windowValue) return windowValue;
+  } catch (e) {
+    console.warn(`Erreur lors de l'accès à window.ENV.${key}:`, e.message);
+  }
+  
+  // Retourner la valeur par défaut
+  console.warn(`Variable d'environnement ${key} non trouvée, utilisation de la valeur par défaut`);
+  return defaultValue;
+};
 
-// La création du client Supabase de base est maintenant gérée dans supabase-secure.ts
+// Configuration de base avec valeurs par défaut
+const supabaseUrl = getEnvVariable(
+  'VITE_SUPABASE_URL',
+  'https://rnxfgvpuaylyhjpzlujx.supabase.co'
+);
+
+const supabaseAnonKey = getEnvVariable(
+  'VITE_SUPABASE_ANON_KEY',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGZndnB1YXlseWhqcHpsdWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo'
+);
+
+// Création du client Supabase de base avec gestion d'erreurs
+let baseSupabaseClient;
+try {
+  baseSupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  });
+  console.log('Client Supabase initialisé avec succès');
+} catch (error) {
+  console.error('Erreur lors de l\'initialisation du client Supabase:', error);
+  // Création d'un client factice pour éviter les erreurs
+  baseSupabaseClient = {
+    from: () => ({
+      select: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+      insert: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+      update: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+      delete: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+    }),
+    rpc: () => Promise.resolve({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+    auth: {
+      signIn: () => Promise.resolve({ error: { message: 'Client Supabase non initialisé' } }),
+      signOut: () => Promise.resolve({ error: { message: 'Client Supabase non initialisé' } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
+    storage: { from: () => ({}) },
+    channel: () => ({}),
+    removeChannel: () => ({}),
+    functions: { invoke: () => Promise.resolve({ error: { message: 'Client Supabase non initialisé' } }) },
+  };
+}
 
 /**
  * Client Supabase amélioré avec méthodes supplémentaires
