@@ -107,6 +107,11 @@ const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR
 // Initialisation du client une seule fois
 let supabaseInstance = null;
 try {
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('URL ou clé Supabase non définie, utilisation du client de secours');
+    throw new Error('URL ou clé Supabase manquante');
+  }
+  
   // Création du client avec options sécurisées
   supabaseInstance = createClient(supabaseUrl, supabaseKey, {
     auth: {
@@ -121,9 +126,16 @@ try {
       }
     }
   });
-  console.log('Client Supabase initialisé avec succès');
+  
+  // Vérification que le client est correctement initialisé
+  if (!supabaseInstance || !supabaseInstance.from) {
+    throw new Error('Client Supabase mal initialisé');
+  }
+  
+  console.log('Client Supabase initialisé avec succès avec l\'URL:', supabaseUrl);
 } catch (e) {
   console.error('Erreur lors de l\'initialisation du client Supabase:', e);
+  console.warn('Utilisation du client de secours pour éviter les erreurs fatales');
   supabaseInstance = createFallbackClient();
 }
 
