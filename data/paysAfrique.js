@@ -117,7 +117,7 @@ export const paysAfrique = [
   {
     nom: "Sao Tomé-et-Principe",
     code: "ST",
-    villes: ["São Tomé", "Santo António", "Neves", "Santana", "Trindade", "Guadalupe", "Pantufo", "Ribeira Afonso", "Santa Cruz", "Guadalupe"]
+    villes: ["São Tomé", "Santo António", "Neves", "Santana", "Trindade", "Guadalupe", "Pantufo", "Ribeira Afonso", "Santa Cruz", "Monte Café"]
   }
 ];
 
