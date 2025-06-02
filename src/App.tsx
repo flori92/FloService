@@ -66,18 +66,39 @@ function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Vérification de la connexion à Supabase
+        // Vérification que le client Supabase est correctement initialisé
+        if (!enhancedSupabase || !enhancedSupabase.from) {
+          throw new Error('Client Supabase non initialisé correctement. Vérifiez les variables d\'environnement.');
+        }
+        
+        // Vérification de la connexion à Supabase avec plus de détails en cas d'erreur
+        console.log('Tentative de connexion à Supabase...');
         const { error } = await enhancedSupabase.from('profiles').select('id').limit(1);
         
         if (error) {
-          console.warn('Erreur lors de la vérification de la connexion à Supabase:', error.message);
+          console.warn('Erreur lors de la vérification de la connexion à Supabase:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          });
           // On continue malgré l'erreur pour permettre l'affichage des notifications
+        } else {
+          console.log('✅ Connexion à Supabase établie avec succès');
         }
         
         setIsAppReady(true);
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'application:', error);
-        setInitError(error instanceof Error ? error : new Error('Erreur inconnue'));
+        // Capture et affichage détaillé de l'erreur
+        const errorDetails = {
+          message: error instanceof Error ? error.message : 'Erreur inconnue',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined,
+          toString: error?.toString ? error.toString() : 'Objet d\'erreur invalide'
+        };
+        
+        console.error('Erreur lors de l\'initialisation de l\'application:', errorDetails);
+        setInitError(error instanceof Error ? error : new Error('Erreur inconnue: ' + JSON.stringify(errorDetails)));
         // Même en cas d'erreur, on considère l'app comme prête pour afficher l'erreur
         setIsAppReady(true);
       }
