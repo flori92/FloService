@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 // Configuration de la connexion à la base de données Supabase
 // Utilisation de variables d'environnement pour les informations sensibles
 const pool = new Pool({
-  host: process.env.SUPABASE_HOST || 'db.example.supabase.co',
+  host: process.env.SUPABASE_HOST || 'db.sxrofrdhpzpjqkplgoij.supabase.co',
   port: parseInt(process.env.SUPABASE_PORT || '5432'),
   database: process.env.SUPABASE_DATABASE || 'postgres',
   user: process.env.SUPABASE_USER || 'postgres',
@@ -63,15 +63,26 @@ async function main() {
   console.log('🔧 Application des corrections manuelles aux fonctions complexes...');
   
   try {
+    // Test de connexion à la base de données
+    console.log(`🔌 Tentative de connexion à la base de données Supabase (${pool.options.host})...`);
+    const client = await pool.connect();
+    console.log('✅ Connexion à la base de données établie avec succès!');
+    client.release();
+    
     // Lire le fichier SQL
     const sqlFilePath = path.join(__dirname, 'fix_complex_functions.sql');
     const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
     
     console.log('📋 Exécution du script SQL pour les fonctions complexes...');
     
-    // Exécuter le script SQL
-    await pool.query(sqlContent);
-    console.log('✅ Script SQL exécuté avec succès!');
+    // Exécuter le script SQL avec gestion des erreurs
+    try {
+      await pool.query(sqlContent);
+      console.log('✅ Script SQL exécuté avec succès!');
+    } catch (error) {
+      console.error('⚠️ Erreur lors de l\'exécution du script SQL:', error.message);
+      console.log('⚙️ Continuons avec les autres opérations...');
+    }
     
     // Vérifier la structure de la table security_scripts
     console.log('\n🔍 Vérification de la structure de la table security_scripts...');
