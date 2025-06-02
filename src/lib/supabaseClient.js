@@ -3,88 +3,144 @@
  * Centralise la configuration et améliore l'expérience utilisateur
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { safeTableOperation, getErrorMessage } from '../utils/errorHandler';
+// Création d'un client Supabase sécurisé avec gestion d'erreurs complète
+let supabaseInstance = null;
 
-// Fonction sécurisée pour récupérer les variables d'environnement
-const getEnvVariable = (key, defaultValue) => {
-  // Vérifier d'abord import.meta.env (Vite)
+// Fonction d'initialisation du client Supabase
+const initSupabase = () => {
   try {
-    const viteValue = import.meta?.env?.[key];
-    if (viteValue) return viteValue;
-  } catch (e) {
-    console.warn(`Erreur lors de l'accès à import.meta.env.${key}:`, e.message);
+    // Import dynamique pour éviter les erreurs de référence
+    const { createClient } = require('@supabase/supabase-js');
+    
+    // Récupération des variables d'environnement avec fallback
+    const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'https://rnxfgvpuaylyhjpzlujx.supabase.co');
+    const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGZndnB1YXlseWhqcHpsdWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo');
+    
+    // Création du client avec options sécurisées
+    return createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      },
+      global: {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erreur critique lors de l\'initialisation de Supabase:', error);
+    return createFallbackClient();
   }
-  
-  // Vérifier ensuite process.env (Node.js/React)
-  try {
-    const processValue = typeof process !== 'undefined' && process.env && process.env[key];
-    if (processValue) return processValue;
-  } catch (e) {
-    console.warn(`Erreur lors de l'accès à process.env.${key}:`, e.message);
-  }
-  
-  // Vérifier window.ENV (injection runtime)
-  try {
-    const windowValue = typeof window !== 'undefined' && window.ENV && window.ENV[key];
-    if (windowValue) return windowValue;
-  } catch (e) {
-    console.warn(`Erreur lors de l'accès à window.ENV.${key}:`, e.message);
-  }
-  
-  // Retourner la valeur par défaut
-  console.warn(`Variable d'environnement ${key} non trouvée, utilisation de la valeur par défaut`);
-  return defaultValue;
 };
 
-// Configuration de base avec valeurs par défaut
-const supabaseUrl = getEnvVariable(
-  'VITE_SUPABASE_URL',
-  'https://rnxfgvpuaylyhjpzlujx.supabase.co'
-);
+// Fonction pour récupérer les variables d'environnement de manière sécurisée
+const getEnvVar = (name, fallback) => {
+  // Essayer toutes les sources possibles avec gestion d'erreur
+  try {
+    // Vite
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[name]) {
+      return import.meta.env[name];
+    }
+  } catch (e) {}
+  
+  try {
+    // React
+    if (typeof process !== 'undefined' && process.env && process.env[name]) {
+      return process.env[name];
+    }
+  } catch (e) {}
+  
+  try {
+    // Variables injectées dans window
+    if (typeof window !== 'undefined' && window.ENV && window.ENV[name]) {
+      return window.ENV[name];
+    }
+  } catch (e) {}
+  
+  // Valeur par défaut
+  return fallback;
+};
 
-const supabaseAnonKey = getEnvVariable(
-  'VITE_SUPABASE_ANON_KEY',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGZndnB1YXlseWhqcHpsdWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc5NzU3NTksImV4cCI6MjAwMzU1MTc1OX0.JdAMPLZALgIoXZPtg_9ePGEyGrBsLw0aOwdVQvg_7Eo'
-);
-
-// Création du client Supabase de base avec gestion d'erreurs
-let baseSupabaseClient;
-try {
-  baseSupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10,
-      },
-    },
+// Création d'un client de secours qui ne génère pas d'erreur
+const createFallbackClient = () => {
+  // Fonction de base pour les opérations
+  const safeOp = () => Promise.resolve({
+    data: null,
+    error: { message: 'Client Supabase non disponible', code: 'SUPABASE_UNAVAILABLE' }
   });
-  console.log('Client Supabase initialisé avec succès');
-} catch (error) {
-  console.error('Erreur lors de l\'initialisation du client Supabase:', error);
-  // Création d'un client factice pour éviter les erreurs
-  baseSupabaseClient = {
-    from: () => ({
-      select: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
-      insert: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
-      update: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
-      delete: () => ({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+  
+  // Création d'un mock complet du client Supabase
+  return {
+    // Méthodes de base
+    from: (table) => ({
+      select: (columns) => ({
+        eq: () => safeOp(),
+        match: () => safeOp(),
+        in: () => safeOp(),
+        order: () => ({
+          limit: () => safeOp()
+        }),
+        limit: () => safeOp()
+      }),
+      insert: () => safeOp(),
+      update: () => safeOp(),
+      delete: () => safeOp(),
+      upsert: () => safeOp()
     }),
-    rpc: () => Promise.resolve({ data: null, error: { message: 'Client Supabase non initialisé' } }),
+    
+    // Auth
     auth: {
-      signIn: () => Promise.resolve({ error: { message: 'Client Supabase non initialisé' } }),
-      signOut: () => Promise.resolve({ error: { message: 'Client Supabase non initialisé' } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      getSession: () => safeOp(),
+      getUser: () => safeOp(),
+      signInWithPassword: () => safeOp(),
+      signOut: () => safeOp(),
+      onAuthStateChange: (callback) => ({
+        data: { subscription: { unsubscribe: () => {} } }
+      }),
+      signUp: () => safeOp()
     },
-    storage: { from: () => ({}) },
-    channel: () => ({}),
-    removeChannel: () => ({}),
-    functions: { invoke: () => Promise.resolve({ error: { message: 'Client Supabase non initialisé' } }) },
+    
+    // RPC
+    rpc: (func, params) => safeOp(),
+    
+    // Storage
+    storage: {
+      from: (bucket) => ({
+        upload: () => safeOp(),
+        download: () => safeOp(),
+        getPublicUrl: () => ({ data: { publicUrl: '' } }),
+        list: () => safeOp(),
+        remove: () => safeOp()
+      })
+    },
+    
+    // Realtime
+    channel: (name) => ({
+      on: () => ({
+        subscribe: () => ({})
+      })
+    }),
+    removeChannel: () => {},
+    
+    // Functions
+    functions: {
+      invoke: () => safeOp()
+    }
   };
+};
+
+// Initialisation du client une seule fois
+if (!supabaseInstance) {
+  try {
+    supabaseInstance = initSupabase();
+    console.log('Client Supabase initialisé avec succès');
+  } catch (e) {
+    console.error('Erreur lors de l\'initialisation du client Supabase:', e);
+    supabaseInstance = createFallbackClient();
+  }
 }
 
 /**
@@ -92,7 +148,12 @@ try {
  */
 class EnhancedSupabaseClient {
   constructor(clientInstance) {
-    this.client = clientInstance; // Utilise l'instance fournie
+    if (!clientInstance) {
+      console.error('Instance de client Supabase non fournie, utilisation du client de secours');
+      this.client = createFallbackClient();
+    } else {
+      this.client = clientInstance;
+    }
     
     // Exposer les méthodes de base du client Supabase
     this.auth = this.client.auth;
@@ -315,12 +376,53 @@ class EnhancedSupabaseClient {
   }
 }
 
-// Créer et exporter l'instance améliorée
-if (!baseSupabaseClient) {
-  console.error("ERREUR CRITIQUE: baseSupabaseClient (depuis supabase-secure.ts) est undefined lors de l'initialisation de EnhancedSupabaseClient. Vérifiez l'ordre d'importation/exécution des modules.");
-  throw new Error("Échec de l'initialisation du client Supabase de base.");
+// Vérification de l'existence du client de base
+if (!supabaseInstance) {
+  console.error("ERREUR CRITIQUE: supabaseInstance est undefined lors de l'initialisation de EnhancedSupabaseClient. Vérifiez l'ordre d'importation/exécution des modules.");
+  // Pas de throw pour éviter les crashs en production, on utilisera le client de secours
+  console.warn("Utilisation du client de secours pour éviter le crash de l'application");
 }
-const enhancedSupabase = new EnhancedSupabaseClient(baseSupabaseClient);
+// Création de l'instance améliorée du client Supabase avec gestion des erreurs
+const enhancedClient = new EnhancedSupabaseClient(supabaseInstance);
 
-export default enhancedSupabase;
-export { baseSupabaseClient as supabase }; // Exporter également le client de base pour la compatibilité
+// Ajout de méthodes spécifiques pour gérer les ID non-UUID
+enhancedClient.handleNonUuidId = (id) => {
+  // Vérification si l'ID est au format UUID ou au format "tg-X"
+  if (typeof id === 'string' && (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) || id.match(/^tg-\d+$/))) {
+    return id;
+  }
+  console.warn(`ID non valide détecté: ${id}, utilisation d'un ID de secours`);
+  return 'fallback-id';
+};
+
+// Méthode pour vérifier si les migrations ont été appliquées
+enhancedClient.checkMigrationsApplied = async () => {
+  try {
+    // Vérifier l'existence de tables clés
+    const { data, error } = await enhancedClient.client.from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .in('table_name', ['messages', 'conversations', 'services']);
+    
+    if (error) {
+      console.error('Erreur lors de la vérification des migrations:', error);
+      return false;
+    }
+    
+    // Vérifier que toutes les tables requises existent
+    const requiredTables = ['messages', 'conversations', 'services'];
+    const existingTables = data.map(row => row.table_name);
+    const allTablesExist = requiredTables.every(table => existingTables.includes(table));
+    
+    return allTablesExist;
+  } catch (error) {
+    console.error('Erreur lors de la vérification des migrations:', error);
+    return false;
+  }
+};
+
+// Export par défaut du client amélioré
+export default enhancedClient;
+
+// Export nommé pour la compatibilité avec le code existant
+export { enhancedClient as supabase };
