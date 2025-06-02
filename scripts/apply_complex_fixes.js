@@ -2,6 +2,7 @@
  * Script pour appliquer les corrections manuelles aux fonctions complexes
  * et vérifier la structure de la table security_scripts
  * Créé le 01/06/2025
+ * Mis à jour le 01/06/2025 avec corrections pour erreurs 406 et problèmes d'ID non-UUID
  */
 
 import pg from 'pg';
@@ -15,12 +16,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration de la connexion à la base de données Supabase
+// Utilisation de variables d'environnement pour les informations sensibles
 const pool = new Pool({
-  host: 'db.sxrofrdhpzpjqkplgoij.supabase.co',
-  port: 5432,
-  database: 'postgres',
-  user: 'postgres',
-  password: 'Apollonf@vi92',
+  host: process.env.SUPABASE_HOST || 'db.example.supabase.co',
+  port: parseInt(process.env.SUPABASE_PORT || '5432'),
+  database: process.env.SUPABASE_DATABASE || 'postgres',
+  user: process.env.SUPABASE_USER || 'postgres',
+  password: process.env.SUPABASE_PASSWORD || '',  // Ne jamais coder en dur les mots de passe
   ssl: {
     rejectUnauthorized: false
   }

@@ -1,20 +1,111 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { fetchCountries, fetchCitiesByCountry } from '../utils/supabaseHelpers';
+import toast from 'react-hot-toast';
+
+// Types pour les pays et villes
+type Country = {
+  id: number;
+  nom: string;
+  code: string;
+};
+
+type City = {
+  id: number;
+  nom: string;
+};
 
 const SearchHero: React.FC = () => {
   const navigate = useNavigate();
-  const [country, setCountry] = useState('');
-  const [city, setCity] = useState('');
+  const [countryCode, setCountryCode] = useState('');
+  const [cityName, setCityName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [countriesList, setCountriesList] = useState<Country[]>([]);
+  const [citiesList, setCitiesList] = useState<City[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Récupération des pays au chargement du composant
+  useEffect(() => {
+    const loadCountries = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await fetchCountries();
+        if (error) {
+          console.error('Erreur lors de la récupération des pays:', error);
+          toast.error('Impossible de charger la liste des pays');
+        } else if (data && Array.isArray(data) && data.length > 0) {
+          // Vérification du type et conversion sécurisée
+          const safeData = data.filter(item => 
+            typeof item === 'object' && 
+            item !== null && 
+            'id' in item && 
+            'nom' in item && 
+            'code' in item
+          ) as Country[];
+          
+          setCountriesList(safeData);
+        }
+      } catch (err) {
+        console.error('Exception lors de la récupération des pays:', err);
+        toast.error('Erreur lors du chargement des pays');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCountries();
+  }, []);
+
+  // Récupération des villes lorsque le pays change
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!countryCode) {
+        setCitiesList([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const { data, error } = await fetchCitiesByCountry(countryCode);
+        if (error) {
+          console.error(`Erreur lors de la récupération des villes pour ${countryCode}:`, error);
+          toast.error('Impossible de charger la liste des villes');
+        } else if (data && Array.isArray(data) && data.length > 0) {
+          // Vérification du type et conversion sécurisée
+          const safeData = data.filter(item => 
+            typeof item === 'object' && 
+            item !== null && 
+            'id' in item && 
+            'nom' in item
+          ) as City[];
+          
+          setCitiesList(safeData);
+        }
+      } catch (err) {
+        console.error('Exception lors de la récupération des villes:', err);
+        toast.error('Erreur lors du chargement des villes');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCities();
+  }, [countryCode]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (searchQuery) params.append('q', searchQuery);
-    if (country) params.append('country', country);
-    if (city) params.append('city', city);
+    if (countryCode) params.append('country', countryCode);
+    if (cityName) params.append('city', cityName);
     navigate(`/explorer?${params.toString()}`);
+  };
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCountryCode = e.target.value;
+    setCountryCode(newCountryCode);
+    setCityName(''); // Réinitialiser la ville quand le pays change
   };
 
   const popularSearches = [
@@ -22,18 +113,6 @@ const SearchHero: React.FC = () => {
     { id: 'electricity', label: 'Électricité' },
     { id: 'homecare', label: 'Services à domicile' }
   ];
-
-  const countries = [
-    { code: 'BJ', name: 'Bénin' },
-    { code: 'TG', name: 'Togo' },
-    { code: 'CI', name: "Côte d'Ivoire" }
-  ];
-
-  const cities = {
-    BJ: ['Cotonou', 'Porto-Novo', 'Parakou', 'Abomey-Calavi', 'Bohicon'],
-    TG: ['Lomé', 'Sokodé', 'Kara', 'Kpalimé', 'Atakpamé'],
-    CI: ['Abidjan', 'Bouaké', 'Yamoussoukro', 'Korhogo', 'San-Pédro']
-  };
 
   return (
     <section className="relative min-h-[600px] flex items-center">
@@ -60,31 +139,29 @@ const SearchHero: React.FC = () => {
           <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-xl p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <select
-                value={country}
-                onChange={(e) => {
-                  setCountry(e.target.value);
-                  setCity('');
-                }}
+                value={countryCode}
+                onChange={handleCountryChange}
                 className="w-full p-3 border border-gray-300 rounded-lg"
+                disabled={isLoading}
               >
                 <option value="">Sélectionnez un pays</option>
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.name}
+                {countriesList.map((country) => (
+                  <option key={country.id} value={country.code}>
+                    {country.nom}
                   </option>
                 ))}
               </select>
 
               <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+                value={cityName}
+                onChange={(e) => setCityName(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg"
-                disabled={!country}
+                disabled={!countryCode || isLoading}
               >
                 <option value="">Sélectionnez une ville</option>
-                {country && cities[country as keyof typeof cities].map((city) => (
-                  <option key={city} value={city.toLowerCase()}>
-                    {city}
+                {citiesList.map((city) => (
+                  <option key={city.id} value={city.nom.toLowerCase()}>
+                    {city.nom}
                   </option>
                 ))}
               </select>
