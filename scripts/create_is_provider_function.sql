@@ -166,14 +166,19 @@ BEGIN
       ('Burundi', 'BI', 'Afrique')
     ON CONFLICT (code) DO NOTHING;
     
-    -- Insérer quelques villes pour ces pays
+    -- Insérer 10 villes pour chaque pays
     -- Bénin (BJ)
     INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
       ('Cotonou', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
       ('Porto-Novo', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
       ('Parakou', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
       ('Abomey-Calavi', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
-      ('Djougou', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ');
+      ('Djougou', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
+      ('Bohicon', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
+      ('Natitingou', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
+      ('Lokossa', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
+      ('Ouidah', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ'),
+      ('Aplahoué', (SELECT id FROM public.pays WHERE code = 'BJ'), 'BJ');
       
     -- Cameroun (CM)
     INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
@@ -181,7 +186,12 @@ BEGIN
       ('Yaoundé', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
       ('Garoua', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
       ('Bamenda', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
-      ('Maroua', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM');
+      ('Maroua', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
+      ('Bafoussam', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
+      ('Ngaoundéré', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
+      ('Bertoua', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
+      ('Loum', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM'),
+      ('Kumba', (SELECT id FROM public.pays WHERE code = 'CM'), 'CM');
       
     -- Burkina Faso (BF)
     INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
@@ -189,7 +199,12 @@ BEGIN
       ('Bobo-Dioulasso', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
       ('Koudougou', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
       ('Banfora', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
-      ('Ouahigouya', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF');
+      ('Ouahigouya', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
+      ('Kaya', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
+      ('Tenkodogo', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
+      ('Fada N’Gourma', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
+      ('Dédougou', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF'),
+      ('Pô', (SELECT id FROM public.pays WHERE code = 'BF'), 'BF');
       
     -- Gabon (GA)
     INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
@@ -197,7 +212,103 @@ BEGIN
       ('Port-Gentil', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
       ('Franceville', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
       ('Oyem', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
-      ('Lambaréné', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA');
+      ('Lambaréné', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
+      ('Moanda', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
+      ('Mouila', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
+      ('Tchibanga', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
+      ('Koulamoutou', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA'),
+      ('Makokou', (SELECT id FROM public.pays WHERE code = 'GA'), 'GA');
+      
+    -- Côte d'Ivoire (CI)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Abidjan', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Yamoussoukro', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Bouaké', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Daloa', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Korhogo', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('San-Pédro', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Gagnoa', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Man', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Divo', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI'),
+      ('Abengourou', (SELECT id FROM public.pays WHERE code = 'CI'), 'CI');
+      
+    -- Sénégal (SN)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Dakar', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Thiès', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Kaolack', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Ziguinchor', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Saint-Louis', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Mbour', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Rufisque', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Tambacounda', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Louga', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN'),
+      ('Diourbel', (SELECT id FROM public.pays WHERE code = 'SN'), 'SN');
+      
+    -- Mali (ML)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Bamako', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Sikasso', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Mopti', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Ségou', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Kayes', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Koutiala', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Gao', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Kati', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Tombouctou', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML'),
+      ('Koulikoro', (SELECT id FROM public.pays WHERE code = 'ML'), 'ML');
+      
+    -- Togo (TG)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Lomé', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Sokodé', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Kara', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Kpalimé', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Atakpamé', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Bassar', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Tsévié', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Aného', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Mango', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG'),
+      ('Dapaong', (SELECT id FROM public.pays WHERE code = 'TG'), 'TG');
+      
+    -- Maroc (MA)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Casablanca', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Rabat', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Fès', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Marrakech', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Tanger', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Meknès', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Agadir', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Oujda', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Kénitra', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA'),
+      ('Tétouan', (SELECT id FROM public.pays WHERE code = 'MA'), 'MA');
+      
+    -- Burundi (BI)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Bujumbura', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Gitega', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Muyinga', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Ruyigi', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Ngozi', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Rumonge', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Bururi', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Kayanza', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Rutana', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI'),
+      ('Makamba', (SELECT id FROM public.pays WHERE code = 'BI'), 'BI');
+      
+    -- Cap-Vert (CV)
+    INSERT INTO public.villes (nom, pays_id, pays_code) VALUES
+      ('Praia', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Mindelo', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Santa Maria', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Assomada', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('São Filipe', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Espargos', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Tarrafal', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Porto Novo', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Ribeira Brava', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV'),
+      ('Sal Rei', (SELECT id FROM public.pays WHERE code = 'CV'), 'CV');
   END IF;
 END
 $$;

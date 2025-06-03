@@ -12,7 +12,7 @@
   - Mise à jour de la fonction getVillesByPays pour utiliser pays_code au lieu de pays_id
   - Ajout d'un système de fallback pour les pays sans villes dans la base de données
   - Création d'un script SQL pour ajouter la colonne pays_code à la table villes
-  - Ajout de données de test pour les pays d'Afrique et leurs villes principales
+  - Ajout de données de test pour 12 pays d'Afrique avec 10 villes principales par pays
 
 ## 2025-06-02
 - ✨ FIX: Refonte complète du client Supabase pour compatibilité navigateur
