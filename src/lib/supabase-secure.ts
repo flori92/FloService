@@ -2,13 +2,21 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { StorageClient } from '@supabase/storage-js';
 
 // Fonction de secours en cas d'échec d'initialisation
-const createFallbackClient = () => {
+const createFallbackClient = (): ExtendedSupabaseClient => {
   console.warn('Utilisation du client de secours Supabase');
   
   // Implémentation minimale pour éviter les erreurs
   const fallbackResponse = { data: null, error: { message: 'Client de secours' } };
   
+  // Retourner directement un mock du client Supabase qui correspond au type ExtendedSupabaseClient
   return {
+    // Propriétés obligatoires de SupabaseClient
+    supabaseUrl: 'https://fallback.supabase.co',
+    supabaseKey: 'fallback-key',
+    realtime: { connect: () => {}, disconnect: () => {}, removeChannel: () => {} },
+    realtimeUrl: 'wss://fallback.supabase.co',
+    rest: { baseUrl: 'https://fallback.supabase.co' },
+    headers: {},
     auth: {
       onAuthStateChange: () => ({ 
         data: { 
@@ -20,7 +28,13 @@ const createFallbackClient = () => {
       signIn: () => Promise.resolve({ error: { message: 'Client de secours - Non disponible' } }),
       signOut: () => Promise.resolve({ error: null }),
       user: () => ({ id: 'fallback-user' }),
-      getUser: () => Promise.resolve({ data: { user: { id: 'fallback-user' } }, error: null })
+      getUser: () => Promise.resolve({ data: { user: { id: 'fallback-user' } }, error: null }),
+      // Autres méthodes requises
+      session: () => null,
+      refreshSession: () => Promise.resolve({ data: null, error: null }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      setSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      setAuth: () => {}
     },
     from: () => ({
       select: () => ({
@@ -40,8 +54,14 @@ const createFallbackClient = () => {
         getPublicUrl: (path: string) => ({ data: { publicUrl: '' } })
       })
     },
-    rpc: () => Promise.resolve(fallbackResponse)
-  };
+    rpc: () => Promise.resolve(fallbackResponse),
+    // Autres méthodes requises
+    channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
+    removeChannel: () => {},
+    getChannels: () => [],
+    removeAllChannels: () => {},
+    functions: { invoke: () => Promise.resolve(fallbackResponse) }
+  } as unknown as ExtendedSupabaseClient;
 };
 
 // Type du client de secours
@@ -127,15 +147,21 @@ const getEnvVariable = (key: string, defaultValue: string): string => {
   // Vérifier d'abord import.meta.env (Vite)
   debugLog(`Récupération de la variable d'environnement: ${key}`);
   const viteValue = (import.meta as any).env?.[key];
-  if (viteValue) return viteValue;
+  if (viteValue) {
+    return viteValue;
+  }
   
   // Vérifier ensuite process.env (Node.js/React)
   const processValue = typeof process !== 'undefined' && process.env && (process.env as any)[key];
-  if (processValue) return processValue;
+  if (processValue) {
+    return processValue;
+  }
   
   // Vérifier window.ENV (injection runtime)
   const windowValue = typeof window !== 'undefined' && window.ENV && window.ENV[key];
-  if (windowValue) return windowValue;
+  if (windowValue) {
+    return windowValue;
+  }
   
   // Retourner la valeur par défaut
   console.warn(`Variable d'environnement ${key} non trouvée, utilisation de la valeur par défaut`);
@@ -156,8 +182,12 @@ const supabaseKey = getEnvVariable(
 // Vérification des variables d'environnement critiques
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Configuration Supabase manquante. Vérifiez vos variables d\'environnement.');
-  if (!supabaseUrl) console.error('VITE_SUPABASE_URL est manquant');
-  if (!supabaseKey) console.error('VITE_SUPABASE_ANON_KEY est manquant');
+  if (!supabaseUrl) {
+    console.error('VITE_SUPABASE_URL est manquant');
+  }
+  if (!supabaseKey) {
+    console.error('VITE_SUPABASE_ANON_KEY est manquant');
+  }
 }
 
 // Création du client Supabase avec gestion d'erreur
@@ -238,7 +268,10 @@ export const supabase: ExtendedSupabaseClient = createSupabaseClient();
 
 // Fonction utilitaire pour échapper les entrées utilisateur dans les recherches
 export function safeSearchTerm(term: string): string {
-  if (!term) return '';
+  if (!term) {
+    return '';
+  }
+  
   return term
     .replace(/[\s\t\n]+/g, ' ') // Remplacer les espaces multiples par un seul espace
     .trim()
@@ -248,6 +281,35 @@ export function safeSearchTerm(term: string): string {
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
     .replace(/'/g, "''");
+};
+
+/**
+ * Vérifie si l'ID fourni correspond à l'utilisateur actuellement connecté
+ * @param userId - L'ID à vérifier
+ * @returns true si l'ID correspond à l'utilisateur connecté, false sinon
+ */
+const isCurrentUserId = async (userId?: string): Promise<boolean> => {
+  if (!userId || !supabase) {
+    return false;
+  }
+  
+  try {
+    // Vérifier avec getSession si disponible
+    if ('getSession' in supabase.auth) {
+      const { data: { session } } = await (supabase.auth as any).getSession();
+      return session?.user?.id === userId;
+    }
+    // Sinon vérifier avec user()
+    else if ('user' in supabase.auth) {
+      const user = (supabase.auth as any).user();
+      return user?.id === userId;
+    }
+    
+    return false;
+  } catch (err) {
+    console.error('Erreur lors de la vérification de l\'ID utilisateur:', err);
+    return false;
+  }
 };
 
 // Fonction utilitaire pour vérifier si l'utilisateur est un prestataire
@@ -288,29 +350,53 @@ export const isProvider = async (userId?: string): Promise<boolean> => {
     }
 
     try {
-      // Essayer d'abord d'utiliser la méthode RPC si elle est disponible
+      // Vérifier si on cherche le statut de l'utilisateur actuellement connecté
+      const isCurrentUser = await isCurrentUserId(userId);
+      
+      // Si c'est l'utilisateur actuel, utiliser get_my_provider_status (plus sûr)
+      if (isCurrentUser && 'rpc' in supabase) {
+        try {
+          console.log('Utilisation de get_my_provider_status pour l\'utilisateur connecté');
+          const { data: myStatus, error: myStatusError } = await (supabase as any).rpc('get_my_provider_status');
+          if (!myStatusError) {
+            return myStatus === true;
+          }
+          console.warn('La fonction RPC get_my_provider_status a échoué:', myStatusError);
+        } catch (rpcErr) {
+          console.warn('Exception lors de l\'appel RPC get_my_provider_status:', rpcErr);
+        }
+      }
+      
+      // Sinon, essayer d'utiliser la méthode RPC is_provider avec l'ID spécifié
       if ('rpc' in supabase) {
         try {
+          console.log('Utilisation de is_provider avec userId:', userId);
           const { data: rpcCheck, error: rpcError } = await (supabase as any).rpc('is_provider', { user_id: userId });
           if (!rpcError) {
             return rpcCheck === true;
           }
-          console.warn('La fonction RPC a échoué, utilisation de la méthode alternative');
+          console.warn('La fonction RPC is_provider a échoué:', rpcError);
         } catch (rpcErr) {
-          console.warn('Erreur lors de l\'appel RPC is_provider:', rpcErr);
+          console.warn('Exception lors de l\'appel RPC is_provider:', rpcErr);
         }
       }
       
-      // Méthode alternative : requête directe sur la table profiles
-      console.log('Utilisation de la méthode alternative pour vérifier le statut prestataire');
+      // Méthode de dernier recours : requête directe sur la table profiles
+      // ATTENTION: Cette méthode échouera si la politique RLS est restrictive
+      console.warn('Utilisation de la méthode de dernier recours (requête directe sur profiles)');
       
       const { data, error } = await (supabase as any)
         .from('profiles')
         .select('is_provider')
         .eq('id', userId);
       
-      if (error || !data || data.length === 0) {
-        console.error('❌ Erreur lors de la vérification du statut prestataire:', error || 'Aucune donnée retournée');
+      if (error) {
+        console.error('❌ Erreur lors de la vérification du statut prestataire:', error);
+        return false;
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn('⚠️ Aucun profil trouvé pour l\'utilisateur:', userId);
         return false;
       }
       
