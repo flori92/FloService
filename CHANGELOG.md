@@ -1,5 +1,13 @@
 # Changelog FloService
 
+## 2025-06-03
+- ✨ FIX: Unification du client Supabase et correction des erreurs HTTP
+  - Remplacement des importations multiples par un client unique (supabase-secure.ts)
+  - Résolution des erreurs 406 (Not Acceptable) avec des en-têtes HTTP améliorés
+  - Élimination des instances multiples de GoTrueClient dans le même contexte navigateur
+  - Amélioration de la fonction isProvider avec gestion robuste des erreurs
+  - Ajout de scripts SQL pour créer la fonction RPC is_provider manquante
+
 ## 2025-06-02
 - ✨ FIX: Refonte complète du client Supabase pour compatibilité navigateur
   - Suppression de toutes les références à `require()` incompatibles avec le navigateur
