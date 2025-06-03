@@ -289,31 +289,39 @@ export function safeSearchTerm(term: string): string {
  * @returns true si l'ID correspond à l'utilisateur connecté, false sinon
  */
 const isCurrentUserId = async (userId?: string): Promise<boolean> => {
+  console.log('[Debug RLS] isCurrentUserId called with userId:', userId);
   if (!userId || !supabase) {
+    console.log('[Debug RLS] isCurrentUserId: no userId or supabase client. Returning false.');
     return false;
   }
   
   try {
+    let currentAuthUserId: string | undefined;
     // Vérifier avec getSession si disponible
     if ('getSession' in supabase.auth) {
       const { data: { session } } = await (supabase.auth as any).getSession();
-      return session?.user?.id === userId;
+      currentAuthUserId = session?.user?.id;
+      console.log('[Debug RLS] isCurrentUserId: using getSession. session?.user?.id:', currentAuthUserId);
     }
     // Sinon vérifier avec user()
     else if ('user' in supabase.auth) {
       const user = (supabase.auth as any).user();
-      return user?.id === userId;
+      currentAuthUserId = user?.id;
+      console.log('[Debug RLS] isCurrentUserId: using user(). user?.id:', currentAuthUserId);
     }
     
-    return false;
+    const match = currentAuthUserId === userId;
+    console.log(`[Debug RLS] isCurrentUserId: Comparison: ${currentAuthUserId} === ${userId} -> ${match}`);
+    return match;
   } catch (err) {
-    console.error('Erreur lors de la vérification de l\'ID utilisateur:', err);
+    console.error('[Debug RLS] Erreur dans isCurrentUserId:', err);
     return false;
   }
 };
 
 // Fonction utilitaire pour vérifier si l'utilisateur est un prestataire
 export const isProvider = async (userId?: string): Promise<boolean> => {
+  console.log('[Debug RLS] isProvider called with initial userId:', userId);
   try {
     // Vérification du client Supabase
     if (!supabase) {
@@ -321,94 +329,111 @@ export const isProvider = async (userId?: string): Promise<boolean> => {
       return false;
     }
 
+    let resolvedUserId = userId;
     // Si aucun userId n'est fourni, vérifier l'utilisateur connecté
-    if (!userId) {
+    if (!resolvedUserId) {
+      console.log('[Debug RLS] isProvider: userId is initially null/undefined. Attempting to get current user.');
       try {
         // Essayer d'abord avec getSession() si disponible
         if ('getSession' in supabase.auth) {
           const { data: { session } } = await (supabase.auth as any).getSession();
           if (session?.user) {
-            userId = session.user.id;
+            resolvedUserId = session.user.id;
+            console.log('[Debug RLS] isProvider: userId resolved from getSession:', resolvedUserId);
           }
         } 
         // Sinon essayer avec user()
         else if ('user' in supabase.auth) {
           const user = (supabase.auth as any).user();
           if (user) {
-            userId = user.id;
+            resolvedUserId = user.id;
+            console.log('[Debug RLS] isProvider: userId resolved from user():', resolvedUserId);
           }
         }
 
-        if (!userId) {
-          console.error('❌ Aucun utilisateur connecté et aucun userId fourni');
+        if (!resolvedUserId) {
+          console.error('[Debug RLS] isProvider: ❌ Aucun utilisateur connecté et aucun userId fourni');
           return false;
         }
       } catch (err) {
-        console.error('❌ Erreur lors de la récupération de l\'utilisateur:', err);
+        console.error('[Debug RLS] isProvider: ❌ Erreur lors de la récupération de l\'utilisateur:', err);
         return false;
       }
     }
+    console.log('[Debug RLS] isProvider: resolvedUserId to use for checks:', resolvedUserId);
 
     try {
       // Vérifier si on cherche le statut de l'utilisateur actuellement connecté
-      const isCurrentUser = await isCurrentUserId(userId);
+      const isCurrentUser = await isCurrentUserId(resolvedUserId);
+      console.log('[Debug RLS] isProvider: isCurrentUserId returned:', isCurrentUser, 'for userId:', resolvedUserId);
       
       // Si c'est l'utilisateur actuel, utiliser get_my_provider_status (plus sûr)
       if (isCurrentUser && 'rpc' in supabase) {
+        console.log('[Debug RLS] isProvider: Attempting RPC get_my_provider_status for current user.');
         try {
-          console.log('Utilisation de get_my_provider_status pour l\'utilisateur connecté');
           const { data: myStatus, error: myStatusError } = await (supabase as any).rpc('get_my_provider_status');
           if (!myStatusError) {
+            console.log('[Debug RLS] isProvider: RPC get_my_provider_status success. Status:', myStatus);
             return myStatus === true;
           }
-          console.warn('La fonction RPC get_my_provider_status a échoué:', myStatusError);
+          console.warn('[Debug RLS] isProvider: RPC get_my_provider_status failed:', myStatusError);
         } catch (rpcErr) {
-          console.warn('Exception lors de l\'appel RPC get_my_provider_status:', rpcErr);
+          console.warn('[Debug RLS] isProvider: Exception during RPC get_my_provider_status:', rpcErr);
+        }
+      } else {
+        if (!isCurrentUser) {
+          console.log('[Debug RLS] isProvider: Not current user or RPC not available for get_my_provider_status.');
+        }
+        if (!('rpc' in supabase)) {
+          console.log('[Debug RLS] isProvider: supabase.rpc not available.');
         }
       }
       
       // Sinon, essayer d'utiliser la méthode RPC is_provider avec l'ID spécifié
+      console.log('[Debug RLS] isProvider: Attempting RPC is_provider with userId:', resolvedUserId);
       if ('rpc' in supabase) {
         try {
-          console.log('Utilisation de is_provider avec userId:', userId);
-          const { data: rpcCheck, error: rpcError } = await (supabase as any).rpc('is_provider', { user_id: userId });
+          const { data: rpcCheck, error: rpcError } = await (supabase as any).rpc('is_provider', { user_id: resolvedUserId });
           if (!rpcError) {
+            console.log('[Debug RLS] isProvider: RPC is_provider success. Status:', rpcCheck);
             return rpcCheck === true;
           }
-          console.warn('La fonction RPC is_provider a échoué:', rpcError);
+          console.warn('[Debug RLS] isProvider: RPC is_provider failed:', rpcError);
         } catch (rpcErr) {
-          console.warn('Exception lors de l\'appel RPC is_provider:', rpcErr);
+          console.warn('[Debug RLS] isProvider: Exception during RPC is_provider:', rpcErr);
         }
+      } else {
+        console.log('[Debug RLS] isProvider: supabase.rpc not available for is_provider call.');
       }
       
       // Méthode de dernier recours : requête directe sur la table profiles
-      // ATTENTION: Cette méthode échouera si la politique RLS est restrictive
-      console.warn('Utilisation de la méthode de dernier recours (requête directe sur profiles)');
+      console.warn('[Debug RLS] isProvider: Falling back to direct query on profiles table for userId:', resolvedUserId);
       
       const { data, error } = await (supabase as any)
         .from('profiles')
         .select('is_provider')
-        .eq('id', userId);
+        .eq('id', resolvedUserId); // Use resolvedUserId here
       
       if (error) {
-        console.error('❌ Erreur lors de la vérification du statut prestataire:', error);
+        console.error('[Debug RLS] isProvider: ❌ Direct query error:', error);
         return false;
       }
       
       if (!data || data.length === 0) {
-        console.warn('⚠️ Aucun profil trouvé pour l\'utilisateur:', userId);
+        console.warn('[Debug RLS] isProvider: ⚠️ No profile found in direct query for user:', resolvedUserId);
         return false;
       }
       
-      // Retourner la valeur de is_provider ou false si non défini
-      return data[0]?.is_provider === true;
+      const providerStatus = data[0]?.is_provider === true;
+      console.log('[Debug RLS] isProvider: Direct query result for is_provider:', providerStatus);
+      return providerStatus;
       
     } catch (err) {
-      console.error('❌ Exception lors de la vérification du statut prestataire:', err);
+      console.error('[Debug RLS] isProvider: ❌ Exception during provider status check logic:', err);
       return false;
     }
   } catch (err) {
-    console.error('❌ Erreur critique dans isProvider:', err);
+    console.error('[Debug RLS] isProvider: ❌ Critical error in isProvider:', err);
     return false;
   }
 };
