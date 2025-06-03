@@ -146,10 +146,12 @@ export const createSupabaseClient = () => {
       },
       global: {
         headers: {
-          'Accept': 'application/json',
+          'Accept': 'application/json, */*',
           'Content-Type': 'application/json',
           'Accept-Profile': 'public',
           'Content-Profile': 'public',
+          'apikey': supabaseKey,
+          'Prefer': 'return=representation',
         },
       },
       // Le schéma est défini directement dans le type Database

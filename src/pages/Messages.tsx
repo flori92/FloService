@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import enhancedSupabase from '../lib/supabaseClient';
+import { supabase as enhancedSupabase } from '../lib/supabase-secure';
 import { useAuthStore } from '../store/authStore';
 import Chat from '../components/Chat';
 

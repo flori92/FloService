@@ -3,7 +3,7 @@
  * Permet de récupérer les pays, villes et filtrer les prestataires par localisation
  */
 
-import supabase from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase-secure';
 
 /**
  * Récupère tous les pays disponibles

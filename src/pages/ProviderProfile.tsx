@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import supabase from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase-secure';
 import { handleSupabaseError, checkTableExists, isTestId, isValidUUID, cleanIdForSupabase } from '../utils/migrationChecker';
 import { toast } from 'react-hot-toast';
 import { MapPin, Star, Briefcase, Clock, Award, Mail, Phone } from 'lucide-react';
