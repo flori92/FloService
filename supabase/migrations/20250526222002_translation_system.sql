@@ -60,9 +60,9 @@ CREATE POLICY "Seuls les administrateurs peuvent modifier les traductions"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
+      SELECT 1 FROM auth.users
+      WHERE auth.users.id = auth.uid()
+      AND auth.users.role = 'admin'
     )
   );
 
@@ -105,7 +105,7 @@ INSERT INTO translations (key, fr, en) VALUES
 ('cta.provider.benefits.1', 'Recevez des demandes qualifiées', 'Receive qualified requests'),
 ('cta.provider.benefits.2', 'Gérez facilement votre agenda', 'Easily manage your schedule'),
 ('cta.provider.button', 'Devenir prestataire', 'Become a provider'),
-('cta.client.title', 'Besoin d\'un service ?', 'Need a service?'),
+('cta.client.title', 'Besoin d''un service ?', 'Need a service?'),
 ('cta.client.description', 'Trouvez rapidement le bon professionnel pour votre projet.', 'Quickly find the right professional for your project.'),
 ('cta.client.benefits.0.title', 'Prestataires vérifiés', 'Verified providers'),
 ('cta.client.benefits.0.description', 'Tous nos prestataires sont vérifiés', 'All our providers are verified'),

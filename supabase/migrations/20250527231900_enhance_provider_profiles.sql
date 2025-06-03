@@ -21,7 +21,20 @@ CREATE TABLE IF NOT EXISTS portfolio_items (
 );
 
 -- Index pour optimiser les requêtes
-CREATE INDEX IF NOT EXISTS idx_portfolio_items_profile_id ON portfolio_items(profile_id);
+DO $$
+BEGIN
+    -- Vérifier si la colonne profile_id existe dans la table portfolio_items
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'portfolio_items'
+        AND column_name = 'profile_id'
+    ) THEN
+        -- Créer l'index seulement si la colonne existe
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_portfolio_items_profile_id ON portfolio_items(profile_id)';
+    END IF;
+END;
+$$;
 
 -- Fonction pour mettre à jour automatiquement updated_at
 CREATE OR REPLACE FUNCTION update_portfolio_item_updated_at()
@@ -38,35 +51,57 @@ BEFORE UPDATE ON portfolio_items
 FOR EACH ROW EXECUTE FUNCTION update_portfolio_item_updated_at();
 
 -- Politiques RLS pour les éléments du portfolio
-ALTER TABLE portfolio_items ENABLE ROW LEVEL SECURITY;
-
--- Les utilisateurs peuvent voir leurs propres éléments de portfolio
-CREATE POLICY "Users can view their own portfolio items"
-ON portfolio_items
-FOR SELECT
-TO authenticated
-USING (profile_id = auth.uid());
-
--- Les utilisateurs peuvent créer des éléments de portfolio
-CREATE POLICY "Users can create portfolio items"
-ON portfolio_items
-FOR INSERT
-TO authenticated
-WITH CHECK (profile_id = auth.uid());
-
--- Les utilisateurs peuvent mettre à jour leurs propres éléments de portfolio
-CREATE POLICY "Users can update their own portfolio items"
-ON portfolio_items
-FOR UPDATE
-TO authenticated
-USING (profile_id = auth.uid());
-
--- Les utilisateurs peuvent supprimer leurs propres éléments de portfolio
-CREATE POLICY "Users can delete their own portfolio items"
-ON portfolio_items
-FOR DELETE
-TO authenticated
-USING (profile_id = auth.uid());
+DO $$
+BEGIN
+    -- Vérifier si la table portfolio_items existe et si la colonne profile_id existe
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_name = 'portfolio_items'
+    ) AND EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'portfolio_items'
+        AND column_name = 'profile_id'
+    ) THEN
+        -- Activer RLS sur la table
+        EXECUTE 'ALTER TABLE portfolio_items ENABLE ROW LEVEL SECURITY';
+        
+        -- Vérifier si la politique existe déjà
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies 
+            WHERE tablename = 'portfolio_items' 
+            AND policyname = 'Users can view their own portfolio items'
+        ) THEN
+            EXECUTE 'CREATE POLICY "Users can view their own portfolio items" ON portfolio_items FOR SELECT TO authenticated USING (profile_id = auth.uid())';
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies 
+            WHERE tablename = 'portfolio_items' 
+            AND policyname = 'Users can create portfolio items'
+        ) THEN
+            EXECUTE 'CREATE POLICY "Users can create portfolio items" ON portfolio_items FOR INSERT TO authenticated WITH CHECK (profile_id = auth.uid())';
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies 
+            WHERE tablename = 'portfolio_items' 
+            AND policyname = 'Users can update their own portfolio items'
+        ) THEN
+            EXECUTE 'CREATE POLICY "Users can update their own portfolio items" ON portfolio_items FOR UPDATE TO authenticated USING (profile_id = auth.uid())';
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies 
+            WHERE tablename = 'portfolio_items' 
+            AND policyname = 'Users can delete their own portfolio items'
+        ) THEN
+            EXECUTE 'CREATE POLICY "Users can delete their own portfolio items" ON portfolio_items FOR DELETE TO authenticated USING (profile_id = auth.uid())';
+        END IF;
+    END IF;
+END;
+$$;
 
 -- Création de la table pour les paramètres utilisateur
 CREATE TABLE IF NOT EXISTS user_settings (

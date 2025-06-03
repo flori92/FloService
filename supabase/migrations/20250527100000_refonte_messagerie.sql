@@ -174,7 +174,7 @@ BEGIN
     END,
     'Nouveau message',
     CASE 
-      WHEN p_sender_id = v_client_id THEN 'Vous avez reçu un nouveau message d\'un client.'
+      WHEN p_sender_id = v_client_id THEN 'Vous avez reçu un nouveau message d''un client.'
       ELSE 'Vous avez reçu une réponse du prestataire.'
     END,
     'message',
@@ -191,46 +191,62 @@ ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- Politiques pour la table conversations
-CREATE POLICY "Les utilisateurs peuvent voir leurs conversations" 
-ON public.conversations
-FOR SELECT
-USING (
-  auth.uid() = client_id OR 
-  auth.uid() = provider_id
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Les utilisateurs peuvent voir leurs conversations' AND tablename = 'conversations') THEN
+    CREATE POLICY "Les utilisateurs peuvent voir leurs conversations" 
+    ON public.conversations
+    FOR SELECT
+    USING (
+      auth.uid() = client_id OR 
+      auth.uid() = provider_id
+    );
+  END IF;
 
-CREATE POLICY "Les clients peuvent créer des conversations"
-ON public.conversations
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  auth.uid() = client_id
-);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Les clients peuvent créer des conversations' AND tablename = 'conversations') THEN
+    CREATE POLICY "Les clients peuvent créer des conversations"
+    ON public.conversations
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+      auth.uid() = client_id
+    );
+  END IF;
+END
+$$;
 
 -- Politiques pour la table messages
-CREATE POLICY "Les utilisateurs peuvent voir les messages de leurs conversations"
-ON public.messages
-FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM conversations
-    WHERE id = messages.conversation_id
-    AND (client_id = auth.uid() OR provider_id = auth.uid())
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Les utilisateurs peuvent voir les messages de leurs conversations' AND tablename = 'messages') THEN
+    CREATE POLICY "Les utilisateurs peuvent voir les messages de leurs conversations"
+    ON public.messages
+    FOR SELECT
+    USING (
+      EXISTS (
+        SELECT 1 FROM conversations
+        WHERE id = messages.conversation_id
+        AND (client_id = auth.uid() OR provider_id = auth.uid())
+      )
+    );
+  END IF;
 
-CREATE POLICY "Les utilisateurs peuvent envoyer des messages dans leurs conversations"
-ON public.messages
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM conversations
-    WHERE id = messages.conversation_id
-    AND (client_id = auth.uid() OR provider_id = auth.uid())
-  )
-  AND sender_id = auth.uid()
-);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Les utilisateurs peuvent envoyer des messages dans leurs conversations' AND tablename = 'messages') THEN
+    CREATE POLICY "Les utilisateurs peuvent envoyer des messages dans leurs conversations"
+    ON public.messages
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM conversations
+        WHERE id = messages.conversation_id
+        AND (client_id = auth.uid() OR provider_id = auth.uid())
+      )
+      AND sender_id = auth.uid()
+    );
+  END IF;
+END
+$$;
 
 -- Créer un index pour améliorer les performances des requêtes
 CREATE INDEX IF NOT EXISTS idx_conversations_client_provider 

@@ -1,5 +1,14 @@
 // Utilitaires pour améliorer la compatibilité avec l'API Supabase
 import { supabase } from '../lib/supabase';
+import {
+  Category,
+  Subcategory,
+  CategoryWithSubcategories,
+  isValidCategory,
+  isValidSubcategory,
+  isValidCategoryArray,
+  isValidSubcategoryArray
+} from '../types/supabase';
 
 /**
  * Vérifie si un utilisateur est un prestataire de manière robuste
@@ -229,5 +238,124 @@ export const fetchWithAcceptWorkaround = async (
   } catch (error) {
     console.error(`Erreur lors de la requête sur ${table}:`, error);
     return { data: null, error };
+  }
+};
+
+/**
+ * Récupère toutes les catégories avec typage fort
+ */
+export const fetchCategories = async (): Promise<{ data: Category[]; error: Error | null }> => {
+  try {
+    const response = await supabase
+      .from('categories')
+      .select('id, name, description')
+      .order('name', { ascending: true });
+
+    if (response.error) {
+      console.error('Erreur lors du chargement des catégories:', response.error);
+      return { data: [], error: new Error(response.error.message) };
+    }
+
+    // Validation et transformation des données
+    if (!Array.isArray(response.data)) {
+      return { data: [], error: new Error('Format de données invalide') };
+    }
+
+    const validCategories = response.data
+      .filter(item => isValidCategory(item))
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description
+      }));
+
+    return { data: validCategories, error: null };
+  } catch (error: any) {
+    console.error('Exception lors du chargement des catégories:', error);
+    return { data: [], error: error instanceof Error ? error : new Error('Erreur inconnue') };
+  }
+};
+
+/**
+ * Récupère les sous-catégories pour une catégorie spécifique avec typage fort
+ */
+export const fetchSubcategoriesByCategory = async (categoryId: string): Promise<{ data: Subcategory[]; error: Error | null }> => {
+  try {
+    const response = await supabase
+      .from('subcategories')
+      .select('id, name, category_id, description')
+      .eq('category_id', categoryId)
+      .order('name', { ascending: true });
+
+    if (response.error) {
+      console.error(`Erreur lors du chargement des sous-catégories pour la catégorie ${categoryId}:`, response.error);
+      return { data: [], error: new Error(response.error.message) };
+    }
+
+    // Validation et transformation des données
+    if (!Array.isArray(response.data)) {
+      return { data: [], error: new Error('Format de données invalide') };
+    }
+
+    const validSubcategories = response.data
+      .filter(item => isValidSubcategory(item))
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        category_id: item.category_id,
+        description: item.description
+      }));
+
+    return { data: validSubcategories, error: null };
+  } catch (error: any) {
+    console.error(`Exception lors du chargement des sous-catégories pour la catégorie ${categoryId}:`, error);
+    return { data: [], error: error instanceof Error ? error : new Error('Erreur inconnue') };
+  }
+};
+
+/**
+ * Récupère toutes les catégories avec leurs sous-catégories
+ */
+export const fetchCategoriesWithSubcategories = async (): Promise<{ data: CategoryWithSubcategories[]; error: Error | null }> => {
+  try {
+    // 1. Récupérer toutes les catégories
+    const { data: categories, error: categoriesError } = await fetchCategories();
+    
+    if (categoriesError || categories.length === 0) {
+      return { data: [], error: categoriesError || new Error('Aucune catégorie trouvée') };
+    }
+
+    // 2. Pour chaque catégorie, récupérer ses sous-catégories
+    const categoriesWithSubcategories = await Promise.all(
+      categories.map(async (category) => {
+        try {
+          const { data: subcategories, error: subcategoriesError } = await fetchSubcategoriesByCategory(category.id);
+          
+          if (subcategoriesError) {
+            console.error(`Erreur lors du chargement des sous-catégories pour la catégorie ${category.id}:`, subcategoriesError);
+            return {
+              ...category,
+              subcategories: []
+            };
+          }
+          
+          return {
+            ...category,
+            subcategories: subcategories
+          };
+        } catch (error) {
+          console.error(`Exception lors du chargement des sous-catégories pour la catégorie ${category.id}:`, error);
+          return {
+            ...category,
+            subcategories: []
+          };
+        }
+      })
+    );
+
+    return { data: categoriesWithSubcategories, error: null };
+  } catch (error: any) {
+    console.error('Exception lors du chargement des catégories avec sous-catégories:', error);
+    return { data: [], error: error instanceof Error ? error : new Error('Erreur inconnue') };
   }
 };

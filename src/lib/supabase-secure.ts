@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { StorageClient } from '@supabase/storage-js';
 
 // Fonction de secours en cas d'échec d'initialisation
 const createFallbackClient = () => {
@@ -18,21 +19,56 @@ const createFallbackClient = () => {
       }),
       signIn: () => Promise.resolve({ error: { message: 'Client de secours - Non disponible' } }),
       signOut: () => Promise.resolve({ error: null }),
-      user: () => ({ id: 'fallback-user' })
+      user: () => ({ id: 'fallback-user' }),
+      getUser: () => Promise.resolve({ data: { user: { id: 'fallback-user' } }, error: null })
     },
     from: () => ({
       select: () => ({
         eq: () => ({
           single: () => Promise.resolve(fallbackResponse)
         })
+      }),
+      insert: () => ({
+        select: () => ({
+          single: () => Promise.resolve(fallbackResponse)
+        })
       })
     }),
+    storage: {
+      from: (bucket: string) => ({
+        upload: (path: string, file: File | string, options?: any) => Promise.resolve(fallbackResponse),
+        getPublicUrl: (path: string) => ({ data: { publicUrl: '' } })
+      })
+    },
     rpc: () => Promise.resolve(fallbackResponse)
   };
 };
 
 // Type du client de secours
 type FallbackSupabaseClient = ReturnType<typeof createFallbackClient>;
+
+// Type étendu pour inclure le stockage
+type ExtendedSupabaseClient = SupabaseClient<Database, 'public', {
+  Tables: { [key: string]: any };
+  Views: { [key: string]: any };
+  Functions: {
+    is_provider: { Args: { user_id?: string }; Returns: boolean };
+    check_invoice_permissions: { Args: { invoice_id: string }; Returns: boolean };
+    log_audit_action: {
+      Args: {
+        action: string;
+        table_name: string;
+        record_id: string;
+        old_data?: Json;
+        new_data?: Json;
+      };
+      Returns: undefined;
+    };
+    [key: string]: any;
+  };
+}> & {
+  storage: StorageClient;
+};
 
 // Types de base pour Supabase
 export type Json =
@@ -125,7 +161,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // Création du client Supabase avec gestion d'erreur
-export const createSupabaseClient = () => {
+export const createSupabaseClient = (): ExtendedSupabaseClient => {
   try {
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Configuration Supabase incomplète');
@@ -198,7 +234,7 @@ export const createSupabaseClient = () => {
 };
 
 // Création et exportation du client Supabase
-export const supabase = createSupabaseClient();
+export const supabase: ExtendedSupabaseClient = createSupabaseClient();
 
 // Fonction utilitaire pour échapper les entrées utilisateur dans les recherches
 export function safeSearchTerm(term: string): string {

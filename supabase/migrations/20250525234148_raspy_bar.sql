@@ -1,87 +1,27 @@
 /*
-  # Booking System Implementation
+  # Système de paiement - Extension du système de réservation
 
-  1. New Tables
-    - `bookings`
+  Cette migration ajoute une table de paiements qui complète le système de réservation.
+  La table bookings et ses politiques de base ont déjà été créées dans les migrations précédentes.
+  
+  1. Nouvelles Tables
+    - `payments`
       - `id` (uuid, primary key)
-      - `service_id` (uuid, foreign key)
-      - `client_id` (uuid, foreign key)
-      - `provider_id` (uuid, foreign key)
+      - `booking_id` (uuid, foreign key)
       - `amount` (numeric)
-      - `status` (booking_status)
-      - `date` (date)
-      - `time` (time)
-      - `notes` (text)
+      - `status` (payment_status)
+      - `stripe_payment_id` (text)
       - `created_at` (timestamptz)
 
-  2. Security
-    - Enable RLS on bookings table
-    - Policies for clients and providers
-    - Trigger for handling booking status updates
+  2. Sécurité
+    - Activation RLS sur la table payments
+    - Politiques pour clients et prestataires
+    - Trigger pour mettre à jour le statut des réservations lors du paiement
 */
 
--- Create bookings table
-CREATE TABLE IF NOT EXISTS bookings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  service_id uuid REFERENCES services(id) ON DELETE CASCADE,
-  client_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  provider_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  amount numeric NOT NULL CHECK (amount > 0),
-  status booking_status DEFAULT 'pending',
-  date date NOT NULL,
-  time time NOT NULL,
-  notes text,
-  created_at timestamptz DEFAULT now()
-);
-
--- Enable RLS
-ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
-
--- Policies for bookings
-CREATE POLICY "Clients can create bookings"
-  ON bookings
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    auth.uid() = client_id AND
-    status = 'pending'
-  );
-
-CREATE POLICY "Clients can view their bookings"
-  ON bookings
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = client_id);
-
-CREATE POLICY "Providers can view bookings for their services"
-  ON bookings
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = provider_id);
-
-CREATE POLICY "Providers can confirm or cancel pending bookings"
-  ON bookings
-  FOR UPDATE
-  TO authenticated
-  USING (
-    auth.uid() = provider_id AND
-    status = 'pending'
-  )
-  WITH CHECK (
-    status IN ('confirmed', 'cancelled')
-  );
-
-CREATE POLICY "Providers can mark confirmed bookings as completed"
-  ON bookings
-  FOR UPDATE
-  TO authenticated
-  USING (
-    auth.uid() = provider_id AND
-    status = 'confirmed'
-  )
-  WITH CHECK (
-    status = 'completed'
-  );
+-- Note: La table bookings et ses politiques ont déjà été créées
+-- dans les migrations précédentes. Cette migration se concentre sur
+-- l'ajout de la table payments et ses fonctionnalités associées.
 
 -- Create payments table
 CREATE TABLE IF NOT EXISTS payments (

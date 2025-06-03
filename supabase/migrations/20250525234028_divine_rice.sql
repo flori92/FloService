@@ -30,8 +30,8 @@ CREATE TYPE payment_status AS ENUM ('pending', 'completed', 'refunded');
 CREATE TABLE IF NOT EXISTS bookings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   service_id uuid REFERENCES services(id) ON DELETE CASCADE,
-  client_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  provider_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  client_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  provider_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   amount numeric NOT NULL CHECK (amount > 0),
   status booking_status DEFAULT 'pending',
   payment_status payment_status DEFAULT 'pending',
@@ -76,8 +76,8 @@ CREATE POLICY "Providers can confirm or cancel pending bookings"
     status = 'pending'
   )
   WITH CHECK (
-    status IN ('confirmed', 'cancelled') AND
-    payment_status = OLD.payment_status
+    status IN ('confirmed', 'cancelled')
+    -- Nous ne pouvons pas vérifier OLD.payment_status dans une politique RLS
   );
 
 CREATE POLICY "Providers can mark confirmed bookings as completed"

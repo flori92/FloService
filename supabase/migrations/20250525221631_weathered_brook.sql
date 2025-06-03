@@ -77,6 +77,15 @@ CREATE POLICY "Users can update their own verification data"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Création de la fonction update_updated_at_column si elle n'existe pas
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Create updated_at trigger
 CREATE TRIGGER update_provider_verifications_updated_at
   BEFORE UPDATE ON provider_verifications

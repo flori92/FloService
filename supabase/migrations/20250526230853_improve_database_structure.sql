@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS cities (
 -- Table des catégories de services
 CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL UNIQUE,
   description TEXT,
   icon VARCHAR(50),
   parent_id UUID REFERENCES categories(id) ON DELETE SET NULL,
@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS status provider_status DEFAULT 'pending',
 ADD COLUMN IF NOT EXISTS bio TEXT,
+ADD COLUMN IF NOT EXISTS business_name TEXT,
 ADD COLUMN IF NOT EXISTS website TEXT,
 ADD COLUMN IF NOT EXISTS languages TEXT[],
 ADD COLUMN IF NOT EXISTS response_time_hours INTEGER,
@@ -103,8 +104,37 @@ ADD COLUMN IF NOT EXISTS postal_code VARCHAR(20);
 -- Pour les recherches de messages
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at DESC);
 
+-- Création de la table service_areas si elle n'existe pas
+CREATE TABLE IF NOT EXISTS service_areas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  lat DECIMAL(10, 8) NOT NULL,
+  lng DECIMAL(11, 8) NOT NULL,
+  radius_km INTEGER DEFAULT 10,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Pour les recherches géographiques
-CREATE INDEX IF NOT EXISTS idx_service_areas_location ON service_areas USING GIST (ST_MakePoint(lng, lat));
+DO $$
+BEGIN
+  -- Vérifier si les colonnes lng et lat existent dans la table service_areas
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'service_areas' 
+    AND column_name = 'lng'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'service_areas' 
+    AND column_name = 'lat'
+  ) THEN
+    -- Créer l'index géographique si les colonnes existent
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_service_areas_location ON service_areas USING GIST (ST_MakePoint(lng, lat))';
+  END IF;
+END
+$$;
 
 -- Pour les recherches de disponibilités
 CREATE INDEX IF NOT EXISTS idx_provider_availability_dates ON provider_availability(provider_id, day_of_week, start_time, end_time) 
@@ -133,7 +163,7 @@ BEGIN
       p.full_name,
       p.business_name,
       ST_Distance(
-        ST_MakePoint(lng, lat)::GEOGRAPHY,
+        ST_MakePoint($2, $1)::GEOGRAPHY,
         ST_MakePoint(sa.lng, sa.lat)::GEOGRAPHY
       ) / 1000 AS distance_km
     FROM profiles p
@@ -288,7 +318,11 @@ BEGIN
     SELECT table_name 
     FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name NOT IN ('spatial_ref_sys')
+    AND table_type = 'BASE TABLE'
+    AND table_name NOT IN (
+      'spatial_ref_sys', 'geography_columns', 'geometry_columns', 
+      'raster_columns', 'raster_overviews', 'schema_migrations'
+    )
   LOOP
     BEGIN
       EXECUTE format('CREATE TRIGGER update_%1$s_updated_at

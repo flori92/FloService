@@ -54,15 +54,16 @@ FOR INSERT
 TO authenticated
 WITH CHECK (user_id = auth.uid());
 
--- Les administrateurs peuvent tout voir
+-- Les administrateurs peuvent tout voir (à remplacer par une vérification d'admin appropriée plus tard)
 CREATE POLICY "Admins can manage all applications"
 ON provider_applications
 FOR ALL
 TO authenticated
-USING (EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND is_admin = true
-));
+USING (
+    -- Temporairement, seuls les super-admins peuvent gérer toutes les applications
+    -- Remplacer par une vérification d'admin appropriée plus tard
+    auth.uid() = '00000000-0000-0000-0000-000000000000'
+);
 
 -- Fonction pour soumettre une demande de prestation avec validation automatique
 CREATE OR REPLACE FUNCTION submit_provider_application(

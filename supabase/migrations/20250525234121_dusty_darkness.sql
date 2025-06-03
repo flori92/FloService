@@ -1,59 +1,17 @@
 /*
-  # Booking and Payment System
+  # Booking and Payment System - Migration complémentaire
   
-  1. Tables
-    - bookings: Stores booking information with payment status
+  Cette migration est un complément à la migration précédente (20250525234028_divine_rice.sql)
+  qui a déjà créé la table bookings et ses politiques de base.
   
-  2. Policies
-    - Clients can create and view their bookings
-    - Providers can view and manage their bookings
-    
-  3. Triggers
-    - Automatically confirms booking when payment is completed
+  Nous évitons de recréer les éléments existants pour éviter les erreurs.
 */
 
--- Create bookings table
-CREATE TABLE IF NOT EXISTS bookings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  service_id uuid REFERENCES services(id) ON DELETE CASCADE,
-  client_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  provider_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  amount numeric NOT NULL CHECK (amount > 0),
-  status booking_status DEFAULT 'pending',
-  payment_status payment_status DEFAULT 'pending',
-  date date NOT NULL,
-  time time NOT NULL,
-  notes text,
-  created_at timestamptz DEFAULT now()
-);
+-- Note: La table bookings et ses politiques de base ont déjà été créées
+-- dans la migration précédente. Cette migration ne contient que des
+-- modifications complémentaires si nécessaire.
 
--- Enable RLS
-ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
-
--- Policies for bookings
-CREATE POLICY "Clients can create bookings"
-  ON bookings
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    auth.uid() = client_id AND
-    payment_status = 'pending' AND
-    status = 'pending'
-  );
-
-CREATE POLICY "Clients can view their bookings"
-  ON bookings
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = client_id);
-
-CREATE POLICY "Providers can view bookings for their services"
-  ON bookings
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = provider_id);
-
-CREATE POLICY "Providers can confirm or cancel pending bookings"
+CREATE POLICY "Providers can confirm or cancel pending bookings_v2"
   ON bookings
   FOR UPDATE
   TO authenticated
@@ -62,11 +20,11 @@ CREATE POLICY "Providers can confirm or cancel pending bookings"
     status = 'pending'
   )
   WITH CHECK (
-    status IN ('confirmed', 'cancelled') AND
-    payment_status = OLD.payment_status
+    status IN ('confirmed', 'cancelled')
+    -- Nous ne pouvons pas vérifier OLD.payment_status dans une politique RLS
   );
 
-CREATE POLICY "Providers can mark confirmed bookings as completed"
+CREATE POLICY "Providers can mark confirmed bookings as completed_v2"
   ON bookings
   FOR UPDATE
   TO authenticated
@@ -80,21 +38,6 @@ CREATE POLICY "Providers can mark confirmed bookings as completed"
     payment_status = 'completed'
   );
 
--- Create function to handle payment completion
-CREATE OR REPLACE FUNCTION handle_payment_completion()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- If payment is completed and booking is pending, automatically set status to confirmed
-  IF NEW.payment_status = 'completed' AND OLD.payment_status = 'pending' THEN
-    NEW.status := 'confirmed';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger for payment completion
-CREATE TRIGGER on_payment_completion
-  BEFORE UPDATE ON bookings
-  FOR EACH ROW
-  WHEN (NEW.payment_status = 'completed' AND OLD.payment_status = 'pending')
-  EXECUTE FUNCTION handle_payment_completion();
+-- La fonction handle_payment_completion et le trigger on_payment_completion
+-- ont déjà été créés dans la migration précédente.
+-- Nous ne les recréons pas ici pour éviter les erreurs de duplication.

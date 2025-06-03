@@ -20,16 +20,8 @@
     - Add policies for message access
 */
 
--- Create messages table
-CREATE TABLE IF NOT EXISTS messages (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id uuid REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  content text,
-  file_url text,
-  file_type text,
-  created_at timestamptz DEFAULT now()
-);
+-- Modification de la table messages pour ajouter la colonne conversation_id
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS conversation_id uuid REFERENCES conversations(id) ON DELETE CASCADE;
 
 -- Enable RLS
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
@@ -60,20 +52,5 @@ CREATE POLICY "Users can send messages in their conversations"
     AND auth.uid() = sender_id
   );
 
--- Create storage bucket for attachments
-INSERT INTO storage.buckets (id, name)
-VALUES ('chat-attachments', 'chat-attachments')
-ON CONFLICT DO NOTHING;
-
--- Storage policies
-CREATE POLICY "Authenticated users can upload attachments"
-  ON storage.objects
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (bucket_id = 'chat-attachments');
-
-CREATE POLICY "Users can view chat attachments"
-  ON storage.objects
-  FOR SELECT
-  TO authenticated
-  USING (bucket_id = 'chat-attachments');
+-- Le bucket de stockage et les politiques ont déjà été créés dans la migration précédente
+-- Nous ne les recréons pas ici pour éviter les erreurs de duplication

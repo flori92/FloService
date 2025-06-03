@@ -17,7 +17,8 @@
 CREATE TABLE IF NOT EXISTS messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id uuid REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  sender_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  receiver_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   content text,
   file_url text,
   file_type text,

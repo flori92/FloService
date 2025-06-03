@@ -1,44 +1,21 @@
 /*
-  # Add notifications system
+  # Extension du système de notifications - Ajout de triggers
   
-  1. New Tables
-    - notifications
-      - id (uuid, primary key)
-      - user_id (uuid, references auth.users)
-      - type (text)
-      - content (text)
-      - read (boolean)
-      - created_at (timestamp)
+  Cette migration complète le système de notifications créé dans la migration précédente
+  (20250526180147_proud_harbor.sql) en ajoutant un trigger pour la création automatique
+  de notifications lors de l'envoi de nouveaux messages.
   
-  2. Security
-    - Enable RLS on notifications table
-    - Add policies for users to view and update their own notifications
-  
-  3. Triggers
-    - Create trigger for automatic notification creation on new messages
+  1. Fonctionnalités ajoutées
+    - Fonction pour créer des notifications de message
+    - Trigger pour exécuter cette fonction lors de l'insertion de nouveaux messages
 */
 
--- Create notifications table
-CREATE TABLE IF NOT EXISTS notifications (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  type text NOT NULL,
-  content text NOT NULL,
-  read boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
-);
+-- Note: La table notifications et ses politiques ont déjà été créées
+-- dans la migration précédente. Cette migration ajoute uniquement
+-- les fonctionnalités de notification automatique.
 
--- Enable RLS
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-
--- Create policies
-CREATE POLICY "Users can view their own notifications"
-  ON notifications
-  FOR SELECT
-  TO authenticated
-  USING (user_id = auth.uid());
-
-CREATE POLICY "Users can update their own notifications"
+-- Création d'une politique supplémentaire pour la mise à jour des notifications
+CREATE POLICY "Users can update their own notifications_v2"
   ON notifications
   FOR UPDATE
   TO authenticated
@@ -71,8 +48,5 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger for new messages
-CREATE TRIGGER on_new_message
-  AFTER INSERT ON messages
-  FOR EACH ROW
-  EXECUTE FUNCTION create_message_notification();
+-- Le trigger on_new_message a déjà été créé dans une migration précédente.
+-- Nous ne le recréons pas ici pour éviter les erreurs de duplication.

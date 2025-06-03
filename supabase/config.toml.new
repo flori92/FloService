@@ -30,6 +30,16 @@ shadow_port = 54320
 # server_version;` on the remote database to check.
 major_version = 15
 
+# Configuration de la connexion à la base de données distante
+# [db.remote_db]
+# # URL de connexion à la base de données PostgreSQL
+# dbname = "postgres"
+# host = "db.sxrofrdhpzpjqkplgoij.supabase.co"
+# port = 5432
+# user = "postgres"
+# password = "Apollonf@vi92"
+# sslmode = "require"
+
 [db.pooler]
 enabled = false
 # Port to use for the local connection pooler.
@@ -107,7 +117,7 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["https://localhost:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.
@@ -117,26 +127,43 @@ enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
-# Allow/disallow anonymous sign-ins to your project.
-enable_anonymous_sign_ins = false
-# Allow/disallow testing manual linking of accounts
-enable_manual_linking = false
-# Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
-# Passwords that do not meet the following requirements will be rejected as weak. Supported values
-# are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
-
-[auth.rate_limit]
-# Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
-# Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
-sms_sent = 30
-# Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
-anonymous_users = 30
-# Number of sessions that can be refreshed in a 5 minute interval per IP address.
-token_refresh = 150
-# Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
+# Allow/disallow account linking.
+enable_account_linking = true
+# Require email verification before login.
+enable_confirmations = false
+# Require account linking for email signups.
+enable_signup_linking = false
+# Automatically link accounts if the linking conditions are met.
+auto_link = false
+# Automatically confirm users if they use an OAuth provider.
+oauth_auto_confirm = true
+# Automatically confirm users if they use a trusted email domain.
+# trusted_email_domains = ["mydomain.com", "company.org"]
+# Minimum password strength to enforce. 0: no policy, 1: minimum length, 2: moderate, 3: strong.
+password_min_strength = 1
+# Minimum password length to enforce.
+password_min_length = 6
+# Minimum number of characters that must be changed when a user changes their password.
+password_min_characters_changed = 0
+# Limits the number of sign-in attempts per IP address within a specified time window.
+# sign_in_rate_limit = { max_retries = 5, window_seconds = 60 }
+# Limits the number of sign-up attempts per IP address within a specified time window.
+# sign_up_rate_limit = { max_retries = 5, window_seconds = 60 }
+# Rate limit the number of requests per IP address within a specified time window.
+# rate_limits = [
+#   { namespace = "email_confirmation", max_retries = 5, window_seconds = 60 },
+#   { namespace = "email_change", max_retries = 5, window_seconds = 60 },
+#   { namespace = "email_reset", max_retries = 5, window_seconds = 60 },
+#   { namespace = "phone_confirmation", max_retries = 5, window_seconds = 60 },
+#   { namespace = "phone_change", max_retries = 5, window_seconds = 60 },
+#   { namespace = "phone_reset", max_retries = 5, window_seconds = 60 },
+#   { namespace = "mfa_challenge", max_retries = 5, window_seconds = 60 },
+#   { namespace = "otp_verification", max_retries = 5, window_seconds = 60 },
+#   { namespace = "password_reset", max_retries = 5, window_seconds = 60 },
+#   { namespace = "profile_update", max_retries = 5, window_seconds = 60 },
+#   { namespace = "token_refresh", max_retries = 5, window_seconds = 60 }
+# ]
+# Number of sign-in / sign-up attempts before captcha is triggered.
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
@@ -155,24 +182,10 @@ enable_signup = true
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
-# If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
-# Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1s"
-# Number of characters used in the email OTP.
-otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
-
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Template for the email verification link. Use `{{ .ConfirmationURL }}` to insert the confirmation URL.
+template_confirm_signup = "Confirmez votre inscription à {{ .SiteURL }}"
+# Template for the email address change confirmation link. Use `{{ .ConfirmationURL }}` to insert the confirmation URL.
+template_change_email = "Confirmez votre nouvelle adresse email pour {{ .SiteURL }}"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

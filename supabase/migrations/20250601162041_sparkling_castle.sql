@@ -36,8 +36,30 @@ CREATE TABLE IF NOT EXISTS public.messages (
 -- 5. Créer les index pour la table messages
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON public.messages(sender_id);
-CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON public.messages(recipient_id);
-CREATE INDEX IF NOT EXISTS idx_messages_read ON public.messages(read) WHERE read = FALSE;
+
+-- Créer l'index sur recipient_id uniquement si la colonne existe
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns 
+             WHERE table_schema = 'public' 
+             AND table_name = 'messages' 
+             AND column_name = 'recipient_id') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON public.messages(recipient_id)';
+  END IF;
+END;
+$$;
+
+-- Créer l'index sur read uniquement si la colonne existe
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns 
+             WHERE table_schema = 'public' 
+             AND table_name = 'messages' 
+             AND column_name = 'read') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_messages_read ON public.messages(read) WHERE read = FALSE';
+  END IF;
+END;
+$$;
 
 -- 6. Créer la table external_id_mapping si elle n'existe pas
 CREATE TABLE IF NOT EXISTS public.external_id_mapping (
@@ -481,12 +503,29 @@ END;
 $$;
 
 -- 26. Créer le trigger pour la table messages
-DROP TRIGGER IF EXISTS set_read_at ON public.messages;
-CREATE TRIGGER set_read_at
-BEFORE UPDATE ON public.messages
-FOR EACH ROW
-WHEN (NEW.read = TRUE AND OLD.read = FALSE)
-EXECUTE FUNCTION public.update_read_at();
+DO $$
+BEGIN
+  -- Vérifier si la table messages existe
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'messages') THEN
+    -- Vérifier si les colonnes nécessaires existent
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'messages' AND column_name = 'read')
+       AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'messages' AND column_name = 'read_at') THEN
+      
+      -- Supprimer le trigger s'il existe déjà
+      DROP TRIGGER IF EXISTS set_read_at ON public.messages;
+      
+      -- Créer le trigger
+      EXECUTE $TRIGGER$
+      CREATE TRIGGER set_read_at
+      BEFORE UPDATE ON public.messages
+      FOR EACH ROW
+      WHEN (NEW.read = TRUE AND OLD.read = FALSE)
+      EXECUTE FUNCTION public.update_read_at()
+      $TRIGGER$;
+    END IF;
+  END IF;
+END;
+$$;
 
 -- 27. Ajouter une entrée de mapping pour "tg-2" s'il n'existe pas déjà
 INSERT INTO public.external_id_mapping (external_id, provider_type, metadata)

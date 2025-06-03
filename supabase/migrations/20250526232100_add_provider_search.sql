@@ -9,7 +9,8 @@ ADD COLUMN IF NOT EXISTS location GEOGRAPHY(POINT, 4326),
 ADD COLUMN IF NOT EXISTS address TEXT,
 ADD COLUMN IF NOT EXISTS city TEXT,
 ADD COLUMN IF NOT EXISTS postal_code TEXT,
-ADD COLUMN IF NOT EXISTS search_vector TSVECTOR;
+ADD COLUMN IF NOT EXISTS search_vector TSVECTOR,
+ADD COLUMN IF NOT EXISTS is_provider BOOLEAN DEFAULT FALSE;
 
 -- 3. Mettre à jour le vecteur de recherche pour la recherche plein texte
 CREATE OR REPLACE FUNCTION update_profiles_search_vector()
@@ -106,7 +107,7 @@ BEGIN
         LEFT JOIN services s ON p.id = s.provider_id
         LEFT JOIN service_categories sc ON s.category_id = sc.id
         LEFT JOIN provider_availability pa ON p.id = pa.provider_id
-        WHERE p.role = 'provider' 
+        WHERE p.is_provider = true 
         AND p.status = 'approved'
         AND (p_category_id IS NULL OR s.category_id = p_category_id)
         AND (p_max_price IS NULL OR s.price <= p_max_price)
@@ -222,7 +223,7 @@ BEGIN
     SELECT status INTO v_provider_status
     FROM profiles
     WHERE id = p_provider_id
-    AND role = 'provider';
+    AND is_provider = true;
     
     IF v_provider_status IS NULL THEN
         RAISE EXCEPTION 'Prestataire non trouvé';
@@ -497,4 +498,4 @@ SET search_vector =
     setweight(to_tsvector('french', COALESCE(business_name, '')), 'A') ||
     setweight(to_tsvector('french', COALESCE(bio, '')), 'B') ||
     setweight(to_tsvector('french', COALESCE(city, '')), 'C')
-WHERE role = 'provider';
+WHERE is_provider = true;

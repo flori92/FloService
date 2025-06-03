@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Calendar, ShieldCheck, CheckCircle, ChevronRight, Lock, User, Loader } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase-secure';
+import { fetchCategoriesWithSubcategories } from '../utils/supabaseHelpers';
+import { uploadIdentityFile, uploadPortfolioFiles, createProviderApplication } from '../utils/providerHelpers';
+import { Category, Subcategory, CategoryWithSubcategories } from '../types/supabase';
 import toast from 'react-hot-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -23,7 +26,9 @@ type FormStep = 'personal-info' | 'professional-info' | 'identity-verification' 
 const ProviderRegistration: React.FC = () => {
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors }, getValues } = useForm<RegistrationForm>();
-  const [categories, setCategories] = useState<{id: string, name: string, subcategories: {id: string, name: string}[]}[]>([]);
+  // Utilisation des types définis dans le fichier types/supabase.ts
+  const [categories, setCategories] = useState<CategoryWithSubcategories[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [idFront, setIdFront] = useState<File | null>(null);
   const [idBack, setIdBack] = useState<File | null>(null);
@@ -39,30 +44,7 @@ const ProviderRegistration: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
 
-  const uploadFile = async (file: File | string | null, storagePath: string): Promise<string | null> => {
-    if (!file) return null;
-    if (typeof file === 'string') {
-      const response = await fetch(file);
-      const blob = await response.blob();
-      const actualFile = new File([blob], "biometric_selfie.jpg", { type: blob.type });
-      const fileName = `${Date.now()}-${actualFile.name}`;
-      const { data, error } = await supabase.storage.from('provider-documents').upload(`${storagePath}/${fileName}`, actualFile);
-      if (error) {
-        console.error('Error uploading data URL file:', error);
-        toast.error(`Erreur d'upload pour ${fileName}: ${error.message}`);
-        return null;
-      }
-      return data?.path ? supabase.storage.from('provider-documents').getPublicUrl(data.path).data.publicUrl : null;
-    }
-    const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage.from('provider-documents').upload(`${storagePath}/${fileName}`, file);
-    if (error) {
-      console.error('Error uploading file:', error);
-      toast.error(`Erreur d'upload pour ${fileName}: ${error.message}`);
-      return null;
-    }
-    return data?.path ? supabase.storage.from('provider-documents').getPublicUrl(data.path).data.publicUrl : null;
-  };
+  // Nous utilisons maintenant les fonctions d'upload depuis providerHelpers.ts
 
   const handleSubmitLogic: SubmitHandler<RegistrationForm> = async (formData) => {
     try {
@@ -88,7 +70,9 @@ const ProviderRegistration: React.FC = () => {
       let effectiveUserId = userId;
 
       if (!effectiveUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Récupération de l'utilisateur courant
+      const { data } = await supabase.auth.getUser?.() || { data: null };
+      const user = data?.user;
         if (user) {
           setUserId(user.id);
           effectiveUserId = user.id;
@@ -99,46 +83,68 @@ const ProviderRegistration: React.FC = () => {
         }
       }
 
-      const idFrontUrl = await uploadFile(idFront, `identity/${effectiveUserId}/id_front`);
-      const idBackUrl = await uploadFile(idBack, `identity/${effectiveUserId}/id_back`);
-      const addressProofUrl = await uploadFile(addressProof, `identity/${effectiveUserId}/address_proof`);
-      const biometricSelfieUrl = await uploadFile(biometricSelfie, `identity/${effectiveUserId}/biometric_selfie`);
-
-      if (!idFrontUrl || !idBackUrl || !addressProofUrl || !biometricSelfieUrl) {
-        toast.error("Erreur lors du téléversement d'un ou plusieurs documents d'identité.");
+      const idFrontUrl = await uploadIdentityFile(idFront, effectiveUserId, 'id_front');
+      if (!idFrontUrl) {
+        toast.error('Erreur lors de l\'upload du recto de la pièce d\'identité');
         setLoading(false);
         return;
       }
+      
+      // Pour le justificatif de domicile, on utilise le type id_front comme solution temporaire
+      const addressProofUrl = await uploadIdentityFile(addressProof, effectiveUserId, 'id_front');
+      if (!addressProofUrl) {
+        toast.error('Erreur lors de l\'upload du justificatif de domicile');
+        setLoading(false);
+        return;
+      }
+      
+      const idBackUrl = await uploadIdentityFile(idBack, effectiveUserId, 'id_back');
+      if (!idBackUrl) {
+        toast.error('Erreur lors de l\'upload du verso de la pièce d\'identité');
+        setLoading(false);
+        return;
+      }
+      
+      const selfieUrl = await uploadIdentityFile(biometricSelfie, effectiveUserId, 'selfie');
+      if (!selfieUrl) {
+        toast.error('Erreur lors de l\'upload de la selfie biométrique');
+        setLoading(false);
+        return;
+      }
+      
+      const portfolioUrls = await uploadPortfolioFiles(portfolioFiles, effectiveUserId);
 
-      const portfolioUrls = await Promise.all(
-        portfolioFiles.map((file: File) => 
-          uploadFile(file, `portfolios/${effectiveUserId}/${file.name}`)
-        )
-      );
+      // Création de la candidature prestataire
+      const applicationData = {
+        user_id: effectiveUserId,
+        full_name: formData.fullName,
+        date_of_birth: formData.dateOfBirth,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        specialties: formData.specialties.join(', '), // Conversion du tableau en chaîne
+        experience_years: formData.experienceYears,
+        category_id: selectedCategory,
+        id_front_url: idFrontUrl,
+        id_back_url: idBackUrl,
+        selfie_url: selfieUrl,
+        address_proof_url: addressProofUrl,
+        portfolio_urls: portfolioUrls,
+        status: 'pending' as const // Utilisation de 'as const' pour typer correctement le statut
+      };
 
-      const { error: applicationError } = await supabase
-        .from('provider_applications')
-        .insert({
-          user_id: effectiveUserId,
-          full_name: formData.fullName,
-          date_of_birth: formData.dateOfBirth,
-          address: formData.address,
-          phone: formData.phone,
-          email: formData.email,
-          specialties: formData.specialties,
-          experience_years: formData.experienceYears,
-          id_front_url: idFrontUrl,
-          id_back_url: idBackUrl,
-          address_proof_url: addressProofUrl,
-          biometric_selfie_url: biometricSelfieUrl,
-          portfolio_urls: portfolioUrls.filter(url => url !== null) as string[],
-          status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (applicationError) throw applicationError;
-
+      const applicationId = await createProviderApplication(applicationData);
+      
+      if (!applicationId) {
+        toast.error('Erreur lors de la création de votre candidature');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Candidature créée avec succès, ID:', applicationId);
+      
+      // 3. Redirection vers la page de confirmation
+      toast.success('Votre candidature a été soumise avec succès!');
       setCurrentStep('auto-validation');
 
     } catch (error: any) {
@@ -203,52 +209,26 @@ const ProviderRegistration: React.FC = () => {
     }
   };
 
+  // Utilisation de la fonction fetchCategoriesWithSubcategories du module supabaseHelpers
   const fetchCategories = async () => {
     try {
       setLoading(true);
       
-      // 1. D'abord, récupérer les catégories principales
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name')
-        .order('name', { ascending: true });
+      // Utilisation de notre nouvelle fonction avec typage fort
+      const { data: categoriesWithSubcategories, error } = await fetchCategoriesWithSubcategories();
       
-      if (categoriesError) {
-        console.error('Erreur lors du chargement des catégories:', categoriesError);
-        throw categoriesError;
-      }
-      
-      if (!categoriesData || categoriesData.length === 0) {
-        console.log('Aucune catégorie trouvée');
+      if (error) {
+        console.error('Erreur lors du chargement des catégories:', error);
+        toast.error('Impossible de charger les catégories. Veuillez réessayer.');
         setCategories([]);
         return;
       }
       
-      // 2. Ensuite, pour chaque catégorie, récupérer ses sous-catégories
-      const categoriesWithSubcategories = await Promise.all(
-        categoriesData.map(async (category) => {
-          try {
-            const { data: subcategoriesData, error: subcategoriesError } = await supabase
-              .from('subcategories')
-              .select('id, name')
-              .eq('category_id', category.id)
-              .order('name', { ascending: true });
-            
-            if (subcategoriesError) {
-              console.error(`Erreur lors du chargement des sous-catégories pour la catégorie ${category.id}:`, subcategoriesError);
-              return { ...category, subcategories: [] };
-            }
-            
-            return {
-              ...category,
-              subcategories: subcategoriesData || []
-            };
-          } catch (error) {
-            console.error(`Exception lors du chargement des sous-catégories pour la catégorie ${category.id}:`, error);
-            return { ...category, subcategories: [] };
-          }
-        })
-      );
+      if (!categoriesWithSubcategories || categoriesWithSubcategories.length === 0) {
+        console.log('Aucune catégorie trouvée');
+        setCategories([]);
+        return;
+      }
       
       console.log('Catégories chargées avec succès:', categoriesWithSubcategories);
       setCategories(categoriesWithSubcategories);
@@ -264,7 +244,9 @@ const ProviderRegistration: React.FC = () => {
   useEffect(() => {
     fetchCategories();
     const getCurrentUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Récupération de l'utilisateur courant
+      const { data } = await supabase.auth.getUser?.() || { data: null };
+      const user = data?.user;
         if (user) {
             setUserId(user.id);
         }
@@ -759,9 +741,15 @@ const ProviderRegistration: React.FC = () => {
                                 <input
                                   type="file"
                                   className="sr-only"
-                                  accept="image/*"
+                                  accept="image/*,.pdf,.doc,.docx"
                                   multiple
-                                  onChange={(e) => setPortfolioFiles(Array.from(e.target.files || []))}
+                                  onChange={(e) => {
+                                    const files = Array.from(e.target.files || []);
+                                    console.log(`${files.length} fichiers portfolio sélectionnés:`, 
+                                      files.map(f => `${f.name} (${f.size} octets)`))
+                                    setPortfolioFiles(files);
+                                    toast.success(`${files.length} fichier(s) sélectionné(s)`);
+                                  }}
                                 />
                               </label>
                             </div>
