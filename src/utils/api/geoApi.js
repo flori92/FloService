@@ -26,23 +26,92 @@ export const getAllPays = async () => {
 
 /**
  * Récupère toutes les villes d'un pays donné
- * @param {number} paysId - ID du pays
+ * @param {string} paysCode - Code du pays (ex: 'BJ', 'CM')
  * @returns {Promise<Array>} Liste des villes du pays
  */
-export const getVillesByPays = async (paysId) => {
+export const getVillesByPays = async (paysCode) => {
   try {
-    const { data, error } = await supabase
+    // Vérifier si le code du pays est valide
+    if (!paysCode || typeof paysCode !== 'string' || paysCode.length !== 2) {
+      console.warn('Code pays invalide:', paysCode);
+      return [];
+    }
+
+    // Essayer d'abord avec pays_code
+    let { data, error } = await supabase
       .from('villes')
       .select('id, nom')
-      .eq('pays_id', paysId)
-      .order('nom');
+      .eq('pays_code', paysCode)
+      .order('nom', { ascending: true });
+    
+    if (error) {
+      console.warn(`Erreur avec pays_code pour ${paysCode}:`, error);
+      // Essayer avec pays_id comme fallback (si le code est un ID numérique)
+      if (!isNaN(parseInt(paysCode))) {
+        const result = await supabase
+          .from('villes')
+          .select('id, nom')
+          .eq('pays_id', parseInt(paysCode))
+          .order('nom', { ascending: true });
+        
+        data = result.data;
+        error = result.error;
+      }
+    }
     
     if (error) throw error;
-    return data || [];
+    
+    if (!data || data.length === 0) {
+      // Utiliser des données mockées pour les pays sans villes
+      console.log(`Utilisation de la liste de villes par défaut pour ${paysCode}`);
+      return getDefaultCitiesForCountry(paysCode);
+    }
+    
+    return data;
   } catch (error) {
-    console.error(`Erreur lors de la récupération des villes du pays ${paysId}:`, error);
-    return [];
+    console.error(`Erreur lors de la récupération des villes pour ${paysCode}:`, error);
+    throw new Error(`Aucune ville disponible pour ce pays`);
   }
+};
+
+/**
+ * Retourne une liste de villes par défaut pour un pays donné
+ * @param {string} countryCode - Code du pays
+ * @returns {Array} Liste des villes par défaut
+ */
+const getDefaultCitiesForCountry = (countryCode) => {
+  const defaultCities = {
+    'BJ': [
+      { id: 'cotonou-bj', nom: 'Cotonou' },
+      { id: 'porto-novo-bj', nom: 'Porto-Novo' },
+      { id: 'parakou-bj', nom: 'Parakou' },
+      { id: 'abomey-calavi-bj', nom: 'Abomey-Calavi' },
+      { id: 'djougou-bj', nom: 'Djougou' }
+    ],
+    'CM': [
+      { id: 'douala-cm', nom: 'Douala' },
+      { id: 'yaounde-cm', nom: 'Yaoundé' },
+      { id: 'garoua-cm', nom: 'Garoua' },
+      { id: 'bamenda-cm', nom: 'Bamenda' },
+      { id: 'maroua-cm', nom: 'Maroua' }
+    ],
+    'BF': [
+      { id: 'ouagadougou-bf', nom: 'Ouagadougou' },
+      { id: 'bobo-dioulasso-bf', nom: 'Bobo-Dioulasso' },
+      { id: 'koudougou-bf', nom: 'Koudougou' },
+      { id: 'banfora-bf', nom: 'Banfora' },
+      { id: 'ouahigouya-bf', nom: 'Ouahigouya' }
+    ],
+    'GA': [
+      { id: 'libreville-ga', nom: 'Libreville' },
+      { id: 'port-gentil-ga', nom: 'Port-Gentil' },
+      { id: 'franceville-ga', nom: 'Franceville' },
+      { id: 'oyem-ga', nom: 'Oyem' },
+      { id: 'lambarene-ga', nom: 'Lambaréné' }
+    ]
+  };
+  
+  return defaultCities[countryCode] || [];
 };
 
 /**

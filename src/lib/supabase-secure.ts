@@ -146,11 +146,11 @@ export const createSupabaseClient = () => {
       },
       global: {
         headers: {
-          'Accept': 'application/json, */*',
+          'Accept': '*/*',
           'Content-Type': 'application/json',
-          'Accept-Profile': 'public',
-          'Content-Profile': 'public',
           'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'X-Client-Info': 'FloService Web Client',
           'Prefer': 'return=representation',
         },
       },
