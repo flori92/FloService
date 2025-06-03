@@ -19,46 +19,40 @@ BEGIN
 END
 $$;
 
--- Création ou mise à jour de la fonction is_provider
-DO $$
+-- Recréation de la fonction is_provider pour s'assurer que le nom du paramètre est 'user_id'
+
+-- Supprimer l'ancienne fonction is_provider si elle existe (indépendamment du nom du paramètre)
+-- Cela garantit que nous pouvons la recréer avec le nom de paramètre correct.
+DROP FUNCTION IF EXISTS public.is_provider(UUID);
+
+-- Création de la fonction is_provider avec le paramètre user_id
+CREATE OR REPLACE FUNCTION public.is_provider(user_id UUID) -- Assurez-vous que le nom du paramètre est user_id
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  is_provider_status BOOLEAN;
 BEGIN
-  -- Vérifier si la fonction existe déjà
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'public' AND p.proname = 'is_provider'
-  ) THEN
-    -- Créer la fonction si elle n'existe pas
-    EXECUTE $FUNC$
-    CREATE FUNCTION public.is_provider(p_user_id UUID)
-    RETURNS BOOLEAN
-    LANGUAGE plpgsql
-    SECURITY DEFINER
-    SET search_path = public
-    AS $BODY$
-    DECLARE
-      is_provider_status BOOLEAN;
-    BEGIN
-      SELECT p.is_provider INTO is_provider_status
-      FROM public.profiles p
-      WHERE p.id = p_user_id;
-      
-      RETURN COALESCE(is_provider_status, false);
-    EXCEPTION
-      WHEN OTHERS THEN
-        RETURN false;
-    END;
-    $BODY$;
-    $FUNC$;
-    
-    -- Ajout d'un commentaire à la fonction
-    COMMENT ON FUNCTION public.is_provider(UUID) IS 'Vérifie si un utilisateur est un prestataire de services';
-    
-    -- Accorder les privilèges d'exécution à anon et authenticated
-    GRANT EXECUTE ON FUNCTION public.is_provider(UUID) TO anon, authenticated;
-  END IF;
-END
+  SELECT p.is_provider INTO is_provider_status
+  FROM public.profiles p
+  WHERE p.id = user_id; -- Utilisation de user_id ici
+
+  RETURN COALESCE(is_provider_status, false);
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE WARNING 'Erreur dans la fonction is_provider: %', SQLERRM;
+    RETURN false;
+END;
 $$;
+
+COMMENT ON FUNCTION public.is_provider(UUID) IS 'Vérifie si un utilisateur est un prestataire de services (paramètre user_id)';
+
+GRANT EXECUTE ON FUNCTION public.is_provider(UUID) TO anon, authenticated;
+
+-- Notifier PostgREST pour recharger le schéma. Essentiel après des modifications de fonction.
+NOTIFY pgrst, 'reload schema';
 
 
 
