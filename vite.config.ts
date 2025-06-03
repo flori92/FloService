@@ -61,18 +61,26 @@ export default defineConfig(({ mode }) => {
           ]
         },
         workbox: {
+          // Ajout de sources externes autorisées pour le fetch
+          navigateFallback: '/index.html',
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,json}'],
+          // Stratégies de cache améliorées
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
+              handler: 'StaleWhileRevalidate',
               options: {
-                cacheName: 'google-fonts-cache',
+                cacheName: 'google-fonts-stylesheets',
                 expiration: {
                   maxEntries: 10,
                   maxAgeSeconds: 60 * 60 * 24 * 365 // 1 an
                 },
                 cacheableResponse: {
                   statuses: [0, 200]
+                },
+                fetchOptions: {
+                  mode: 'cors',
+                  credentials: 'omit'
                 }
               }
             },
@@ -80,10 +88,42 @@ export default defineConfig(({ mode }) => {
               urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
               handler: 'CacheFirst',
               options: {
-                cacheName: 'gstatic-fonts-cache',
+                cacheName: 'google-fonts-webfonts',
                 expiration: {
-                  maxEntries: 10,
+                  maxEntries: 30,
                   maxAgeSeconds: 60 * 60 * 24 * 365 // 1 an
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
+                },
+                fetchOptions: {
+                  mode: 'cors',
+                  credentials: 'omit'
+                }
+              }
+            },
+            // Cache pour les images
+            {
+              urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'images-cache',
+                expiration: {
+                  maxEntries: 60,
+                  maxAgeSeconds: 30 * 24 * 60 * 60 // 30 jours
+                }
+              }
+            },
+            // Cache pour les API Supabase
+            {
+              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'supabase-api-cache',
+                networkTimeoutSeconds: 10,
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 60 // 1 heure
                 },
                 cacheableResponse: {
                   statuses: [0, 200]

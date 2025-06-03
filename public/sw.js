@@ -3,8 +3,10 @@
  * Créé le 03/06/2025
  */
 
-// Nom du cache
+// Noms des caches
 const CACHE_NAME = 'floservice-cache-v1';
+const CACHE_FONTS = 'floservice-fonts-v1';
+const CACHE_IMAGES = 'floservice-images-v1';
 
 // Liste des ressources à mettre en cache immédiatement
 const INITIAL_CACHED_RESOURCES = [
@@ -36,7 +38,9 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           // Supprime les anciens caches
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && 
+              cacheName !== CACHE_FONTS && 
+              cacheName !== CACHE_IMAGES) {
             console.log('Service Worker: Suppression de l\'ancien cache', cacheName);
             return caches.delete(cacheName);
           }
@@ -64,6 +68,49 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Gestion spécifique pour les polices Google
+  if (event.request.url.includes('fonts.googleapis.com') || 
+      event.request.url.includes('fonts.gstatic.com')) {
+    
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // Retourner la réponse du cache si elle existe
+          if (response) {
+            return response;
+          }
+          
+          // Sinon, faire une requête réseau
+          return fetch(event.request)
+            .then((fetchResponse) => {
+              // Vérifier que la réponse est valide
+              if (!fetchResponse || fetchResponse.status !== 200) {
+                return fetchResponse;
+              }
+              
+              // Mettre en cache la nouvelle ressource
+              const responseToCache = fetchResponse.clone();
+              caches.open(CACHE_FONTS).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+              
+              return fetchResponse;
+            })
+            .catch(() => {
+              // En cas d'erreur, on retourne une réponse vide plutôt qu'une erreur
+              return new Response('', {
+                status: 200,
+                headers: new Headers({
+                  'Content-Type': 'text/plain'
+                })
+              });
+            });
+        })
+    );
+    return;
+  }
+  
+  // Gestion standard pour les autres ressources
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -119,13 +166,15 @@ self.addEventListener('message', (event) => {
 // Préchargement des ressources en arrière-plan
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CACHE_URLS') {
-    const { payload: { urls } } = event.data;
+    const { payload } = event.data;
     
-    event.waitUntil(
-      caches.open(CACHE_NAME)
-        .then((cache) => {
-          return cache.addAll(urls);
-        })
-    );
+    if (payload && payload.urls) {
+      event.waitUntil(
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            return cache.addAll(payload.urls);
+          })
+      );
+    }
   }
 });
