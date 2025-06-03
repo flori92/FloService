@@ -11,26 +11,10 @@ const LoadingFallback = () => (
   <div className="loading-spinner"></div>
 );
 
-// Fonction pour enregistrer le Service Worker en production
-const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => {
-          console.log('Service Worker enregistré avec succès:', registration.scope);
-        })
-        .catch(error => {
-          console.log('Échec de l\'enregistrement du Service Worker:', error);
-        });
-    });
-  }
-};
-
 // Préchargement des ressources critiques
 preloadCriticalResources();
 
-// Enregistrement du Service Worker
-registerServiceWorker();
+// Note: L'enregistrement du Service Worker est géré dans index.html
 
 // Mesure des performances de chargement initial
 const reportWebVitals = () => {

@@ -11,15 +11,15 @@ import { ConnectionError } from './components/ui/EmptyState';
 import { supabase as enhancedSupabase } from './lib/supabase-secure';
 
 // Import des pages avec chargement différé pour optimiser les performances
-const HomePage = React.lazy(() => import('./pages/HomePage'));
-const LoginPage = React.lazy(() => import('./pages/LoginPage'));
-const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
-const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
+const HomePage = React.lazy(() => import('./pages/Home'));
+const LoginPage = React.lazy(() => import('./pages/Login'));
+const RegisterPage = React.lazy(() => import('./pages/Register'));
+const ProfilePage = React.lazy(() => import('./pages/Profile'));
 const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
-const ConversationsPage = React.lazy(() => import('./pages/ConversationsPage'));
-const ProvidersPage = React.lazy(() => import('./pages/ProvidersPage'));
-const ServicesPage = React.lazy(() => import('./pages/ServicesPage'));
-const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const ConversationsPage = React.lazy(() => import('./pages/Messages')); // Messages.tsx pour les conversations
+const ProvidersPage = React.lazy(() => import('./pages/AllProviders'));
+const ServicesPage = React.lazy(() => import('./pages/Categories')); // Categories pour les services
+const NotFoundPage = React.lazy(() => import('./pages/NotFound'));
 
 // Composant de chargement global
 const GlobalLoadingSpinner = () => (
