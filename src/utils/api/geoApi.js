@@ -32,45 +32,68 @@ export const getAllPays = async () => {
 export const getVillesByPays = async (paysCode) => {
   try {
     // Vérifier si le code du pays est valide
-    if (!paysCode || typeof paysCode !== 'string' || paysCode.length !== 2) {
-      console.warn('Code pays invalide:', paysCode);
+    if (!paysCode) {
+      console.warn('Code pays manquant');
       return [];
     }
 
-    // Essayer d'abord avec pays_code
-    let { data, error } = await supabase
-      .from('villes')
-      .select('id, nom')
-      .eq('pays_code', paysCode)
-      .order('nom', { ascending: true });
+    // Normaliser le code pays
+    const normalizedCode = typeof paysCode === 'string' ? paysCode.toUpperCase() : String(paysCode);
     
-    if (error) {
-      console.warn(`Erreur avec pays_code pour ${paysCode}:`, error);
-      // Essayer avec pays_id comme fallback (si le code est un ID numérique)
-      if (!isNaN(parseInt(paysCode))) {
+    // Vérifier si le format est valide pour une requête à la base de données
+    const isValidCountryCode = typeof normalizedCode === 'string' && normalizedCode.length === 2;
+    
+    if (!isValidCountryCode) {
+      console.warn(`Code pays invalide: ${paysCode}, utilisation des données par défaut`);
+      return getDefaultCitiesForCountry(normalizedCode);
+    }
+
+    try {
+      // Utiliser la fonction RPC sécurisée get_villes_by_pays_code
+      const { data, error } = await supabase
+        .rpc('get_villes_by_pays_code', { code_pays: normalizedCode });
+      
+      // Si pas d'erreur et données présentes, retourner les données
+      if (!error && data && data.length > 0) {
+        return data;
+      }
+
+      // Log pour le débogage
+      if (error) {
+        console.warn(`Erreur RPC get_villes_by_pays_code pour ${normalizedCode}:`, error);
+      } else {
+        console.log(`Aucune ville trouvée via RPC pour ${normalizedCode}`);
+      }
+
+      // Fallback: essayer avec la table villes directement (pour compatibilité)
+      try {
         const result = await supabase
           .from('villes')
           .select('id, nom')
-          .eq('pays_id', parseInt(paysCode))
+          .eq('pays_id', paysCode) // Essayer avec pays_id si c'est un UUID
           .order('nom', { ascending: true });
-        
-        data = result.data;
-        error = result.error;
+
+        if (!result.error && result.data && result.data.length > 0) {
+          return result.data;
+        }
+      } catch (fallbackError) {
+        console.warn(`Erreur fallback pour ${normalizedCode}:`, fallbackError);
       }
+
+      // Si aucune méthode ne fonctionne, utiliser les données par défaut
+      console.log(`Utilisation de la liste de villes par défaut pour ${normalizedCode}`);
+      return getDefaultCitiesForCountry(normalizedCode);
+      
+    } catch (dbError) {
+      // En cas d'erreur de base de données, utiliser les données par défaut
+      console.warn(`Erreur de base de données pour ${normalizedCode}:`, dbError);
+      return getDefaultCitiesForCountry(normalizedCode);
     }
     
-    if (error) throw error;
-    
-    if (!data || data.length === 0) {
-      // Utiliser des données mockées pour les pays sans villes
-      console.log(`Utilisation de la liste de villes par défaut pour ${paysCode}`);
-      return getDefaultCitiesForCountry(paysCode);
-    }
-    
-    return data;
   } catch (error) {
+    // Erreur générale, utiliser les données par défaut au lieu de lancer une exception
     console.error(`Erreur lors de la récupération des villes pour ${paysCode}:`, error);
-    throw new Error(`Aucune ville disponible pour ce pays`);
+    return getDefaultCitiesForCountry(String(paysCode));
   }
 };
 
