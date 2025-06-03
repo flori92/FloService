@@ -68,45 +68,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Gestion spécifique pour les polices Google
+  // Pour les polices Google, on laisse le navigateur gérer directement les requêtes
+  // pour éviter les problèmes de CSP
   if (event.request.url.includes('fonts.googleapis.com') || 
       event.request.url.includes('fonts.gstatic.com')) {
-    
-    event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          // Retourner la réponse du cache si elle existe
-          if (response) {
-            return response;
-          }
-          
-          // Sinon, faire une requête réseau
-          return fetch(event.request)
-            .then((fetchResponse) => {
-              // Vérifier que la réponse est valide
-              if (!fetchResponse || fetchResponse.status !== 200) {
-                return fetchResponse;
-              }
-              
-              // Mettre en cache la nouvelle ressource
-              const responseToCache = fetchResponse.clone();
-              caches.open(CACHE_FONTS).then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-              
-              return fetchResponse;
-            })
-            .catch(() => {
-              // En cas d'erreur, on retourne une réponse vide plutôt qu'une erreur
-              return new Response('', {
-                status: 200,
-                headers: new Headers({
-                  'Content-Type': 'text/plain'
-                })
-              });
-            });
-        })
-    );
+    // Ne pas intercepter ces requêtes, laissez le navigateur les gérer
     return;
   }
   

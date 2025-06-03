@@ -64,44 +64,13 @@ export default defineConfig(({ mode }) => {
           // Ajout de sources externes autorisées pour le fetch
           navigateFallback: '/index.html',
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,json}'],
-          // Stratégies de cache améliorées
+          // Exclusion des polices Google pour éviter les problèmes de CSP
+          navigateFallbackDenylist: [/^\/api\//],
+          skipWaiting: true,
+          clientsClaim: true,
+          // Désactivation du précaching des polices Google
+          // pour éviter les problèmes de CSP
           runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'google-fonts-stylesheets',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // 1 an
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                },
-                fetchOptions: {
-                  mode: 'cors',
-                  credentials: 'omit'
-                }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-webfonts',
-                expiration: {
-                  maxEntries: 30,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // 1 an
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                },
-                fetchOptions: {
-                  mode: 'cors',
-                  credentials: 'omit'
-                }
-              }
-            },
             // Cache pour les images
             {
               urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/,
