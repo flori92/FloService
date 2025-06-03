@@ -230,13 +230,53 @@ class EnhancedSupabaseClient {
    */
   async isProvider(userId) {
     try {
+      // Vérifier si on cherche le statut de l'utilisateur actuellement connecté
+      let isCurrentUser = false;
+      try {
+        const { data: { session } } = await this.client.auth.getSession();
+        isCurrentUser = session?.user?.id === userId;
+      } catch (err) {
+        console.warn('Impossible de vérifier si userId correspond à l\'utilisateur connecté:', err);
+      }
+      
+      // Si c'est l'utilisateur actuel, utiliser get_my_provider_status (plus sûr)
+      if (isCurrentUser) {
+        try {
+          const { data: myStatus, error: myStatusError } = await this.client.rpc('get_my_provider_status');
+          if (!myStatusError) {
+            return myStatus === true;
+          }
+          console.warn('La fonction RPC get_my_provider_status a échoué:', myStatusError);
+        } catch (rpcErr) {
+          console.warn('Exception lors de l\'appel RPC get_my_provider_status:', rpcErr);
+        }
+      }
+      
+      // Sinon, essayer d'utiliser la méthode RPC is_provider avec l'ID spécifié
+      try {
+        const { data: rpcCheck, error: rpcError } = await this.client.rpc('is_provider', { user_id: userId });
+        if (!rpcError) {
+          return rpcCheck === true;
+        }
+        console.warn('La fonction RPC is_provider a échoué:', rpcError);
+      } catch (rpcErr) {
+        console.warn('Exception lors de l\'appel RPC is_provider:', rpcErr);
+      }
+      
+      // Méthode de dernier recours : requête directe sur la table profiles
+      // ATTENTION: Cette méthode échouera si la politique RLS est restrictive
+      console.warn('Utilisation de la méthode de dernier recours (requête directe sur profiles) pour userId:', userId);
+      
       const { data, error } = await this.client
         .from('profiles')
         .select('is_provider')
         .eq('id', userId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur lors de la vérification du statut prestataire:', error);
+        return false;
+      }
       
       return !!data?.is_provider;
     } catch (error) {
@@ -400,9 +440,7 @@ enhancedClient.checkMigrationsApplied = async () => {
     // Vérifier que toutes les tables requises existent
     const requiredTables = ['messages', 'conversations', 'services'];
     const existingTables = data.map(row => row.table_name);
-    const allTablesExist = requiredTables.every(table => existingTables.includes(table));
-    
-    return allTablesExist;
+    return requiredTables.every(table => existingTables.includes(table));
   } catch (error) {
     console.error('Erreur lors de la vérification des migrations:', error);
     return false;

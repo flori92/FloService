@@ -37,14 +37,46 @@ const Header: React.FC = () => {
   useEffect(() => {
     if (user) {
       const checkProviderStatus = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_provider')
-          .eq('id', user.id)
-          .single();
+        try {
+          // Utiliser la fonction RPC sécurisée get_my_provider_status
+          const { data: isProviderStatus, error: rpcError } = await supabase.rpc('get_my_provider_status');
           
-        if (!error && data && data.is_provider) {
-          setIsProvider(true);
+          if (!rpcError && isProviderStatus === true) {
+            setIsProvider(true);
+            return;
+          }
+          
+          if (rpcError) {
+            console.warn('Erreur lors de l\'appel RPC get_my_provider_status:', rpcError);
+            
+            // Fallback: utiliser la méthode RPC is_provider
+            const { data: rpcCheck, error: rpcError2 } = await supabase.rpc('is_provider', { user_id: user.id });
+            
+            if (!rpcError2 && rpcCheck === true) {
+              setIsProvider(true);
+              return;
+            }
+            
+            if (rpcError2) {
+              console.warn('Erreur lors de l\'appel RPC is_provider:', rpcError2);
+              
+              // Dernier recours: requête directe (risque d'erreur 406)
+              console.warn('Utilisation de la méthode de dernier recours (requête directe sur profiles)');
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('is_provider')
+                .eq('id', user.id)
+                .single();
+                
+              if (!error && data && 'is_provider' in data && data.is_provider === true) {
+                setIsProvider(true);
+              } else if (error) {
+                console.error('Erreur lors de la vérification directe du statut prestataire:', error);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Exception lors de la vérification du statut prestataire:', err);
         }
       };
       
