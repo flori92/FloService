@@ -145,76 +145,56 @@ try {
 class EnhancedSupabaseClient {
   constructor(clientInstance) {
     if (!clientInstance) {
-      console.error('Instance de client Supabase non fournie, utilisation du client de secours');
-      this.client = createFallbackClient();
-    } else {
-      this.client = clientInstance;
+      throw new Error('Client Supabase requis pour l\'initialisation');
     }
-    
-    // Exposer les méthodes de base du client Supabase
-    this.auth = this.client.auth;
-    this.from = this.client.from;
-    this.rpc = this.client.rpc;
-    this.storage = this.client.storage;
-    this.channel = this.client.channel;
-    this.removeChannel = this.client.removeChannel;
-    this.functions = this.client.functions;
+    this.client = clientInstance;
   }
   
   /**
-   * Effectue une opération sécurisée sur une table avec vérification d'existence
-   * @param {string} tableName - Nom de la table
-   * @param {Function} operation - Fonction à exécuter si la table existe
-   * @param {Function} fallback - Fonction à exécuter si la table n'existe pas
-   * @returns {Promise<any>} - Résultat de l'opération ou du fallback
+   * Vérifie si une table existe avant d'exécuter une opération
+   * @param {string} tableName - Nom de la table à vérifier
+   * @param {Function} operation - Opération à exécuter si la table existe
+   * @param {Function} fallback - Opération à exécuter si la table n'existe pas
+   * @returns {Promise<any>} - Résultat de l'opération
    */
   async safeOperation(tableName, operation, fallback) {
     try {
-      return await operation();
-    } catch (error) {
-      console.error(`Erreur lors de l'opération sur la table ${tableName}:`, error);
-      return await fallback();
-    }
-  }
-  
-  /**
-   * Vérifie si une table existe dans la base de données
-   * @param {string} tableName - Nom de la table à vérifier
-   * @returns {Promise<boolean>} - True si la table existe, false sinon
-   */
-  async tableExists(tableName) {
-    try {
+      // Vérifier si la table existe
       const { data, error } = await this.client
         .from('information_schema.tables')
         .select('table_name')
         .eq('table_schema', 'public')
         .eq('table_name', tableName)
-        .maybeSingle();
+        .single();
       
-      if (error) {
-        console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
-        return false;
+      if (error || !data) {
+        console.warn(`La table ${tableName} n'existe pas encore, utilisation du fallback`);
+        return fallback ? fallback() : { data: null, error: new Error(`Table ${tableName} non disponible`) };
       }
       
-      return !!data;
+      // La table existe, exécuter l'opération
+      return await operation();
     } catch (error) {
-      console.error(`Erreur lors de la vérification de l'existence de la table ${tableName}:`, error);
-      return false;
+      console.error(`Erreur lors de la vérification de la table ${tableName}:`, error);
+      return fallback ? fallback() : { data: null, error };
     }
   }
   
   /**
-   * Récupère le nombre de messages de manière sécurisée
-   * @param {string} conversationId - ID de la conversation
-   * @returns {Promise<number>} - Nombre de messages ou 0 si erreur
+   * Compte le nombre de messages non lus pour un utilisateur
+   * @param {string} userId - ID de l'utilisateur
+   * @returns {Promise<number>} - Nombre de messages non lus
    */
-  async getMessageCount(conversationId) {
+  async countUnreadMessages(userId) {
     try {
-      const { data, error } = await this.client.rpc('safe_message_count', { 
-        conversation_id: conversationId 
+      const { data, error } = await this.client.rpc('count_unread_messages', { 
+        recipient_id: userId,
+        conversation_id: null 
       });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       return data || 0;
     } catch (error) {
@@ -224,13 +204,52 @@ class EnhancedSupabaseClient {
   }
   
   /**
+   * Compte le nombre de messages non lus dans une conversation spécifique
+   * @param {string} conversationId - ID de la conversation
+   * @param {string} userId - ID de l'utilisateur
+   * @returns {Promise<number>} - Nombre de messages non lus
+   */
+  async countUnreadMessagesInConversation(conversationId, userId) {
+    try {
+      const { data, error } = await this.client.rpc('count_unread_messages', { 
+        recipient_id: userId,
+        conversation_id: conversationId 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data || 0;
+    } catch (error) {
+      console.error('Erreur lors du comptage des messages:', error);
+      return 0;
+    }
+  }
+  
+  /**
+   * Vérifie si l'ID fourni correspond à l'utilisateur actuellement connecté
+   * @param {string} userId - ID à vérifier
+   * @returns {Promise<boolean>} - True si c'est l'utilisateur actuel
+   */
+  async isCurrentUserId(userId) {
+    try {
+      const { data: { session } } = await this.client.auth.getSession();
+      return session?.user?.id === userId;
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l\'ID utilisateur:', error);
+      return false;
+    }
+  }
+  
+  /**
    * Vérifie si un utilisateur est un prestataire
    * @param {string} userId - ID de l'utilisateur à vérifier
-   * @returns {Promise<boolean>} - True si l'utilisateur est un prestataire, false sinon
+   * @returns {Promise<boolean>} - True si l'utilisateur est un prestataire
    */
   async isProvider(userId) {
     try {
-      // Vérifier si on cherche le statut de l'utilisateur actuellement connecté
+      // Vérifier d'abord si c'est l'utilisateur actuel
       let isCurrentUser = false;
       try {
         const { data: { session } } = await this.client.auth.getSession();
@@ -301,7 +320,9 @@ class EnhancedSupabaseClient {
             p_provider_external_id: userId2
           });
           
-          if (error) throw error;
+          if (error) {
+            throw error;
+          }
           
           return { data, error: null };
         },
@@ -347,7 +368,9 @@ class EnhancedSupabaseClient {
             .select()
             .single();
           
-          if (error) throw error;
+          if (error) {
+            throw error;
+          }
           
           return { data, error: null };
         },
@@ -381,7 +404,9 @@ class EnhancedSupabaseClient {
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
           
-          if (error) throw error;
+          if (error) {
+            throw error;
+          }
           
           return { data, error: null };
         },
@@ -404,12 +429,10 @@ class EnhancedSupabaseClient {
       return await this.safeOperation(
         'messages',
         async () => {
-          const { data, error } = await this.client.rpc('mark_messages_as_read', {
+          return await this.client.rpc('mark_messages_as_read', {
             p_conversation_id: conversationId,
             p_user_id: userId
           });
-          
-          return { data, error };
         },
         () => ({ data: 0, error: null })
       );
@@ -437,10 +460,7 @@ enhancedClient.checkMigrationsApplied = async () => {
       return false;
     }
     
-    // Vérifier que toutes les tables requises existent
-    const requiredTables = ['messages', 'conversations', 'services'];
-    const existingTables = data.map(row => row.table_name);
-    return requiredTables.every(table => existingTables.includes(table));
+    return data.map(row => row.table_name).every(table => ['messages', 'conversations', 'services'].includes(table));
   } catch (error) {
     console.error('Erreur lors de la vérification des migrations:', error);
     return false;
