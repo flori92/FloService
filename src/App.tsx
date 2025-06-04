@@ -66,36 +66,37 @@ function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Vérification que le client Supabase est correctement initialisé
-        if (!enhancedSupabase || !enhancedSupabase.from) {
-          throw new Error('Client Supabase non initialisé correctement. Vérifiez les variables d\'environnement.');
+        // Vérification explicite du client Supabase
+        if (!enhancedSupabase || !enhancedSupabase.from || typeof enhancedSupabase.from !== 'function') {
+          setInitError(new Error('Client Supabase non initialisé ou en mode fallback (mock). Vérifiez vos variables d\'environnement VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY côté Netlify et local.'));
+          console.error('[FloService] Client Supabase non initialisé ou mock. Variables actuelles :', {
+            VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+            VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY
+          });
+          return;
         }
-        
-        // Vérification de la connexion à Supabase avec gestion des erreurs améliorée
+        // Vérification de la connexion à Supabase
         console.log('Tentative de connexion à Supabase...');
-        
         try {
-          // Vérification simple de la connexion sans dépendre de méthodes spécifiques
           const query = enhancedSupabase.from('profiles').select('id');
-          
-          // Vérifier si la méthode limit est disponible avant de l'utiliser
           const result = 'limit' in query 
             ? await query.limit(1)
             : await query;
-            
           if ('error' in result && result.error) {
+            setInitError(new Error('Erreur lors de la connexion à Supabase : ' + (result.error.message || 'Erreur inconnue')));
             console.warn('Erreur lors de la vérification de la connexion à Supabase:', {
               message: result.error.message,
               code: result.error.code,
               details: result.error.details,
               hint: result.error.hint
             });
+            return;
           } else {
             console.log('✅ Connexion à Supabase établie avec succès');
           }
         } catch (err) {
-          // Gestion des erreurs avec typage sûr
           const error = err as Error & { code?: string; details?: string; hint?: string };
+          setInitError(new Error('Erreur lors de la connexion à Supabase (exception) : ' + (error.message || 'Erreur inconnue')));
           console.warn('Erreur lors de la vérification de la connexion à Supabase:', {
             message: error.message || 'Erreur inconnue',
             code: error.code,
