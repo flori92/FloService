@@ -1,0 +1,31 @@
+[
+  {
+    "id": "05a350db-ebf4-429b-ab0c-4393bd185880",
+    "full_name": "Système FloService",
+    "business_name": null,
+    "phone": null,
+    "avatar_url": "",
+    "created_at": "2025-05-27T09:31:43.293Z",
+    "updated_at": "2025-05-29T11:19:47.289Z",
+    "status": "pending",
+    "bio": "",
+    "website": "",
+    "languages": null,
+    "response_time_hours": null,
+    "rating_average": "0.00",
+    "review_count": 0,
+    "city_id": null,
+    "address": null,
+    "postal_code": null,
+    "is_admin": true,
+    "banner_url": null,
+    "social_links": {},
+    "is_provider": false,
+    "last_seen": "2025-05-28T09:38:49.033Z",
+    "registration_completed": false,
+    "city": null,
+    "is_online": false,
+    "location": null,
+    "search_vector": null
+  }
+]

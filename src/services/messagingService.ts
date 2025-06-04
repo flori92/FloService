@@ -1,5 +1,6 @@
-import { supabase } from '../lib/supabase';
+import backendAdapter from '../lib/backendAdapter';
 import { v4 as uuidv4 } from 'uuid';
+import { COLLECTIONS } from '../lib/appwriteClient';
 
 export interface Message {
   id: string;
@@ -47,22 +48,38 @@ class MessagingService {
     error: Error | null;
   }> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await backendAdapter.getCurrentUser();
       
       if (!user) {
         throw new Error('Utilisateur non connecté');
       }
 
-      // Appel à la fonction RPC pour créer ou récupérer une conversation
-      const { data: conversationId, error: rpcError } = await supabase.rpc(
-        'get_or_create_conversation',
-        {
-          p_client_id: user.id,
-          p_provider_external_id: providerExternalId
-        }
-      );
+      // Vérifier si une conversation existe déjà
+      const userId = user.id || user.$id;
+      const conversations = await backendAdapter.query(COLLECTIONS.CONVERSATIONS, {
+        filters: [
+          { field: 'client_id', operator: '=', value: userId },
+          { field: 'provider_external_id', operator: '=', value: providerExternalId }
+        ]
+      });
 
-      if (rpcError) throw rpcError;
+      let conversationId;
+      
+      if (conversations && conversations.length > 0) {
+        // Conversation existante trouvée
+        conversationId = conversations[0].id || conversations[0].$id;
+      } else {
+        // Créer une nouvelle conversation
+        const newConversation = await backendAdapter.create(COLLECTIONS.CONVERSATIONS, {
+          client_id: userId,
+          provider_external_id: providerExternalId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+        conversationId = newConversation.id || newConversation.$id;
+      }
+
       if (!conversationId) throw new Error('Échec de la création de la conversation');
 
       // Récupérer les détails complets de la conversation
@@ -81,24 +98,18 @@ class MessagingService {
     error: Error | null;
   }> {
     try {
-      // D'abord récupérer les données de base de la conversation pour déterminer son type
-      const { data: convData, error: convError } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .single();
+      // D'abord récupérer les données de base de la conversation
+      const convData = await backendAdapter.getById(COLLECTIONS.CONVERSATIONS, conversationId);
 
-      if (convError) throw convError;
-      if (!convData) throw new Error('Conversation non trouvée');
+      if (!convData) {
+        throw new Error('Conversation non trouvée');
+      }
 
       // Récupérer les détails du client (toujours présent)
-      const { data: clientData, error: clientError } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, is_online')
-        .eq('id', convData.client_id)
-        .single();
-
-      if (clientError) {
+      let clientData = null;
+      try {
+        clientData = await backendAdapter.getById(COLLECTIONS.PROFILES, convData.client_id);
+      } catch (clientError) {
         console.warn('Erreur lors de la récupération du profil client:', clientError);
       }
 
@@ -107,21 +118,16 @@ class MessagingService {
 
       // Si provider_id existe, récupérer les informations du prestataire depuis profiles
       if (convData.provider_id) {
-        const { data: provData, error: provError } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, is_online')
-          .eq('id', convData.provider_id)
-          .single();
-
-        if (!provError) {
-          providerData = provData;
-        } else {
+        try {
+          providerData = await backendAdapter.getById(COLLECTIONS.PROFILES, convData.provider_id);
+        } catch (provError) {
           console.warn('Erreur lors de la récupération du profil prestataire:', provError);
         }
       }
 
       // Déterminer quel utilisateur est l'autre utilisateur dans la conversation
-      const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+      const currentUser = await backendAdapter.getCurrentUser();
+      const currentUserId = currentUser?.id || currentUser?.$id;
       const isClient = currentUserId === convData.client_id;
       
       // Construire les informations de l'autre utilisateur
@@ -178,55 +184,59 @@ class MessagingService {
     file?: File
   ): Promise<{ data: Message | null; error: Error | null }> {
     try {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) throw new Error('Utilisateur non connecté');
+      const user = await backendAdapter.getCurrentUser();
+      
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
 
-      let mediaUrl: string | undefined;
-      let mediaMetadata: Record<string, any> = {};
+      // Gérer l'upload de fichier si nécessaire
+      let mediaUrl = '';
+      let mediaMetadata: any = {};
 
-      // Gérer l'upload du fichier si présent
-      if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
-        const filePath = `message_attachments/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('message-attachments')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        mediaUrl = uploadData.path;
-        mediaMetadata = {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        };
-
-        // Extraire les métadonnées supplémentaires selon le type de fichier
-        if (file.type.startsWith('image/')) {
-          const dimensions = await this.getImageDimensions(file);
-          mediaMetadata = { ...mediaMetadata, ...dimensions };
-        } else if (file.type.startsWith('audio/')) {
-          const duration = await this.getAudioDuration(file);
-          mediaMetadata = { ...mediaMetadata, duration };
-        } else if (file.type.startsWith('video/')) {
-          const videoData = await this.getVideoMetadata(file);
-          mediaMetadata = { ...mediaMetadata, ...videoData };
+      if (file && messageType !== 'text') {
+        // Upload du fichier
+        const filePath = `${uuidv4()}-${file.name}`;
+        const bucketId = 'media'; // ID du bucket dans Appwrite
+        
+        try {
+          const uploadData = await backendAdapter.uploadFile(bucketId, file, filePath);
+          mediaUrl = backendAdapter.getFileUrl(bucketId, filePath);
+          
+          mediaMetadata = {
+            name: file.name,
+            size: file.size,
+            type: file.type
+          };
+  
+          // Ajouter des métadonnées spécifiques selon le type de média
+          if (messageType === 'image') {
+            const dimensions = await this.getImageDimensions(file);
+            mediaMetadata = { ...mediaMetadata, ...dimensions };
+          } else if (messageType === 'audio') {
+            const duration = await this.getAudioDuration(file);
+            mediaMetadata = { ...mediaMetadata, duration };
+          } else if (messageType === 'video') {
+            const videoData = await this.getVideoMetadata(file);
+            mediaMetadata = { ...mediaMetadata, ...videoData };
+          }
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload du fichier:', uploadError);
+          throw uploadError;
         }
       }
 
-      // Envoyer le message via la fonction RPC
-      const { data: messageData, error: messageError } = await supabase.rpc('send_message', {
-        p_conversation_id: conversationId,
-        p_sender_id: user.id,
-        p_content: content,
-        p_message_type: messageType,
-        p_media_url: mediaUrl,
-        p_media_metadata: Object.keys(mediaMetadata).length > 0 ? mediaMetadata : null
+      // Créer le message directement dans la collection messages
+      const messageData = await backendAdapter.create(COLLECTIONS.MESSAGES, {
+        conversation_id: conversationId,
+        sender_id: user.id || user.$id,
+        content: content,
+        message_type: messageType,
+        media_url: mediaUrl,
+        media_metadata: Object.keys(mediaMetadata).length > 0 ? mediaMetadata : null,
+        created_at: new Date().toISOString(),
+        read: false
       });
-
-      if (messageError) throw messageError;
 
       return { data: messageData as Message, error: null };
     } catch (error) {
@@ -244,20 +254,17 @@ class MessagingService {
     pageSize = 20
   ): Promise<{ data: Message[]; error: Error | null }> {
     try {
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
+      const offset = page * pageSize;
 
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
+      const messages = await backendAdapter.query(COLLECTIONS.MESSAGES, {
+        filters: [{ field: 'conversation_id', operator: '=', value: conversationId }],
+        orderBy: ['DESC(created_at)'],
+        limit: pageSize,
+        offset: offset
+      });
 
       // Inverser pour avoir les plus anciens en premier
-      return { data: (data || []).reverse(), error: null };
+      return { data: (messages || []).reverse(), error: null };
     } catch (error) {
       console.error('Erreur lors de la récupération des messages:', error);
       return { data: [], error: error as Error };
@@ -271,24 +278,21 @@ class MessagingService {
     conversationId: string,
     callback: (message: Message) => void
   ): () => void {
-    const subscription = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        (payload) => {
-          callback(payload.new as Message);
-        }
-      )
-      .subscribe();
+    console.warn('Appwrite ne supporte pas encore complètement le realtime pour les collections');
+    
+    // Utiliser l'adaptateur pour s'abonner aux messages
+    // Assurer que le retour est bien de type () => void
+    const unsubscribe = backendAdapter.subscribeToCollection(COLLECTIONS.MESSAGES, (payload) => {
+      // Vérifier si le message appartient à la conversation
+      if (payload.conversation_id === conversationId) {
+        callback(payload as unknown as Message);
+      }
+    });
 
     return () => {
-      subscription.unsubscribe();
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
     };
   }
 
@@ -337,15 +341,20 @@ class MessagingService {
    */
   async markMessageAsRead(messageId: string): Promise<{ success: boolean; error: Error | null }> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utilisateur non connecté');
+      const user = await backendAdapter.getCurrentUser();
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
 
-      const { error } = await supabase.rpc('mark_message_as_read', {
-        p_message_id: messageId,
-        p_user_id: user.id
-      });
+      // Récupérer le message
+      const message = await backendAdapter.getById(COLLECTIONS.MESSAGES, messageId);
+      if (!message) {
+        throw new Error('Message non trouvé');
+      }
 
-      if (error) throw error;
+      // Mettre à jour le message
+      await backendAdapter.update(COLLECTIONS.MESSAGES, messageId, { read: true });
+      
       return { success: true, error: null };
     } catch (error) {
       console.error('Erreur lors du marquage du message comme lu:', error);

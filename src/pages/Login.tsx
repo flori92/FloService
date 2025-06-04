@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import backendAdapter from '../lib/backendAdapter';
+import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { LogIn } from 'lucide-react';
 import { FormattedMessage } from 'react-intl';
@@ -15,18 +16,16 @@ export default function Login() {
   const redirectTo = searchParams.get('redirect') || '/';
   const intl = useIntl();
 
+  // Utiliser le store d'authentification pour accéder à la fonction signIn
+  const { signIn } = useAuthStore();
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Utilisation de la méthode d'authentification par email/mot de passe
-      const { error } = await (supabase.auth as any).signIn({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      // Utilisation de la méthode d'authentification via notre adaptateur
+      await signIn(email, password);
 
       toast.success('Connexion réussie !');
       
