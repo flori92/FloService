@@ -6,32 +6,23 @@
  */
 
 import { backendConfig } from '../config/backendConfig';
-import AppwriteClient, { COLLECTIONS } from './appwriteClient';
 import supabaseClient from './supabaseClient';
 
 // Classe d'adaptateur qui fournit une interface unifiée
 class BackendAdapter {
   constructor() {
     this.provider = backendConfig.provider;
-    this.isAppwrite = backendConfig.isAppwrite;
-    this.isSupabase = backendConfig.isSupabase;
-    
-    // Initialiser le client approprié
-    if (this.isAppwrite) {
-      this.client = AppwriteClient;
-      this.collections = COLLECTIONS;
-    } else {
-      this.client = supabaseClient;
-      this.collections = {
-        PROFILES: 'profiles',
-        PROVIDER_PROFILES: 'provider_profiles',
-        SERVICES: 'services',
-        CONVERSATIONS: 'conversations',
-        MESSAGES: 'messages',
-        BOOKINGS: 'bookings',
-        INVOICES: 'invoices'
-      };
-    }
+    this.isSupabase = true;
+    this.client = supabaseClient;
+    this.collections = {
+      PROFILES: 'profiles',
+      PROVIDER_PROFILES: 'provider_profiles',
+      SERVICES: 'services',
+      CONVERSATIONS: 'conversations',
+      MESSAGES: 'messages',
+      BOOKINGS: 'bookings',
+      INVOICES: 'invoices'
+    };
   }
   
   /**
