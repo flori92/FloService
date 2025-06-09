@@ -525,5 +525,8 @@ export const logAuditAction = async (
   }
 };
 
-// Exporter le client par défaut
+// Note: Le client Supabase est déjà créé et exporté plus haut dans ce fichier
+// Ne pas redéclarer les variables pour éviter les erreurs de compilation
+
+// Exporter le client par défaut pour la compatibilité avec le code existant
 export default supabase;
