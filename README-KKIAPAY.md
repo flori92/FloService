@@ -33,9 +33,9 @@ Ce module intègre Kkiapay comme agrégateur de paiement dans FloService, permet
 
 ## Fonctions Edge Supabase
 
-- `generate-payment-link` : Génération de liens de paiement
-- `kkiapay-webhook` : Traitement des callbacks Kkiapay
-- `kkiapay-withdrawal` : Traitement des retraits
+- `generate-payment-link.ts` : Génération de liens de paiement
+- `kkiapay-webhook.ts` : Traitement des callbacks Kkiapay
+- `kkiapay-withdrawal.ts` : Traitement des retraits
 
 ## Composants React
 
