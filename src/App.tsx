@@ -143,30 +143,27 @@ function App() {
   // Afficher un écran de chargement pendant l'initialisation
   if (!isAppReady) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <LoadingSpinner 
-          size="LG" 
-          label="Initialisation de l'application..." 
-        />
-      </div>
+      <>
+        <GlobalLoadingSpinner />
+        {/* Debug infos affichées en bas de page */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, background: '#eee', color: '#333', fontSize: 12, padding: 4, zIndex: 9999 }}>
+          <strong>Debug:</strong> {JSON.stringify({ isOnline, isAppReady, initError: !!initError, debugInfo }, null, 2)}
+        </div>
+      </>
     );
   }
 
   // Afficher une erreur si l'initialisation a échoué
   if (initError) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Erreur d'initialisation</h2>
-          <p className="text-gray-700 mb-4">{initError.message}</p>
-          <p className="text-gray-600 mb-6">Veuillez vérifier votre connexion internet et réessayer.</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            Réessayer
-          </button>
-        </div>
+      <div className="flex flex-col items-center justify-center h-screen bg-red-50 text-red-700">
+        <h1 className="text-2xl font-bold mb-2">Erreur d'initialisation</h1>
+        <p className="mb-4">{initError.message}</p>
+        <pre className="bg-red-100 p-2 rounded text-xs max-w-xl overflow-x-auto">{initError.stack}</pre>
+        <details className="mt-4 max-w-xl">
+          <summary className="cursor-pointer">Debug avancé</summary>
+          <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{JSON.stringify(debugInfo, null, 2)}</pre>
+        </details>
       </div>
     );
   }
