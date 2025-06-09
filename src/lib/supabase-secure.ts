@@ -202,7 +202,10 @@ export const createSupabaseClient = (): ExtendedSupabaseClient => {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: false, // Désactiver pour éviter les erreurs JWT au démarrage
+        // Désactiver la vérification automatique de session au démarrage
+        // pour éviter les erreurs de JWT invalide
+        flowType: 'pkce'
       },
       // Désactiver les requêtes de télémétrie
       realtime: {
@@ -223,26 +226,6 @@ export const createSupabaseClient = (): ExtendedSupabaseClient => {
       // Le schéma est défini directement dans le type Database
     } as const; // Utilisation de 'as const' pour le typage littéral
 
-    // Vérification de la connexion au démarrage
-    const checkInitialConnection = async () => {
-      try {
-        const { data, error } = await supabaseInstance
-          .from('profiles')
-          .select('*')
-          .limit(1);
-          
-        if (error) {
-          console.error('❌ Erreur de connexion initiale à Supabase:', error);
-          return false;
-        }
-        console.log('✅ Connexion à Supabase établie avec succès');
-        return true;
-      } catch (err) {
-        console.error('❌ Erreur lors de la vérification de la connexion Supabase:', err);
-        return false;
-      }
-    };
-
     // Création du client Supabase typé
     const supabaseInstance = createClient<Database>(
       supabaseUrl,
@@ -250,9 +233,32 @@ export const createSupabaseClient = (): ExtendedSupabaseClient => {
       supabaseOptions
     );
 
-    // Exécuter la vérification de connexion au chargement
+    // Vérification de la connexion au démarrage (sans authentification)
+    const checkInitialConnection = async () => {
+      try {
+        // Test simple de connectivité sans authentification
+        const { data, error } = await supabaseInstance
+          .from('categories')
+          .select('id')
+          .limit(1);
+          
+        if (error && error.code !== 'PGRST116') { // PGRST116 = table vide, c'est OK
+          console.warn('⚠️ Avertissement de connexion à Supabase:', error.message);
+          return false;
+        }
+        console.log('✅ Connexion à Supabase établie avec succès');
+        return true;
+      } catch (err) {
+        console.warn('⚠️ Avertissement lors de la vérification de la connexion Supabase:', err);
+        return false;
+      }
+    };
+
+    // Exécuter la vérification de connexion au chargement (de manière asynchrone)
     if (typeof window !== 'undefined') {
-      checkInitialConnection();
+      setTimeout(() => {
+        checkInitialConnection();
+      }, 1000);
     }
 
     return supabaseInstance;
@@ -448,10 +454,10 @@ export const checkMigrationsApplied = async (): Promise<boolean> => {
 
     // Vérification de base de la table des migrations
     // On utilise une requête simple qui fonctionne avec le client de secours
-    const result = await supabase.from('migrations').select('*');
+    const result = await supabase.from('schema_migrations').select('version').limit(1);
     
     // Si on obtient une réponse (même vide), c'est que la table existe
-    if (result) {
+    if (result && !result.error) {
       console.log('✅ Vérification des migrations : connexion à la base de données établie');
       return true;
     }
