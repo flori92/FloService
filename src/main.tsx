@@ -1,10 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { preloadCriticalResources } from './utils/lazyLoad';
+import App from './App';
 
-// Chargement paresseux de l'application principale
-const App = lazy(() => import('./App'));
+// Import statique de App pour éviter les problèmes de chargement dynamique
 
 // Composant de chargement pendant que l'application se charge
 const LoadingFallback = () => (
