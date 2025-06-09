@@ -1,2 +1,2 @@
 /*
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://cdn.jsdelivr.net https://images.unsplash.com;
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://cdn.jsdelivr.net https://images.unsplash.com https://images.pexels.com https://afriqueitnews.com https://www.leparisien.fr https://www.afrique-sur7.fr https://mir-s3-cdn-cf.behance.net https://www.afro-impact.com https://gozem.co https://www.goafricaonline.com;
