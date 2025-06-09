@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { supabase as enhancedSupabase } from './lib/supabase-secure';
 import { useAuthStore } from './store/authStore';
@@ -14,23 +14,23 @@ import { NotifierProvider } from './components/ui/Notifier';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import { ConnectionError } from './components/ui/EmptyState';
 
-// Pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import Categories from './pages/Categories';
-import CategoryPage from './pages/CategoryPage';
-import ProviderProfile from './pages/ProviderProfile';
-import ProviderRegistration from './pages/ProviderRegistration';
-import AllProviders from './pages/AllProviders';
-import Explorer from './pages/Explorer';
-import HowItWorks from './pages/HowItWorks';
-import Messages from './pages/Messages';
-import Blog from './pages/Blog';
-import HelpCenter from './pages/HelpCenter';
-import NotFound from './pages/NotFound';
+// Lazy load all page components
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Categories = lazy(() => import('./pages/Categories'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
+const ProviderProfile = lazy(() => import('./pages/ProviderProfile'));
+const ProviderRegistration = lazy(() => import('./pages/ProviderRegistration'));
+const AllProviders = lazy(() => import('./pages/AllProviders'));
+const Explorer = lazy(() => import('./pages/Explorer'));
+const HowItWorks = lazy(() => import('./pages/HowItWorks'));
+const Messages = lazy(() => import('./pages/Messages'));
+const Blog = lazy(() => import('./pages/Blog'));
+const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Composant de chargement global
 const GlobalLoadingSpinner = () => (
