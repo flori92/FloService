@@ -218,7 +218,6 @@ export const createSupabaseClient = (): ExtendedSupabaseClient => {
           'Accept': '*/*',
           'Content-Type': 'application/json',
           'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
           'X-Client-Info': 'FloService Web Client',
           'Prefer': 'return=representation',
         },
