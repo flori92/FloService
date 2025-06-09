@@ -140,6 +140,16 @@ function App() {
     };
   }, [setUser]);
 
+  // Préparation des informations de debug
+  const debugInfo = {
+    isOnline,
+    isAppReady,
+    initError,
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+    // Ajoutez ici d'autres états ou infos utiles si besoin
+  };
+
   // Afficher un écran de chargement pendant l'initialisation
   if (!isAppReady) {
     return (
