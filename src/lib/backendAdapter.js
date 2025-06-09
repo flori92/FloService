@@ -6,14 +6,14 @@
  */
 
 import { backendConfig } from '../config/backendConfig';
-import supabaseClient from './supabaseClient';
+import { supabase } from './supabase-secure';
 
 // Classe d'adaptateur qui fournit une interface unifiée
 class BackendAdapter {
   constructor() {
     this.provider = backendConfig.provider;
     this.isSupabase = true;
-    this.client = supabaseClient;
+    this.client = supabase;
     this.collections = {
       PROFILES: 'profiles',
       PROVIDER_PROFILES: 'provider_profiles',
