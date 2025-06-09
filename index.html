@@ -8,6 +8,9 @@
     <meta name="description" content="FloService connecte les professionnels qualifiés avec les clients en Afrique de l'Ouest. Trouvez des prestataires de confiance pour tous vos besoins." />
     <meta name="theme-color" content="#3b82f6" />
     
+    <!-- CSP directive pour autoriser les images externes -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.supabase.co; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.pexels.com https://afriqueitnews.com https://www.leparisien.fr https://www.afrique-sur7.fr https://mir-s3-cdn-cf.behance.net https://www.afro-impact.com https://gozem.co https://www.goafricaonline.com https://github.com https://*.githubusercontent.com https://*.googleusercontent.com https://*.unsplash.com https://*.cdninstagram.com https://*.fbcdn.net https://*.twimg.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com;" />
+    
     <!-- PWA support -->
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -69,17 +72,26 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Register Service Worker -->
+    <!-- Register Service Worker (version temporaire pour résoudre les problèmes CSP) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('Service Worker enregistré avec succès:', registration.scope);
-            })
-            .catch(error => {
-              console.log('Échec de l\'enregistrement du Service Worker:', error);
-            });
+          // Désinscrire tous les service workers existants
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+              registration.unregister();
+              console.log('Service Worker désinscrit');
+            }
+            
+            // Enregistrer notre service worker temporaire
+            navigator.serviceWorker.register('/noop-sw.js')
+              .then(registration => {
+                console.log('Service Worker temporaire enregistré avec succès:', registration.scope);
+              })
+              .catch(error => {
+                console.log('Échec de l\'enregistrement du Service Worker temporaire:', error);
+              });
+          });
         });
       }
     </script>
