@@ -1,0 +1,2 @@
+/*
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://cdn.jsdelivr.net https://images.unsplash.com;
