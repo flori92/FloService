@@ -3,7 +3,7 @@
  * Améliore l'expérience utilisateur en fournissant des messages d'erreur clairs et des solutions
  */
 
-import { useNotifier } from '../components/ui/Notifier';
+import { useNotifier } from '../components/ui/Notifier.jsx';
 
 // Codes d'erreur Supabase et messages associés
 const ERROR_MESSAGES = {

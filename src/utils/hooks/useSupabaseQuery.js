@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useNotifier } from '../../components/ui/Notifier';
-import useErrorHandler from './useErrorHandler';
+import { supabase } from '../../lib/supabase.ts';
+import { useNotifier } from '../../components/ui/Notifier.jsx';
+import useErrorHandler from './useErrorHandler.js';
 
 /**
  * Hook pour effectuer des requêtes Supabase avec gestion d'état

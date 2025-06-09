@@ -4,8 +4,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useNotifier } from '../../components/ui/Notifier';
+import { supabase } from '../../lib/supabase.ts';
+import { useNotifier } from '../../components/ui/Notifier.jsx';
 
 /**
  * Hook pour s'abonner aux changements en temps réel d'une table Supabase
