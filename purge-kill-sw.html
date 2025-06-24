@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💀 PURGE KILL-SW.JS - Élimination Définitive</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #991b1b, #7f1d1d);
+            color: white;
+            text-align: center;
+            border-radius: 20px;
+        }
+        .alert {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            font-weight: bold;
+        }
+        .status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 13px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover { 
+            background: #991b1b; 
+            transform: translateY(-2px);
+        }
+        .btn-success { 
+            background: #059669; 
+        }
+        .btn-success:hover { 
+            background: #047857; 
+        }
+        .progress {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            height: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: #10b981;
+            height: 100%;
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <h1>💀 PURGE KILL-SW.JS</h1>
+    <p><strong>Élimination définitive du Service Worker fantôme</strong></p>
+    
+    <div class="alert">
+        🚨 <strong>PROBLÈME DÉTECTÉ</strong><br>
+        Le fichier <code>kill-sw.js</code> est encore en cache navigateur<br>
+        Cette page va l'éliminer DÉFINITIVEMENT
+    </div>
+    
+    <div class="progress">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+    
+    <div id="status" class="status">
+        💀 Initialisation de la purge kill-sw.js...<br>
+    </div>
+    
+    <button class="btn" onclick="startPurge()">
+        🔥 PURGER KILL-SW.JS MAINTENANT
+    </button>
+    
+    <button class="btn btn-success" onclick="checkIfPurged()">
+        ✅ VÉRIFIER SI PURGÉ
+    </button>
+    
+    <button class="btn" onclick="nuclearReset()">
+        ☢️ RESET NUCLÉAIRE TOTAL
+    </button>
+
+    <script>
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progress-bar');
+        let progress = 0;
+        
+        function log(message) {
+            const time = new Date().toLocaleTimeString();
+            status.innerHTML += `[${time}] ${message}<br>`;
+            status.scrollTop = status.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateProgress(percent) {
+            progress = Math.min(100, percent);
+            progressBar.style.width = progress + '%';
+        }
+        
+        async function startPurge() {
+            log('🚨 DÉMARRAGE PURGE KILL-SW.JS');
+            updateProgress(10);
+            
+            try {
+                // 1. Vérification présence kill-sw.js
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                const killSW = registrations.find(reg => 
+                    reg.scope.includes('kill-sw') || 
+                    reg.active?.scriptURL?.includes('kill-sw')
+                );
+                
+                if (killSW) {
+                    log('🎯 KILL-SW.JS DÉTECTÉ - Élimination en cours...');
+                } else {
+                    log('🔍 Aucun kill-sw.js visible - Purge préventive...');
+                }
+                updateProgress(25);
+                
+                // 2. Désenregistrement FORCÉ de TOUS les SW
+                log('💥 Désenregistrement forcé de tous les Service Workers');
+                for (const registration of registrations) {
+                    log(`🗑️ Suppression forcée: ${registration.scope}`);
+                    await registration.unregister();
+                }
+                updateProgress(50);
+                
+                // 3. Enregistrement temporaire du purificateur
+                log('🧹 Enregistrement purificateur temporaire...');
+                const purgeReg = await navigator.serviceWorker.register('/purge-cache.js', {
+                    scope: '/',
+                    updateViaCache: 'none' // Force pas de cache
+                });
+                updateProgress(65);
+                
+                // 4. Écoute des messages du purificateur
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data.type === 'CACHE_PURGED') {
+                        log('✅ Cache purgé par le purificateur');
+                        updateProgress(85);
+                        
+                        // Attendre puis vérifier
+                        setTimeout(async () => {
+                            const finalCheck = await navigator.serviceWorker.getRegistrations();
+                            if (finalCheck.length === 0) {
+                                log('🎉 SUCCESS ! Plus aucun Service Worker actif');
+                                log('💀 kill-sw.js DÉFINITIVEMENT ÉLIMINÉ !');
+                                updateProgress(100);
+                                alert('✅ PURGE RÉUSSIE ! kill-sw.js éliminé définitivement.');
+                            } else {
+                                log(`⚠️ ${finalCheck.length} SW encore présents`);
+                                updateProgress(90);
+                            }
+                        }, 2000);
+                    }
+                });
+                
+                // 5. Attendre activation du purificateur
+                await new Promise((resolve) => {
+                    if (purgeReg.active) {
+                        resolve();
+                    } else {
+                        purgeReg.addEventListener('updatefound', () => {
+                            const worker = purgeReg.installing;
+                            worker.addEventListener('statechange', () => {
+                                if (worker.state === 'activated') {
+                                    resolve();
+                                }
+                            });
+                        });
+                    }
+                });
+                
+                log('⚡ Purificateur actif - Nettoyage en cours...');
+                updateProgress(75);
+                
+            } catch (error) {
+                log(`💥 ERREUR PURGE: ${error.message}`);
+                alert('❌ Erreur durant la purge. Essayez le reset nucléaire.');
+            }
+        }
+        
+        async function checkIfPurged() {
+            log('🔍 VÉRIFICATION PURGE');
+            
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                const cacheNames = await caches.keys();
+                
+                log(`📊 Service Workers actifs: ${registrations.length}`);
+                log(`📊 Caches présents: ${cacheNames.length}`);
+                
+                const hasKillSW = registrations.some(reg => 
+                    reg.scope.includes('kill-sw') || 
+                    reg.active?.scriptURL?.includes('kill-sw')
+                );
+                
+                if (hasKillSW) {
+                    log('❌ KILL-SW.JS ENCORE PRÉSENT !');
+                    alert('❌ kill-sw.js encore actif. Utilisez le reset nucléaire.');
+                } else if (registrations.length === 0) {
+                    log('✅ PURGE RÉUSSIE - Plus aucun Service Worker');
+                    updateProgress(100);
+                    alert('✅ SUCCÈS ! Aucun Service Worker actif.');
+                } else {
+                    log('⚠️ Autres Service Workers présents mais pas kill-sw.js');
+                    registrations.forEach((reg, i) => {
+                        log(`  SW ${i+1}: ${reg.scope}`);
+                    });
+                }
+                
+            } catch (error) {
+                log(`💥 ERREUR VÉRIFICATION: ${error.message}`);
+            }
+        }
+        
+        async function nuclearReset() {
+            if (!confirm('☢️ ATTENTION ! Reset nucléaire va tout supprimer. Continuer ?')) {
+                return;
+            }
+            
+            log('☢️ RESET NUCLÉAIRE ACTIVÉ');
+            updateProgress(0);
+            
+            try {
+                // Suppression ultra-agressive
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => {
+                    log(`💀 Destruction nucléaire: ${reg.scope}`);
+                    return reg.unregister();
+                }));
+                
+                // Suppression caches
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => {
+                    log(`🗑️ Cache vaporisé: ${name}`);
+                    return caches.delete(name);
+                }));
+                
+                // Suppression storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                updateProgress(100);
+                log('☢️ RESET NUCLÉAIRE TERMINÉ');
+                alert('☢️ Reset nucléaire terminé ! Redémarrez le navigateur.');
+                
+            } catch (error) {
+                log(`💥 ERREUR NUCLÉAIRE: ${error.message}`);
+            }
+        }
+        
+        // Auto-vérification au chargement
+        window.addEventListener('load', () => {
+            setTimeout(checkIfPurged, 1000);
+        });
+    </script>
+</body>
+</html>
