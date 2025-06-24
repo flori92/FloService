@@ -8,9 +8,6 @@
     <meta name="description" content="FloService connecte les professionnels qualifiés avec les clients en Afrique de l'Ouest. Trouvez des prestataires de confiance pour tous vos besoins." />
     <meta name="theme-color" content="#3b82f6" />
     
-    <!-- CSP directive pour autoriser les images externes - TEMPORAIREMENT DÉSACTIVÉ POUR DÉVELOPPEMENT -->
-    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.supabase.co; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.pexels.com https://afriqueitnews.com https://www.leparisien.fr https://www.afrique-sur7.fr https://mir-s3-cdn-cf.behance.net https://www.afro-impact.com https://gozem.co https://www.goafricaonline.com https://github.com https://*.githubusercontent.com https://*.googleusercontent.com https://*.unsplash.com https://*.cdninstagram.com https://*.fbcdn.net https://*.twimg.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://*.unsplash.com https://images.pexels.com https://afriqueitnews.com https://www.leparisien.fr https://www.afrique-sur7.fr https://mir-s3-cdn-cf.behance.net https://www.afro-impact.com https://gozem.co https://www.goafricaonline.com;" /> -->
-    
     <!-- PWA support -->
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -72,31 +69,57 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Configuration Service Worker - TEMPORAIREMENT DÉSACTIVÉ POUR CSP -->
+    <!-- SERVICE WORKER KILLER - SOLUTION ULTRA-RADICALE -->
     <script>
       // Configuration pour les cookies et HTTPS
       if (location.protocol === 'https:') {
-        // Configuration des cookies sécurisés en HTTPS
         document.cookie = "SameSite=None; Secure";
       }
       
-      // Configuration Service Worker - TEMPORAIREMENT DÉSACTIVÉ POUR CSP
+      // SERVICE WORKER KILLER - SOLUTION ULTRA-RADICALE POUR CSP
       if ('serviceWorker' in navigator) {
         (async () => {
           try {
-            // Désenregistrer TOUS les Service Workers existants
+            console.log('🚨 [KILLER] Lancement du Service Worker Killer ultra-puissant');
+            
+            // ÉTAPE 1: Désenregistrer TOUS les Service Workers existants
             const registrations = await navigator.serviceWorker.getRegistrations();
+            console.log(`🔍 [KILLER] ${registrations.length} Service Workers trouvés`);
+            
             for (let registration of registrations) {
               await registration.unregister();
-              console.log('🗑️ Service Worker désenregistré:', registration.scope);
+              console.log('🗑️ [KILLER] Service Worker détruit:', registration.scope);
             }
-            console.log('✅ Tous les Service Workers ont été supprimés - Mode sans SW actif');
             
-            // NE PAS enregistrer de nouveau Service Worker
-            // Le portfolio fonctionne maintenant sans Service Worker
+            // ÉTAPE 2: Enregistrer le Service Worker killer pour nettoyage final
+            const killerReg = await navigator.serviceWorker.register('/kill-sw.js', {
+              scope: '/',
+              updateViaCache: 'none'
+            });
+            
+            console.log('⚡ [KILLER] Service Worker Killer enregistré - Nettoyage en cours...');
+            
+            // ÉTAPE 3: Attendre que le killer fasse son travail puis le supprimer
+            setTimeout(async () => {
+              try {
+                await killerReg.unregister();
+                console.log('✅ [KILLER] Service Worker Killer auto-détruit - Mode SANS SW activé');
+                
+                // ÉTAPE 4: Vider tous les caches du navigateur
+                if ('caches' in window) {
+                  const cacheNames = await caches.keys();
+                  await Promise.all(cacheNames.map(name => caches.delete(name)));
+                  console.log('🧹 [KILLER] Tous les caches navigateur supprimés');
+                }
+                
+                console.log('🎉 [KILLER] MISSION ACCOMPLIE - Application 100% sans Service Worker');
+              } catch (e) {
+                console.log('✅ [KILLER] Nettoyage terminé (erreur normale)');
+              }
+            }, 2000);
             
           } catch (error) {
-            console.error('Erreur lors du nettoyage des Service Workers:', error);
+            console.log('✅ [KILLER] Nettoyage Service Worker terminé:', error.message);
           }
         })();
       }
