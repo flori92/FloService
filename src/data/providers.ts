@@ -2,7 +2,7 @@ import { ServiceProvider } from '../types';
 
 export const serviceProviders: ServiceProvider[] = [
   {
-    id: 'bj-1',
+    id: 'provider-bj-1',  // Préfixe ajouté pour éviter les conflits
     name: 'Koffi AHOUANSOU',
     profession: 'Plombier',
     country: 'BJ',
@@ -21,7 +21,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Installation sanitaire', 'Réparation de fuite', 'Débouchage']
   },
   {
-    id: 'bj-2',
+    id: 'provider-bj-2',
     name: 'Afiavi DOSSOU',
     profession: 'Décoratrice d\'intérieur',
     country: 'BJ',
@@ -40,7 +40,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Design contemporain', 'Décoration traditionnelle', 'Aménagement d\'espace']
   },
   {
-    id: 'bj-3',
+    id: 'provider-bj-3',
     name: 'Codjo AGBESSI',
     profession: 'Électricien',
     country: 'BJ',
@@ -59,7 +59,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Installation électrique', 'Dépannage', 'Éclairage LED']
   },
   {
-    id: 'bj-4',
+    id: 'provider-bj-4',
     name: 'Abiba SAKA',
     profession: 'Coiffeuse',
     country: 'BJ',
@@ -78,7 +78,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Tresses', 'Coiffures de mariage', 'Extensions']
   },
   {
-    id: 'bj-5',
+    id: 'provider-bj-5',
     name: 'Yaovi ADJAVON',
     profession: 'Menuisier',
     country: 'BJ',
@@ -97,7 +97,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Meubles sur mesure', 'Menuiserie traditionnelle', 'Restauration']
   },
   {
-    id: 'tg-1',
+    id: 'provider-tg-1',
     name: 'Kossi ADEBAYOR',
     profession: 'Électricien',
     country: 'TG',
@@ -116,7 +116,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Installation électrique', 'Dépannage', 'Éclairage LED']
   },
   {
-    id: 'tg-2',
+    id: 'provider-tg-2',
     name: 'Eric KOUDJO',
     profession: 'Menuisier',
     country: 'TG',
@@ -135,7 +135,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Meubles sur mesure', 'Menuiserie traditionnelle', 'Restauration']
   },
   {
-    id: 'tg-3',
+    id: 'provider-tg-3',
     name: 'Ayélé LAWSON',
     profession: 'Coiffeuse',
     country: 'TG',
@@ -154,7 +154,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Tresses', 'Coiffures traditionnelles', 'Extensions']
   },
   {
-    id: 'ci-1',
+    id: 'provider-ci-1',
     name: 'Kouamé KOFFI',
     profession: 'Maçon',
     country: 'CI',
@@ -173,7 +173,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Construction', 'Rénovation', 'Carrelage']
   },
   {
-    id: 'ci-2',
+    id: 'provider-ci-2',
     name: 'Kady TOURÉ',
     profession: 'Coiffeuse',
     country: 'CI',
@@ -192,7 +192,7 @@ export const serviceProviders: ServiceProvider[] = [
     specialties: ['Tresses', 'Coiffures de mariage', 'Extensions']
   },
   {
-    id: 'ci-3',
+    id: 'provider-ci-3',
     name: 'Sékou DIABATÉ',
     profession: 'Électricien',
     country: 'CI',
