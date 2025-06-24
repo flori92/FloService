@@ -72,26 +72,57 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Register Service Worker (version temporaire pour résoudre les problèmes CSP) -->
+    <!-- Configuration optimisée du Service Worker -->
     <script>
+      // Configuration pour les cookies et HTTPS
+      if (location.protocol === 'https:') {
+        // Configuration des cookies sécurisés en HTTPS
+        document.cookie = "SameSite=None; Secure";
+      }
+      
+      // Gestion intelligente du Service Worker
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          // Désinscrire tous les service workers existants
-          navigator.serviceWorker.getRegistrations().then(registrations => {
-            for (let registration of registrations) {
-              registration.unregister();
-              console.log('Service Worker désinscrit');
+        window.addEventListener('load', async () => {
+          try {
+            // Vérifier si un service worker est déjà enregistré
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            const existingRegistration = registrations.find(reg => 
+              reg.scope.includes(location.origin)
+            );
+            
+            if (existingRegistration) {
+              // Vérifier si c'est notre service worker actuel
+              if (existingRegistration.active && existingRegistration.active.scriptURL.includes('noop-sw.js')) {
+                console.log('✅ Service Worker FloService déjà actif');
+                return;
+              } else {
+                // Désinscrire l'ancien service worker
+                await existingRegistration.unregister();
+                console.log('🔄 Ancien Service Worker désinscrit');
+              }
             }
             
-            // Enregistrer notre service worker temporaire
-            navigator.serviceWorker.register('/noop-sw.js')
-              .then(registration => {
-                console.log('Service Worker temporaire enregistré avec succès:', registration.scope);
-              })
-              .catch(error => {
-                console.log('Échec de l\'enregistrement du Service Worker temporaire:', error);
-              });
-          });
+            // Enregistrer notre service worker optimisé
+            const registration = await navigator.serviceWorker.register('/noop-sw.js', {
+              scope: '/',
+              updateViaCache: 'none' // Force la vérification des mises à jour
+            });
+            
+            console.log('✅ Service Worker FloService enregistré avec succès:', registration.scope);
+            
+            // Gestion des mises à jour
+            registration.addEventListener('updatefound', () => {
+              console.log('🔄 Mise à jour du Service Worker détectée');
+            });
+            
+          } catch (error) {
+            console.warn('⚠️ Erreur Service Worker (non critique):', error.message);
+          }
+        });
+        
+        // Écouter les changements d'état
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('🔄 Contrôleur Service Worker mis à jour');
         });
       }
     </script>
