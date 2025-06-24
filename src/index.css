@@ -351,7 +351,7 @@
 }
 
 .metric-value.important {
-  @apply animation-pulse;
+  @apply animate-pulse;
   animation: metric-highlight 2s ease-in-out infinite;
 }
 
