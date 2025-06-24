@@ -72,7 +72,7 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Configuration optimisée du Service Worker -->
+    <!-- Configuration Service Worker - TEMPORAIREMENT DÉSACTIVÉ POUR CSP -->
     <script>
       // Configuration pour les cookies et HTTPS
       if (location.protocol === 'https:') {
@@ -80,50 +80,23 @@
         document.cookie = "SameSite=None; Secure";
       }
       
-      // Gestion intelligente du Service Worker
+      // Configuration Service Worker - TEMPORAIREMENT DÉSACTIVÉ POUR CSP
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', async () => {
-          try {
-            // Vérifier si un service worker est déjà enregistré
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            const existingRegistration = registrations.find(reg => 
-              reg.scope.includes(location.origin)
-            );
-            
-            if (existingRegistration) {
-              // Vérifier si c'est notre service worker actuel
-              if (existingRegistration.active && existingRegistration.active.scriptURL.includes('noop-sw.js')) {
-                console.log('✅ Service Worker FloService déjà actif');
-                return;
-              } else {
-                // Désinscrire l'ancien service worker
-                await existingRegistration.unregister();
-                console.log('🔄 Ancien Service Worker désinscrit');
-              }
-            }
-            
-            // Enregistrer notre service worker optimisé
-            const registration = await navigator.serviceWorker.register('/noop-sw.js', {
-              scope: '/',
-              updateViaCache: 'none' // Force la vérification des mises à jour
-            });
-            
-            console.log('✅ Service Worker FloService enregistré avec succès:', registration.scope);
-            
-            // Gestion des mises à jour
-            registration.addEventListener('updatefound', () => {
-              console.log('🔄 Mise à jour du Service Worker détectée');
-            });
-            
-          } catch (error) {
-            console.warn('⚠️ Erreur Service Worker (non critique):', error.message);
+        try {
+          // Désenregistrer TOUS les Service Workers existants
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let registration of registrations) {
+            await registration.unregister();
+            console.log('🗑️ Service Worker désenregistré:', registration.scope);
           }
-        });
-        
-        // Écouter les changements d'état
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('🔄 Contrôleur Service Worker mis à jour');
-        });
+          console.log('✅ Tous les Service Workers ont été supprimés - Mode sans SW actif');
+          
+          // NE PAS enregistrer de nouveau Service Worker
+          // Le portfolio fonctionne maintenant sans Service Worker
+          
+        } catch (error) {
+          console.error('Erreur lors du nettoyage des Service Workers:', error);
+        }
       }
     </script>
     

@@ -1,50 +1,37 @@
-// Service Worker optimisé pour FloService
-// Version: 1.1.0 - Résolution des problèmes de re-enregistrement
+// Service Worker temporairement désactivé pour résoudre les problèmes CSP
+// Version: 1.3.0 - Mode bypass pour développement
 
-const CACHE_NAME = 'floservice-v1';
-const isProduction = true; // Défini en production
+const CACHE_NAME = 'floservice-v3';
+const isProduction = false; // Temporairement désactivé en dev
 
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installation du Service Worker FloService v1.1.0');
+  console.log('[SW] Service Worker FloService v1.3.0 - Mode bypass CSP');
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activation du Service Worker');
+  console.log('[SW] Activation en mode bypass - Suppression de tous les caches');
   event.waitUntil(
     Promise.all([
-      // Supprime les anciens caches si nécessaire
+      // Supprime TOUS les caches existants
       caches.keys().then((cacheNames) => {
         return Promise.all(
-          cacheNames
-            .filter(cacheName => cacheName !== CACHE_NAME)
-            .map(cacheName => {
-              console.log('[SW] Suppression du cache obsolète:', cacheName);
-              return caches.delete(cacheName);
-            })
+          cacheNames.map(cacheName => {
+            console.log('[SW] Suppression du cache:', cacheName);
+            return caches.delete(cacheName);
+          })
         );
       }),
-      // Prend le contrôle immédiatement
       self.clients.claim()
     ])
   );
 });
 
-// Gestionnaire fetch minimal pour éviter les avertissements
+// Gestionnaire fetch désactivé pour éviter les conflits CSP
 self.addEventListener('fetch', (event) => {
-  // En développement ou pour les requêtes API, laisser passer
-  if (!isProduction || event.request.url.includes('/api/') || event.request.url.includes('supabase.co')) {
-    return; // Laisse le navigateur gérer
-  }
-  
-  // Pour les autres ressources statiques, utilisation du cache si nécessaire
-  if (event.request.method === 'GET') {
-    event.respondWith(
-      caches.match(event.request).then(response => {
-        return response || fetch(event.request);
-      })
-    );
-  }
+  // Ne fait rien - laisse le navigateur gérer toutes les requêtes
+  console.log('[SW] Bypass fetch pour:', event.request.url);
+  return;
 });
 
 // Gestion des messages du client principal
@@ -54,4 +41,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('[SW] Service Worker FloService initialisé');
+console.log('[SW] Service Worker FloService initialisé en mode bypass CSP');
