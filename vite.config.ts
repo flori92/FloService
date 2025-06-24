@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { VitePWA } from 'vite-plugin-pwa';
 import viteCompression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
@@ -14,7 +13,7 @@ export default defineConfig(({ mode }) => {
   
   // Log pour le debugging (uniquement en développement)
   if (!isProd) {
-    console.log('Mode:', mode);
+    console.log(' Mode:', mode);
     console.log('Variables d\'environnement chargées:', {
       VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || '(non définie)',
       VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY ? '(présente)' : '(non définie)',
@@ -23,85 +22,15 @@ export default defineConfig(({ mode }) => {
     // Vérification de l'existence du fichier .env
     const envPath = path.resolve(process.cwd(), '.env');
     if (!fs.existsSync(envPath)) {
-      console.warn(`⚠️ ATTENTION: Fichier .env non trouvé à ${envPath}. Les variables d'environnement pourraient ne pas être chargées correctement.`);
+      console.warn(` ATTENTION: Fichier .env non trouvé à ${envPath}. Les variables d'environnement pourraient ne pas être chargées correctement.`);
     } else {
-      console.log(`✅ Fichier .env trouvé à ${envPath}`);
+      console.log(` Fichier .env trouvé à ${envPath}`);
     }
   }
   
   return {
     plugins: [
       react(),
-      // Plugin PWA pour transformer l'application en Progressive Web App
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'robots.txt', 'floservice.svg', 'icons/*.png'],
-        manifest: {
-          name: 'FloService',
-          short_name: 'FloService',
-          description: 'Services professionnels en Afrique de l\'Ouest',
-          theme_color: '#3b82f6',
-          icons: [
-            {
-              src: '/icons/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: '/icons/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
-            },
-            {
-              src: '/icons/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable'
-            }
-          ]
-        },
-        workbox: {
-          // Ajout de sources externes autorisées pour le fetch
-          navigateFallback: '/index.html',
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,json}'],
-          // Exclusion des polices Google pour éviter les problèmes de CSP
-          navigateFallbackDenylist: [/^\/api\//],
-          skipWaiting: true,
-          clientsClaim: true,
-          // Désactivation du précaching des polices Google
-          // pour éviter les problèmes de CSP
-          runtimeCaching: [
-            // Cache pour les images
-            {
-              urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'images-cache',
-                expiration: {
-                  maxEntries: 60,
-                  maxAgeSeconds: 30 * 24 * 60 * 60 // 30 jours
-                }
-              }
-            },
-            // Cache pour les API Supabase
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'supabase-api-cache',
-                networkTimeoutSeconds: 10,
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 60 * 60 // 1 heure
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                }
-              }
-            }
-          ]
-        }
-      }),
       // Compression des fichiers en production
       isProd && viteCompression({
         algorithm: 'brotliCompress',

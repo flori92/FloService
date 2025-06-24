@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 TEST FINAL - FloService LIBÉRÉ de tous Service Workers</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .success {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+        }
+        .error {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .warning {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            color: white;
+        }
+        .test-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .image-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .image-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        .test-img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .logs {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 25px 0;
+            line-height: 1.6;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: linear-gradient(90deg, #3b82f6, #2563eb); color: white; }
+        .btn-success { background: linear-gradient(90deg, #10b981, #059669); color: white; }
+        .btn-warning { background: linear-gradient(90deg, #f59e0b, #d97706); color: white; }
+        .btn-danger { background: linear-gradient(90deg, #ef4444, #dc2626); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .stat-card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border-left: 5px solid #3b82f6;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .icon { font-size: 1.5em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 TEST FINAL - FloService 100% LIBÉRÉ</h1>
+        <p><strong>Validation complète après suppression radicale de VitePWA et tous Service Workers</strong></p>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="sw-count">?</div>
+                <div>Service Workers Actifs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="cache-count">?</div>
+                <div>Caches Présents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="csp-errors">?</div>
+                <div>Erreurs CSP</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="images-loaded">?</div>
+                <div>Images Chargées</div>
+            </div>
+        </div>
+        
+        <div id="test-results"></div>
+        
+        <h2>📸 Test Images Portfolio (SANS Service Worker)</h2>
+        <p>Chargement direct des images externes sans aucune interception :</p>
+        
+        <div class="test-images">
+            <div class="image-card">
+                <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=300&h=200" 
+                     alt="Pexels Design" class="test-img" onload="imageSuccess(this)" onerror="imageError(this)">
+                <strong>Pexels</strong><br>Design Projets
+            </div>
+            
+            <div class="image-card">
+                <img src="https://afriqueitnews.com/wp-content/uploads/Screen-Shot-2023-05-09-at-11.27.07.png" 
+                     alt="AfriqueIT" class="test-img" onload="imageSuccess(this)" onerror="imageError(this)">
+                <strong>AfriqueIT</strong><br>News Logos
+            </div>
+            
+            <div class="image-card">
+                <img src="https://gozem.co/wp-content/uploads/2020/03/gozem-logo-hq.png" 
+                     alt="Gozem" class="test-img" onload="imageSuccess(this)" onerror="imageError(this)">
+                <strong>Gozem</strong><br>Startup Logo
+            </div>
+            
+            <div class="image-card">
+                <img src="https://mir-s3-cdn-cf.behance.net/projects/404/4af007181236087.Y3JvcCw4MDgsNjMyLDAsMA.png" 
+                     alt="Behance" class="test-img" onload="imageSuccess(this)" onerror="imageError(this)">
+                <strong>Behance</strong><br>Portfolio Design
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="runCompleteTest()">
+                🚀 Test Complet Final
+            </button>
+            <button class="btn btn-success" onclick="checkServiceWorkerStatus()">
+                🔍 Vérifier SW Status
+            </button>
+            <button class="btn btn-warning" onclick="testDirectFetch()">
+                ⚡ Test Fetch Direct
+            </button>
+            <button class="btn btn-danger" onclick="clearAllData()">
+                🧹 Nettoyer Tout
+            </button>
+        </div>
+
+        <h2>📋 Logs en Temps Réel</h2>
+        <div id="console-logs" class="logs">
+            🔥 DÉMARRAGE DU TEST FINAL FLOSERVICE...<br>
+        </div>
+    </div>
+
+    <script>
+        const results = document.getElementById('test-results');
+        const logs = document.getElementById('console-logs');
+        
+        let testStats = { sw: 0, caches: 0, cspErrors: 0, imagesLoaded: 0 };
+        
+        // Redirection des logs console
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog('💬', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('❌', args.join(' '));
+        };
+        
+        function addLog(icon, message) {
+            const time = new Date().toLocaleTimeString();
+            logs.innerHTML += `[${time}] ${icon} ${message}<br>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        function addResult(title, status, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⚠️';
+            div.innerHTML = `<span class="icon">${icon}</span><div><strong>${title}</strong><br>${message}</div>`;
+            results.appendChild(div);
+        }
+        
+        function updateStats() {
+            document.getElementById('sw-count').textContent = testStats.sw;
+            document.getElementById('cache-count').textContent = testStats.caches;
+            document.getElementById('csp-errors').textContent = testStats.cspErrors;
+            document.getElementById('images-loaded').textContent = testStats.imagesLoaded;
+        }
+        
+        function imageSuccess(img) {
+            testStats.imagesLoaded++;
+            updateStats();
+            addLog('🖼️', `Image chargée: ${img.alt} depuis ${img.src.split('/')[2]}`);
+        }
+        
+        function imageError(img) {
+            addLog('🚫', `Échec image: ${img.alt} - ${img.src.split('/')[2]}`);
+        }
+        
+        async function checkServiceWorkerStatus() {
+            addLog('🔍', 'Vérification des Service Workers...');
+            
+            try {
+                if (!('serviceWorker' in navigator)) {
+                    addResult('Service Workers', 'success', 'API Service Worker non supportée par le navigateur');
+                    testStats.sw = 0;
+                    updateStats();
+                    return;
+                }
+                
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                testStats.sw = registrations.length;
+                updateStats();
+                
+                if (registrations.length === 0) {
+                    addResult('Service Workers', 'success', '🎉 AUCUN Service Worker actif - Suppression PWA réussie !');
+                    addLog('🎯', 'VICTOIRE ! Plus aucun SW actif');
+                } else {
+                    addResult('Service Workers', 'error', `${registrations.length} Service Workers encore présents`);
+                    registrations.forEach((reg, i) => {
+                        addLog('⚠️', `SW ${i+1}: ${reg.scope}`);
+                    });
+                }
+                
+                // Vérification des caches
+                const cacheNames = await caches.keys();
+                testStats.caches = cacheNames.length;
+                updateStats();
+                
+                if (cacheNames.length === 0) {
+                    addResult('Caches', 'success', 'Aucun cache présent - Nettoyage parfait !');
+                } else {
+                    addResult('Caches', 'warning', `${cacheNames.length} caches trouvés`);
+                    cacheNames.forEach(name => addLog('📦', `Cache: ${name}`));
+                }
+                
+            } catch (error) {
+                addResult('Vérification SW', 'error', `Erreur: ${error.message}`);
+                addLog('💥', `Erreur SW check: ${error.message}`);
+            }
+        }
+        
+        async function testDirectFetch() {
+            addLog('⚡', 'Test de fetch direct (sans SW)...');
+            
+            const testUrls = [
+                'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=100',
+                'https://gozem.co/wp-content/uploads/2020/03/gozem-logo-hq.png'
+            ];
+            
+            for (const url of testUrls) {
+                try {
+                    const response = await fetch(url, { method: 'HEAD' });
+                    const domain = url.split('/')[2];
+                    
+                    if (response.ok) {
+                        addResult(`Fetch ${domain}`, 'success', `Connexion réussie (${response.status})`);
+                        addLog('✅', `Fetch OK: ${domain}`);
+                    } else {
+                        addResult(`Fetch ${domain}`, 'error', `Erreur HTTP ${response.status}`);
+                        addLog('⚠️', `Fetch error: ${domain} - ${response.status}`);
+                    }
+                } catch (error) {
+                    const domain = url.split('/')[2];
+                    if (error.message.includes('CSP') || error.message.includes('Content Security Policy')) {
+                        addResult(`Fetch ${domain}`, 'error', 'BLOQUÉ PAR CSP - Erreur encore présente !');
+                        addLog('🚫', `CSP BLOCK: ${domain}`);
+                        testStats.cspErrors++;
+                    } else {
+                        addResult(`Fetch ${domain}`, 'warning', `Erreur réseau: ${error.message}`);
+                        addLog('🌐', `Network error: ${domain} - ${error.message}`);
+                    }
+                    updateStats();
+                }
+            }
+        }
+        
+        async function clearAllData() {
+            addLog('🧹', 'Nettoyage complet des données...');
+            
+            try {
+                // Suppression des caches
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                
+                // Suppression localStorage/sessionStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                addResult('Nettoyage', 'success', `${cacheNames.length} caches supprimés + Storage vidé`);
+                addLog('✨', 'Nettoyage terminé');
+                
+                testStats.caches = 0;
+                updateStats();
+                
+            } catch (error) {
+                addResult('Nettoyage', 'error', `Erreur: ${error.message}`);
+            }
+        }
+        
+        async function runCompleteTest() {
+            addLog('🚀', '=== DÉMARRAGE TEST COMPLET FINAL ===');
+            results.innerHTML = '';
+            
+            // Reset stats
+            testStats = { sw: 0, caches: 0, cspErrors: 0, imagesLoaded: 0 };
+            updateStats();
+            
+            // Écoute des violations CSP
+            window.addEventListener('securitypolicyviolation', (e) => {
+                testStats.cspErrors++;
+                updateStats();
+                addResult('Violation CSP', 'error', `${e.violatedDirective}: ${e.blockedURI}`);
+                addLog('🚫', `CSP violation: ${e.violatedDirective}`);
+            });
+            
+            // Tests séquentiels
+            await checkServiceWorkerStatus();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testDirectFetch();
+            
+            // Résumé final
+            setTimeout(() => {
+                const totalErrors = testStats.sw + testStats.cspErrors;
+                const successRate = totalErrors === 0 ? 100 : Math.max(0, 100 - (totalErrors * 25));
+                
+                const summaryStatus = successRate >= 100 ? 'success' : successRate >= 75 ? 'warning' : 'error';
+                const emoji = successRate >= 100 ? '🎉' : successRate >= 75 ? '⚠️' : '💥';
+                
+                addResult('RÉSUMÉ FINAL', summaryStatus, 
+                    `${emoji} Score: ${successRate}% | SW: ${testStats.sw} | CSP Errors: ${testStats.cspErrors} | Images: ${testStats.imagesLoaded}`);
+                
+                if (successRate >= 100) {
+                    addLog('🏆', '=== FLOSERVICE 100% LIBÉRÉ DE TOUS LES PROBLÈMES CSP ET SW ! ===');
+                } else {
+                    addLog('🔧', '=== QUELQUES PROBLÈMES SUBSISTENT - INVESTIGATION NÉCESSAIRE ===');
+                }
+                
+            }, 2000);
+        }
+        
+        // Écoute globale des erreurs
+        window.addEventListener('error', (e) => {
+            if (e.message.includes('CSP') || e.message.includes('Content Security Policy')) {
+                testStats.cspErrors++;
+                updateStats();
+            }
+        });
+        
+        // Auto-start
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addLog('🎯', 'Auto-démarrage du test final...');
+                runCompleteTest();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
