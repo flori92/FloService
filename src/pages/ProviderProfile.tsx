@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase-secure';
 import { handleSupabaseError, checkTableExists, isTestId, isValidUUID, cleanIdForSupabase } from '../utils/migrationChecker';
+import { formatPrice } from '../lib/utils';
 import { toast } from 'react-hot-toast';
 import { MapPin, Star, Briefcase, Clock, Award, Mail, Phone } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
@@ -464,7 +465,7 @@ const ProviderProfile: React.FC = () => {
                       <Award className="icon" />
                       <div className="info-content">
                         <span className="info-label">Tarif horaire</span>
-                        <span className="info-value">{providerData.provider_profiles.hourly_rate}€/h</span>
+                        <span className="info-value">{formatPrice(providerData.provider_profiles.hourly_rate)}/h</span>
                       </div>
                     </div>
                   )}

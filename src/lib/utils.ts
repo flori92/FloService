@@ -28,14 +28,16 @@ export function formatDate(date: Date | string, options: Intl.DateTimeFormatOpti
 }
 
 /**
- * Formate un prix en euros
+ * Formate un prix en Franc CFA
  * @param price Prix à formater
- * @returns Prix formaté en euros
+ * @returns Prix formaté en Franc CFA (FCFA)
  */
 export function formatPrice(price: number) {
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat('fr-CI', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'XOF',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(price);
 }
 
