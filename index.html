@@ -68,44 +68,19 @@
     </div>
     
     <script>
-      // 🔥 NETTOYAGE SIMPLE SANS SERVICE WORKER v3.0
-      console.log('🧹 FloService - Nettoyage simple démarré');
+      // 🚀 FloService - Mode ULTRA-PROPRE (sans rechargements)
+      console.log('🚀 FloService démarré en mode ULTRA-PROPRE - AUCUN Service Worker');
       
-      if ('serviceWorker' in navigator) {
-        // Désenregistrement massif SANS créer de nouveaux SW
+      // Nettoyage silencieux UNE SEULE FOIS sans rechargement
+      if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-cleaned')) {
         navigator.serviceWorker.getRegistrations().then(registrations => {
-          console.log(`🔍 ${registrations.length} Service Workers trouvés`);
-          
           if (registrations.length > 0) {
-            Promise.all(
-              registrations.map(registration => {
-                console.log(`🗑️ Suppression SW: ${registration.scope}`);
-                return registration.unregister();
-              })
-            ).then(() => {
-              console.log('✅ Tous les Service Workers supprimés');
-              
-              // Nettoyage des caches également
-              if ('caches' in window) {
-                caches.keys().then(cacheNames => {
-                  Promise.all(
-                    cacheNames.map(name => {
-                      console.log(`🧹 Suppression cache: ${name}`);
-                      return caches.delete(name);
-                    })
-                  ).then(() => {
-                    console.log('🎉 FloService 100% nettoyé - Plus de SW ni caches !');
-                  });
-                });
-              }
-            });
-          } else {
-            console.log('✅ Aucun Service Worker présent - Application propre !');
+            console.log(`🧹 Nettoyage silencieux de ${registrations.length} SW`);
+            Promise.all(registrations.map(r => r.unregister()));
+            sessionStorage.setItem('sw-cleaned', 'true');
           }
         });
       }
-      
-      console.log('🚀 FloService démarré en mode ULTRA-PROPRE');
     </script>
     
     <script type="module" src="/src/main.tsx"></script>
