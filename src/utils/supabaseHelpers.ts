@@ -190,27 +190,18 @@ export const fetchProviderData = async (providerId: string) => {
       return { data: null, error: new Error('Cet utilisateur n\'est pas un prestataire') };
     }
     
-    // Essayer de récupérer les données complètes
-    try {
-      const { data: providerData, error: providerError } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          provider_profiles(*)
-        `)
-        .eq('id', providerId)
-        .maybeSingle();
-      
-      if (!providerError && providerData) {
-        return { data: providerData, error: null };
-      }
-      
-      // Si ça échoue, utiliser fetchUserProfile comme fallback
-      return await fetchUserProfile(providerId);
-    } catch (innerError) {
-      console.error('Erreur lors de la récupération des données prestataire:', innerError);
+    // Utiliser la nouvelle fonction sécurisée pour éviter les erreurs 400
+    const { getProfileWithProviderData } = await import('../lib/supabase-secure');
+    
+    const result = await getProfileWithProviderData(providerId);
+    
+    if (result.error) {
+      console.warn('Erreur lors de la récupération via getProfileWithProviderData, fallback vers fetchUserProfile');
       return await fetchUserProfile(providerId);
     }
+    
+    return result;
+    
   } catch (error) {
     console.error('Erreur lors de la récupération des données prestataire:', error);
     return { data: null, error };

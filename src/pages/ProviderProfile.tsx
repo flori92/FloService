@@ -166,19 +166,13 @@ const ProviderProfile: React.FC = () => {
         return;
       }
 
-      // Récupérer les données du prestataire
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          provider_profiles(*)
-        `)
-        .eq('id', validId)
-        .single();
+      // Récupérer les données du prestataire avec la nouvelle méthode sécurisée
+      const { getProfileWithProviderData } = await import('../lib/supabase-secure');
+      const result = await getProfileWithProviderData(validId);
 
-      if (error) {
+      if (result.error) {
         // Utiliser la nouvelle fonction handleSupabaseError qui retourne un objet
-        const errorResult = handleSupabaseError(error);
+        const errorResult = handleSupabaseError(result.error);
         
         if (errorResult.isMigrationError) {
           setMigrationRequired(true);
@@ -191,6 +185,7 @@ const ProviderProfile: React.FC = () => {
         return;
       }
 
+      const data = result.data;
       if (!data) {
         setError('Prestataire non trouvé');
         setLoading(false);
