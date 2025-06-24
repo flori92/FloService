@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 NETTOYAGE D'URGENCE - Service Workers</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: white;
+            text-align: center;
+            border-radius: 20px;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            text-align: left;
+        }
+        .btn {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .btn:hover { background: #047857; }
+        .btn-danger { background: #dc2626; }
+        .btn-danger:hover { background: #991b1b; }
+    </style>
+</head>
+<body>
+    <h1>🚨 NETTOYAGE D'URGENCE</h1>
+    <p><strong>Suppression TOTALE et IMMÉDIATE de tous Service Workers</strong></p>
+    
+    <div id="status" class="status">
+        🔄 Initialisation du nettoyage d'urgence...<br>
+    </div>
+    
+    <button class="btn" onclick="emergencyCleanup()">
+        💥 NETTOYAGE TOTAL IMMÉDIAT
+    </button>
+    
+    <button class="btn btn-danger" onclick="nuclearOption()">
+        ☢️ OPTION NUCLÉAIRE (Tout supprimer)
+    </button>
+    
+    <button class="btn" onclick="checkStatus()">
+        🔍 Vérifier Statut
+    </button>
+
+    <script>
+        const status = document.getElementById('status');
+        
+        function log(message) {
+            const time = new Date().toLocaleTimeString();
+            status.innerHTML += `[${time}] ${message}<br>`;
+            status.scrollTop = status.scrollHeight;
+            console.log(message);
+        }
+        
+        async function emergencyCleanup() {
+            log('🚨 DÉMARRAGE NETTOYAGE D\'URGENCE');
+            
+            try {
+                // 1. Suppression de TOUS les Service Workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    log(`🔍 ${registrations.length} Service Workers trouvés`);
+                    
+                    for (const registration of registrations) {
+                        log(`💥 Suppression: ${registration.scope}`);
+                        await registration.unregister();
+                        log(`✅ SW supprimé: ${registration.scope}`);
+                    }
+                    
+                    log('🎯 Tous les Service Workers supprimés');
+                } else {
+                    log('⚠️ Service Workers non supportés');
+                }
+                
+                // 2. Nettoyage de TOUS les caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    log(`🧹 ${cacheNames.length} caches trouvés`);
+                    
+                    for (const name of cacheNames) {
+                        await caches.delete(name);
+                        log(`🗑️ Cache supprimé: ${name}`);
+                    }
+                    
+                    log('✨ Tous les caches supprimés');
+                }
+                
+                // 3. Nettoyage Storage
+                localStorage.clear();
+                sessionStorage.clear();
+                log('🧽 Storage local et session vidés');
+                
+                // 4. Vérification finale
+                setTimeout(async () => {
+                    const finalCheck = await navigator.serviceWorker.getRegistrations();
+                    if (finalCheck.length === 0) {
+                        log('🎉 SUCCESS ! Plus aucun Service Worker actif');
+                        alert('✅ NETTOYAGE RÉUSSI ! Plus de Service Workers actifs.');
+                    } else {
+                        log(`❌ ÉCHEC ! ${finalCheck.length} SW encore présents`);
+                        alert('⚠️ Échec partiel. Utilisez l\'option nucléaire.');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                log(`💥 ERREUR: ${error.message}`);
+            }
+        }
+        
+        async function nuclearOption() {
+            log('☢️ OPTION NUCLÉAIRE ACTIVÉE');
+            
+            try {
+                // Suppression ultra-agressive
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    log(`☢️ Destruction nucléaire de ${registrations.length} SW`);
+                    
+                    await Promise.all(registrations.map(async (registration) => {
+                        // Force l'arrêt immédiat
+                        if (registration.active) {
+                            registration.active.postMessage({ command: 'SELF_DESTRUCT' });
+                        }
+                        await registration.unregister();
+                        log(`💀 SW détruit: ${registration.scope}`);
+                    }));
+                }
+                
+                // Nettoyage nucléaire des caches
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                log(`☢️ ${cacheNames.length} caches vaporisés`);
+                
+                // Reset complet
+                if (typeof indexedDB !== 'undefined') {
+                    // Note: On ne peut pas vraiment vider IndexedDB facilement
+                    log('⚠️ IndexedDB nécessite nettoyage manuel dans DevTools');
+                }
+                
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                log('☢️ DESTRUCTION NUCLÉAIRE TERMINÉE');
+                alert('☢️ Option nucléaire exécutée ! Redémarrez le navigateur pour confirmer.');
+                
+            } catch (error) {
+                log(`💥 ERREUR NUCLÉAIRE: ${error.message}`);
+            }
+        }
+        
+        async function checkStatus() {
+            log('🔍 VÉRIFICATION STATUS');
+            
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                const cacheNames = await caches.keys();
+                
+                log(`📊 Service Workers: ${registrations.length}`);
+                log(`📊 Caches: ${cacheNames.length}`);
+                log(`📊 LocalStorage keys: ${Object.keys(localStorage).length}`);
+                log(`📊 SessionStorage keys: ${Object.keys(sessionStorage).length}`);
+                
+                if (registrations.length === 0) {
+                    log('✅ STATUS: Application PROPRE !');
+                } else {
+                    log('❌ STATUS: Service Workers encore présents');
+                    registrations.forEach((reg, i) => {
+                        log(`  SW ${i+1}: ${reg.scope}`);
+                    });
+                }
+                
+            } catch (error) {
+                log(`💥 ERREUR STATUS: ${error.message}`);
+            }
+        }
+        
+        // Auto-check au chargement
+        window.addEventListener('load', () => {
+            setTimeout(checkStatus, 500);
+        });
+    </script>
+</body>
+</html>

@@ -67,106 +67,45 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Script KILLER ultra-puissant pour élimination TOTALE des Service Workers -->
-    <script type="module">
-      console.log('🚨 [KILLER] Lancement du Service Worker Killer ultra-puissant');
-
-      async function killAllServiceWorkers() {
-        if (!('serviceWorker' in navigator)) {
-          console.log('🚫 [KILLER] Service Worker non supporté - Rien à tuer');
-          return;
-        }
-
-        try {
-          // 1. Désenregistrement massif de TOUS les SW existants
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          console.log(`🔍 [KILLER] ${registrations.length} Service Workers trouvés`);
-
+    <script>
+      // 🔥 NETTOYAGE SIMPLE SANS SERVICE WORKER v3.0
+      console.log('🧹 FloService - Nettoyage simple démarré');
+      
+      if ('serviceWorker' in navigator) {
+        // Désenregistrement massif SANS créer de nouveaux SW
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          console.log(`🔍 ${registrations.length} Service Workers trouvés`);
+          
           if (registrations.length > 0) {
-            console.log('💥 [KILLER] Désenregistrement en cours...');
-            await Promise.all(
-              registrations.map(async registration => {
-                console.log(`🗑️ [KILLER] Suppression SW: ${registration.scope}`);
-                await registration.unregister();
+            Promise.all(
+              registrations.map(registration => {
+                console.log(`🗑️ Suppression SW: ${registration.scope}`);
+                return registration.unregister();
               })
-            );
-            console.log('✅ [KILLER] Tous les Service Workers désenregistrés');
-          }
-
-          // 2. Enregistrement temporaire du SW Killer pour nettoyage final
-          console.log('⚡ [KILLER] Lancement du SW Killer pour nettoyage des caches');
-          const killerRegistration = await navigator.serviceWorker.register('/kill-sw.js', {
-            scope: '/'
-          });
-
-          // 3. Écouter les messages du Killer SW
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data.type === 'KILLER_FINISHED') {
-              console.log('💀 [KILLER] SW Killer terminé - Rechargement automatique...');
+            ).then(() => {
+              console.log('✅ Tous les Service Workers supprimés');
               
-              // Attendre un peu puis recharger pour éliminer complètement le SW
-              setTimeout(() => {
-                console.log('🔄 [KILLER] Rechargement forcé de la page...');
-                window.location.reload(true);
-              }, 500);
-            }
-          });
-
-          // 4. Attendre que le Killer soit actif puis déclencher le nettoyage
-          await new Promise((resolve) => {
-            if (killerRegistration.active) {
-              resolve();
-            } else {
-              killerRegistration.addEventListener('updatefound', () => {
-                const worker = killerRegistration.installing;
-                worker.addEventListener('statechange', () => {
-                  if (worker.state === 'activated') {
-                    resolve();
-                  }
+              // Nettoyage des caches également
+              if ('caches' in window) {
+                caches.keys().then(cacheNames => {
+                  Promise.all(
+                    cacheNames.map(name => {
+                      console.log(`🧹 Suppression cache: ${name}`);
+                      return caches.delete(name);
+                    })
+                  ).then(() => {
+                    console.log('🎉 FloService 100% nettoyé - Plus de SW ni caches !');
+                  });
                 });
-              });
-            }
-          });
-
-          console.log('🚀 [KILLER] SW Killer actif - Nettoyage en cours...');
-
-          // 5. Attendre quelques secondes puis vérifier que tout est nettoyé
-          setTimeout(async () => {
-            const remainingRegistrations = await navigator.serviceWorker.getRegistrations();
-            if (remainingRegistrations.length === 0) {
-              console.log('✅ [KILLER] Mission accomplie - Plus aucun Service Worker actif');
-              console.log('🎉 [KILLER] Application FloService maintenant 100% libre !');
-            } else {
-              console.log(`⚠️ [KILLER] ${remainingRegistrations.length} SW encore présents - Rechargement nécessaire`);
-              setTimeout(() => window.location.reload(true), 1000);
-            }
-          }, 3000);
-
-        } catch (error) {
-          console.error('❌ [KILLER] Erreur durant le processus:', error);
-          // En cas d'erreur, on recharge quand même pour être sûr
-          setTimeout(() => window.location.reload(true), 2000);
-        }
-      }
-
-      // Lancer le processus dès que possible
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', killAllServiceWorkers);
-      } else {
-        killAllServiceWorkers();
-      }
-
-      // Nettoyage des caches navigateur en parallèle
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          if (cacheNames.length > 0) {
-            console.log(`🧹 [KILLER] Nettoyage ${cacheNames.length} caches navigateur`);
-            return Promise.all(cacheNames.map(name => caches.delete(name)));
+              }
+            });
+          } else {
+            console.log('✅ Aucun Service Worker présent - Application propre !');
           }
-        }).then(() => {
-          console.log('✨ [KILLER] Caches navigateur nettoyés');
         });
       }
+      
+      console.log('🚀 FloService démarré en mode ULTRA-PROPRE');
     </script>
     
     <script type="module" src="/src/main.tsx"></script>

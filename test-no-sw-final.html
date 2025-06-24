@@ -292,7 +292,7 @@
         }
         
         async function testDirectFetch() {
-            addLog('⚡', 'Test de fetch direct (sans SW)...');
+            addLog('⚡', 'Test de connexion images (img vs fetch)...');
             
             const testUrls = [
                 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=100',
@@ -300,23 +300,42 @@
             ];
             
             for (const url of testUrls) {
+                const domain = url.split('/')[2];
+                
+                // Test 1: Image loading (pas soumis aux restrictions CORS)
                 try {
-                    const response = await fetch(url, { method: 'HEAD' });
-                    const domain = url.split('/')[2];
+                    const img = new Image();
+                    const imageLoadPromise = new Promise((resolve, reject) => {
+                        img.onload = () => resolve('success');
+                        img.onerror = () => reject('failed');
+                        setTimeout(() => reject('timeout'), 5000);
+                    });
                     
-                    if (response.ok) {
-                        addResult(`Fetch ${domain}`, 'success', `Connexion réussie (${response.status})`);
-                        addLog('✅', `Fetch OK: ${domain}`);
-                    } else {
-                        addResult(`Fetch ${domain}`, 'error', `Erreur HTTP ${response.status}`);
-                        addLog('⚠️', `Fetch error: ${domain} - ${response.status}`);
-                    }
+                    img.src = url;
+                    const imageResult = await imageLoadPromise;
+                    
+                    addResult(`Image ${domain}`, 'success', `✅ Chargement direct réussi (contourne CORS)`);
+                    addLog('🖼️', `Image OK: ${domain} - Chargement direct sans SW`);
+                    
                 } catch (error) {
-                    const domain = url.split('/')[2];
+                    addResult(`Image ${domain}`, 'error', `❌ Échec chargement image: ${error}`);
+                    addLog('🚫', `Image failed: ${domain} - ${error}`);
+                }
+                
+                // Test 2: Fetch (soumis aux restrictions CORS - NORMAL qu'il échoue)
+                try {
+                    const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+                    addResult(`Fetch ${domain}`, 'success', `Fetch no-cors réussi`);
+                    addLog('✅', `Fetch no-cors OK: ${domain}`);
+                    
+                } catch (error) {
                     if (error.message.includes('CSP') || error.message.includes('Content Security Policy')) {
-                        addResult(`Fetch ${domain}`, 'error', 'BLOQUÉ PAR CSP - Erreur encore présente !');
-                        addLog('🚫', `CSP BLOCK: ${domain}`);
+                        addResult(`Fetch ${domain}`, 'error', '🚨 ERREUR CSP - SERVICE WORKER ENCORE ACTIF !');
+                        addLog('🚫', `CSP BLOCK: ${domain} - PROBLÈME SW !`);
                         testStats.cspErrors++;
+                    } else if (error.message.includes('CORS') || error.message.includes('Access-Control-Allow-Origin')) {
+                        addResult(`Fetch ${domain}`, 'success', '✅ Erreur CORS normale (serveur distant)');
+                        addLog('🌐', `CORS normal: ${domain} - Pas de SW, requête directe`);
                     } else {
                         addResult(`Fetch ${domain}`, 'warning', `Erreur réseau: ${error.message}`);
                         addLog('🌐', `Network error: ${domain} - ${error.message}`);
