@@ -1,3 +1,159 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Styles personnalisés pour les profils de prestataires africains */
+
+/* Portfolio Section */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.portfolio-item {
+  @apply bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300;
+}
+
+.portfolio-item img {
+  @apply w-full h-48 object-cover;
+}
+
+.portfolio-item-content {
+  @apply p-4;
+}
+
+.portfolio-item h4 {
+  @apply font-semibold text-gray-900 mb-2;
+}
+
+.portfolio-item p {
+  @apply text-gray-600 text-sm;
+}
+
+/* Skills Tags */
+.skills-container {
+  @apply flex flex-wrap gap-2 mt-2;
+}
+
+.skill-tag {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors;
+}
+
+.skill-tag.african-focus {
+  @apply bg-green-100 text-green-800 hover:bg-green-200;
+}
+
+/* Certifications */
+.certifications-list {
+  @apply space-y-3;
+}
+
+.certification-item {
+  @apply flex items-center space-x-3 p-3 bg-gray-50 rounded-lg;
+}
+
+.certification-icon {
+  @apply w-8 h-8 text-yellow-500;
+}
+
+.certification-text {
+  @apply flex-1;
+}
+
+.certification-name {
+  @apply font-medium text-gray-900;
+}
+
+.certification-issuer {
+  @apply text-sm text-gray-600;
+}
+
+/* Contact et réseaux sociaux */
+.contact-section {
+  @apply bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100;
+}
+
+.social-links {
+  @apply flex space-x-4 mt-4;
+}
+
+.social-link {
+  @apply flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105;
+}
+
+.social-link.linkedin {
+  @apply hover:bg-blue-50 hover:text-blue-600;
+}
+
+.social-link.behance {
+  @apply hover:bg-purple-50 hover:text-purple-600;
+}
+
+.social-link.instagram {
+  @apply hover:bg-pink-50 hover:text-pink-600;
+}
+
+/* Animations africaines */
+@keyframes african-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.african-highlight {
+  animation: african-pulse 2s ease-in-out infinite;
+}
+
+/* Couleurs inspirées de l'Afrique */
+.bg-african-sunset {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6b35 50%, #f7931e 100%);
+}
+
+.bg-african-earth {
+  background: linear-gradient(135deg, #8b4513 0%, #a0522d 50%, #cd853f 100%);
+}
+
+.text-african-gold {
+  color: #f7931e;
+}
+
+.border-african-gold {
+  border-color: #f7931e;
+}
+
+/* Responsive améliorations */
+@media (max-width: 768px) {
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .skills-container {
+    @apply gap-1;
+  }
+  
+  .skill-tag {
+    @apply px-2 py-1 text-xs;
+  }
+  
+  .social-links {
+    @apply space-x-2;
+  }
+}
+
+/* Améliorations d'accessibilité */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Indicateurs de langue africaine */
+.language-tag.african {
+  @apply bg-orange-100 text-orange-800 border border-orange-200;
+}
+
+.language-tag.african::before {
+  content: '🌍 ';
+}
