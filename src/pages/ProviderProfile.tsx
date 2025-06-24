@@ -17,12 +17,34 @@ interface ProviderProfileData {
   bio?: string;
   is_provider?: boolean;
   city?: string;
+  website?: string;
+  phone?: string;
+  languages?: string[];
+  social_links?: {
+    linkedin?: string;
+    behance?: string;
+    instagram?: string;
+    [key: string]: string | undefined;
+  };
+  banner_url?: string;
+  rating_average?: number;
+  review_count?: number;
+  response_time_hours?: number;
+  status?: string;
   provider_profiles?: {
     specialization?: string;
     experience_years?: number;
     hourly_rate?: number;
     rating?: number;
     reviews_count?: number;
+    description?: string;
+    portfolio?: Array<{
+      title: string;
+      image: string;
+      description: string;
+    }>;
+    skills?: string[];
+    certifications?: string[];
   };
 }
 
@@ -35,12 +57,25 @@ const defaultProfile: ProviderProfileData = {
   bio: 'Informations non disponibles',
   is_provider: true,
   city: '',
+  website: '',
+  phone: '',
+  languages: [],
+  social_links: {},
+  banner_url: '',
+  rating_average: 0,
+  review_count: 0,
+  response_time_hours: 24,
+  status: 'available',
   provider_profiles: {
     specialization: '',
     experience_years: 0,
     hourly_rate: 0,
     rating: 0,
-    reviews_count: 0
+    reviews_count: 0,
+    description: '',
+    portfolio: [],
+    skills: [],
+    certifications: []
   }
 };
 
@@ -295,7 +330,7 @@ const ProviderProfile: React.FC = () => {
   // Gérer le clic sur le bouton de chat
   const handleChatClick = () => {
     if (cleanedProviderId && openChat) {
-      openChat(cleanedProviderId);
+      openChat(cleanedProviderId, providerData?.full_name || 'Prestataire');
     }
   };
 
@@ -314,11 +349,10 @@ const ProviderProfile: React.FC = () => {
         {/* Affichage en cas d'erreur */}
         {!loading && error && (
           <div className="error-container">
-            <Alert 
-              type="error" 
-              title="Erreur" 
-              message={error} 
-            />
+            <Alert variant="destructive">
+              <h4>Erreur</h4>
+              <p>{error}</p>
+            </Alert>
             <button 
               className="btn btn-primary mt-4" 
               onClick={() => navigate(-1)}
@@ -331,11 +365,10 @@ const ProviderProfile: React.FC = () => {
         {/* Affichage si migration requise */}
         {!loading && migrationRequired && (
           <div className="migration-required-container">
-            <Alert 
-              type="warning" 
-              title="Migration requise" 
-              message="La base de données nécessite une mise à jour. Veuillez contacter l'administrateur pour appliquer les migrations." 
-            />
+            <Alert variant="warning">
+              <h4>Migration requise</h4>
+              <p>La base de données nécessite une mise à jour. Veuillez contacter l'administrateur pour appliquer les migrations.</p>
+            </Alert>
             {providerData && !error && (
               <div className="mt-4">
                 <p>Affichage des informations limitées disponibles :</p>
@@ -437,6 +470,99 @@ const ProviderProfile: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Portfolio */}
+              {providerData.provider_profiles?.portfolio && providerData.provider_profiles.portfolio.length > 0 && (
+                <div className="portfolio-section section">
+                  <h3 className="section-title">Portfolio</h3>
+                  <div className="portfolio-grid">
+                    {providerData.provider_profiles.portfolio.map((project, index) => (
+                      <div key={index} className="portfolio-item">
+                        <img 
+                          src={project.image} 
+                          alt={project.title}
+                          className="portfolio-image"
+                        />
+                        <div className="portfolio-content">
+                          <h4 className="portfolio-title">{project.title}</h4>
+                          <p className="portfolio-description">{project.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Compétences */}
+              {providerData.provider_profiles?.skills && providerData.provider_profiles.skills.length > 0 && (
+                <div className="skills-section section">
+                  <h3 className="section-title">Compétences</h3>
+                  <div className="skills-list">
+                    {providerData.provider_profiles.skills.map((skill, index) => (
+                      <span key={index} className="skill-tag">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Certifications */}
+              {providerData.provider_profiles?.certifications && providerData.provider_profiles.certifications.length > 0 && (
+                <div className="certifications-section section">
+                  <h3 className="section-title">Certifications</h3>
+                  <div className="certifications-list">
+                    {providerData.provider_profiles.certifications.map((cert, index) => (
+                      <div key={index} className="certification-item">
+                        <Award className="icon" />
+                        <span>{cert}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Informations de contact */}
+              {(providerData.phone || providerData.website || providerData.social_links) && (
+                <div className="contact-section section">
+                  <h3 className="section-title">Contact</h3>
+                  <div className="contact-info">
+                    {providerData.phone && (
+                      <div className="contact-item">
+                        <Phone className="icon" />
+                        <a href={`tel:${providerData.phone}`} className="contact-link">
+                          {providerData.phone}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {providerData.website && (
+                      <div className="contact-item">
+                        <Mail className="icon" />
+                        <a href={providerData.website} target="_blank" rel="noopener noreferrer" className="contact-link">
+                          Site web
+                        </a>
+                      </div>
+                    )}
+
+                    {providerData.social_links && Object.keys(providerData.social_links).length > 0 && (
+                      <div className="social-links">
+                        {Object.entries(providerData.social_links).map(([platform, url]) => (
+                          url && (
+                            <a 
+                              key={platform} 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="social-link"
+                            >
+                              {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                            </a>
+                          )
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

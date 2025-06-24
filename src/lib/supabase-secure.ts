@@ -556,39 +556,166 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
       return { data: null, error: { message: 'Client non initialisé' } };
     }
 
-    // Vérification préalable pour les ID de test
+    // Vérification préalable pour les ID de test - Créer des profils réalistes
     if (userId === 'tg-2' || userId.startsWith('tg-')) {
-      console.warn('[Profile] ID de test détecté:', userId, '- Retour de données simulées');
-      return {
-        data: {
-          id: userId,
-          full_name: 'Prestataire Test',
-          nom: 'Prestataire Test', // pour compatibilité
-          email: 'test@floservice.com',
+      console.warn('[Profile] ID de test détecté:', userId, '- Retour de données simulées réalistes');
+      
+      // Profils de test variés selon l'ID - Prestataires africains
+      const testProfiles = {
+        'tg-2': {
+          id: 'tg-2',
+          full_name: 'Fatima Kone',
+          business_name: 'Kone Design Studio',
+          email: 'fatima.kone@floservice.com',
+          phone: '+225 07 12 34 56 78',
+          avatar_url: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&crop=face',
+          bio: 'Graphiste et web designer passionnée basée à Abidjan. Spécialisée dans l\'identité visuelle pour les entreprises africaines et les startups. Plus de 6 ans d\'expérience dans le design moderne et l\'accompagnement digital des PME ivoiriennes.',
           is_provider: true,
-          avatar_url: '/default-avatar.png',
-          business_name: 'Entreprise Test',
-          bio: 'Profil de test pour le développement de l\'application FloService',
-          city: 'Paris',
+          city: 'Abidjan, Côte d\'Ivoire',
+          website: 'https://kone-design.ci',
+          languages: ['Français', 'Anglais', 'Dioula'],
+          rating_average: 4.8,
+          review_count: 145,
+          banner_url: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=1200&h=400&fit=crop',
+          social_links: {
+            linkedin: 'https://linkedin.com/in/fatima-kone-design',
+            behance: 'https://behance.net/fatima-kone',
+            instagram: '@kone_design_ci'
+          },
+          response_time_hours: 2,
+          status: 'available',
           provider_profiles: [{
-            id: userId + '-provider',
-            specialization: 'Développement Test',
-            specialites: ['Test'], // pour compatibilité
-            description: 'Profil de test pour le développement',
-            experience_years: 5,
-            hourly_rate: 50,
-            rating: 4.5,
-            reviews_count: 10
+            id: 'tg-2-provider',
+            specialization: 'Design Graphique & Identité Visuelle',
+            experience_years: 6,
+            hourly_rate: 15000, // FCFA
+            rating: 4.8,
+            reviews_count: 145,
+            description: 'Experte en design graphique et identité visuelle pour entreprises africaines',
+            portfolio: [
+              {
+                title: 'Identité visuelle - Banque Atlantique CI',
+                image: 'https://images.unsplash.com/photo-1559329007-40df8bf73b84?w=400&h=300&fit=crop',
+                description: 'Création complète de l\'identité visuelle pour une institution bancaire ivoirienne'
+              },
+              {
+                title: 'E-commerce - Mode Africaine Moderne',
+                image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
+                description: 'Plateforme de vente en ligne pour créateurs de mode africaine'
+              },
+              {
+                title: 'Application - AgriTech Abidjan',
+                image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop',
+                description: 'Interface utilisateur pour application d\'agriculture connectée'
+              }
+            ],
+            certifications: ['Adobe Certified Expert', 'Google Africa Developer Scholarship'],
+            skills: ['Photoshop', 'Illustrator', 'Figma', 'Branding Africain', 'UI/UX', 'Print Design']
           }]
         },
-        error: null
+        'tg-3': {
+          id: 'tg-3',
+          full_name: 'Kwame Asante',
+          business_name: 'Asante Tech Solutions',
+          email: 'kwame.asante@floservice.com',
+          phone: '+233 24 567 89 01',
+          avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+          bio: 'Développeur Full-Stack spécialisé en solutions tech pour l\'Afrique. Expert React, Node.js et systèmes de paiement mobile. Accompagne les startups ghanéennes et ouest-africaines dans leur transformation digitale.',
+          is_provider: true,
+          city: 'Accra, Ghana',
+          website: 'https://asantetech.gh',
+          languages: ['Français', 'Anglais', 'Twi'],
+          rating_average: 4.9,
+          review_count: 98,
+          provider_profiles: [{
+            id: 'tg-3-provider',
+            specialization: 'Développement Web & Mobile Money',
+            experience_years: 5,
+            hourly_rate: 12000, // FCFA
+            rating: 4.9,
+            reviews_count: 98,
+            portfolio: [
+              {
+                title: 'Plateforme Mobile Money - GhanaPay',
+                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
+                description: 'Application complète de transfert d\'argent mobile pour le Ghana'
+              }
+            ],
+            skills: ['React', 'Node.js', 'TypeScript', 'Mobile Money API', 'PayStack', 'MongoDB']
+          }]
+        },
+        'tg-4': {
+          id: 'tg-4',
+          full_name: 'Aminata Diallo',
+          business_name: 'Diallo Communications',
+          email: 'aminata.diallo@floservice.com',
+          phone: '+221 77 123 45 67',
+          avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
+          bio: 'Consultante en marketing digital et communication pour PME sénégalaises. Spécialisée dans le marketing des réseaux sociaux et les stratégies de croissance pour le marché africain francophone.',
+          is_provider: true,
+          city: 'Dakar, Sénégal',
+          website: 'https://diallo-comm.sn',
+          languages: ['Français', 'Wolof', 'Anglais'],
+          rating_average: 4.7,
+          review_count: 76,
+          provider_profiles: [{
+            id: 'tg-4-provider',
+            specialization: 'Marketing Digital & Communication',
+            experience_years: 4,
+            hourly_rate: 8000, // FCFA
+            rating: 4.7,
+            reviews_count: 76,
+            portfolio: [
+              {
+                title: 'Campagne - Teranga Bank Sénégal',
+                image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop',
+                description: 'Stratégie marketing digital pour banque sénégalaise'
+              }
+            ],
+            skills: ['Facebook Ads', 'Google Ads', 'Content Marketing', 'Social Media', 'Analytics', 'Stratégie Digitale']
+          }]
+        },
+        'tg-5': {
+          id: 'tg-5',
+          full_name: 'Moussa Traoré',
+          business_name: 'Traoré Consulting IT',
+          email: 'moussa.traore@floservice.com',
+          phone: '+226 70 12 34 56',
+          avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
+          bio: 'Consultant IT et formateur en nouvelles technologies basé à Ouagadougou. Expert en transformation digitale des entreprises burkinabées et accompagnement dans l\'adoption des outils numériques.',
+          is_provider: true,
+          city: 'Ouagadougou, Burkina Faso',
+          website: 'https://traore-it.bf',
+          languages: ['Français', 'Mooré', 'Anglais'],
+          rating_average: 4.6,
+          review_count: 52,
+          provider_profiles: [{
+            id: 'tg-5-provider',
+            specialization: 'Consulting IT & Formation',
+            experience_years: 8,
+            hourly_rate: 10000, // FCFA
+            rating: 4.6,
+            reviews_count: 52,
+            portfolio: [
+              {
+                title: 'Formation - Orange Burkina Faso',
+                image: 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=300&fit=crop',
+                description: 'Formation en outils numériques pour équipes Orange BF'
+              }
+            ],
+            skills: ['Formation IT', 'Microsoft Office', 'Cybersécurité', 'Cloud Computing', 'Consulting', 'Gestion de Projet']
+          }]
+        }
       };
+
+      const profileData = testProfiles[userId as keyof typeof testProfiles] || testProfiles['tg-2'];
+      return { data: profileData, error: null };
     }
 
-    // Requête séparée pour éviter les problèmes de JOIN
+    // Requête séparée pour éviter les problèmes de JOIN - utiliser la vraie structure
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('id, nom, full_name, email, is_provider, avatar_url, business_name, bio, city')
+      .select('id, full_name, business_name, email, phone, avatar_url, bio, website, languages, rating_average, review_count, city, banner_url, social_links, is_provider, response_time_hours, status')
       .eq('id', userId)
       .maybeSingle();
 
@@ -602,7 +729,7 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
       return { data: null, error: { message: 'Profil non trouvé', code: 'PROFILE_NOT_FOUND' } };
     }
 
-    // Récupérer les données provider séparément
+    // Récupérer les données provider séparément (si la table existe et a des données)
     const { data: providerData, error: providerError } = await supabase
       .from('provider_profiles')
       .select('*')
@@ -619,14 +746,16 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
       specialization: provider.specialization || provider.specialites?.[0] || '',
       experience_years: provider.experience_years || 0,
       hourly_rate: provider.hourly_rate || 0,
-      rating: provider.rating || 0,
-      reviews_count: provider.reviews_count || 0,
-      description: provider.description || ''
+      rating: provider.rating || (profileData as any).rating_average || 0,
+      reviews_count: provider.reviews_count || (profileData as any).review_count || 0,
+      description: provider.description || '',
+      portfolio: provider.portfolio || [],
+      skills: provider.skills || [],
+      certifications: provider.certifications || []
     })) || [];
 
-    // Construire la réponse finale avec mapping des champs
+    // Construire la réponse finale avec mapping des champs de la vraie base
     const result = Object.assign({}, profileData, {
-      full_name: (profileData as any).full_name || (profileData as any).nom || 'Utilisateur',
       provider_profiles: mappedProviderData
     });
 
