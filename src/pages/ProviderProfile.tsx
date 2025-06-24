@@ -41,8 +41,23 @@ interface ProviderProfileData {
     description?: string;
     portfolio?: Array<{
       title: string;
-      image: string;
+      media?: {
+        type: 'image' | 'video' | 'link';
+        url: string;
+        thumbnail?: string;
+      };
+      image?: string;
+      type?: 'design' | 'web_design' | 'mobile_app' | 'motion_graphics' | 'fintech_app' | 'web_platform' | 'documentation' | 'marketing_campaign' | 'video_campaign' | 'case_study' | 'training' | 'audit_consulting' | 'infrastructure' | 'presentation';
+      year?: number;
+      client?: string;
       description: string;
+      tech_stack?: string[];
+      tags?: string[];
+      link?: string;
+      github?: string;
+      metrics?: {
+        [key: string]: string;
+      };
     }>;
     skills?: string[];
     certifications?: string[];
@@ -472,21 +487,131 @@ const ProviderProfile: React.FC = () => {
                 </div>
               </div>
 
-              {/* Portfolio */}
+              {/* Portfolio Avancé */}
               {providerData.provider_profiles?.portfolio && providerData.provider_profiles.portfolio.length > 0 && (
                 <div className="portfolio-section section">
-                  <h3 className="section-title">Portfolio</h3>
-                  <div className="portfolio-grid">
+                  <h3 className="section-title">Portfolio & Réalisations</h3>
+                  <div className="portfolio-grid-advanced">
                     {providerData.provider_profiles.portfolio.map((project, index) => (
-                      <div key={index} className="portfolio-item">
-                        <img 
-                          src={project.image} 
-                          alt={project.title}
-                          className="portfolio-image"
-                        />
-                        <div className="portfolio-content">
-                          <h4 className="portfolio-title">{project.title}</h4>
-                          <p className="portfolio-description">{project.description}</p>
+                      <div key={index} className="portfolio-card">
+                        {/* Media Section */}
+                        <div className="portfolio-media">
+                          {project.media?.type === 'video' ? (
+                            <div className="video-wrapper">
+                              <iframe 
+                                src={project.media.url} 
+                                title={project.title}
+                                className="portfolio-video"
+                                frameBorder="0"
+                                allowFullScreen
+                              />
+                            </div>
+                          ) : project.media?.type === 'link' ? (
+                            <div className="link-preview">
+                              <div className="link-icon">🔗</div>
+                              <span className="link-text">Voir la documentation</span>
+                            </div>
+                          ) : (
+                            <img 
+                              src={project.media?.url || project.image} 
+                              alt={project.title}
+                              className="portfolio-image-advanced"
+                            />
+                          )}
+                          
+                          {/* Type Badge */}
+                          <div className="project-type-badge">
+                            {project.type === 'design' && '🎨 Design'}
+                            {project.type === 'web_design' && '💻 Web Design'}
+                            {project.type === 'mobile_app' && '📱 Mobile App'}
+                            {project.type === 'motion_graphics' && '🎬 Motion'}
+                            {project.type === 'fintech_app' && '💳 Fintech'}
+                            {project.type === 'web_platform' && '🌐 Platform'}
+                            {project.type === 'documentation' && '📚 Documentation'}
+                            {project.type === 'marketing_campaign' && '📈 Marketing'}
+                            {project.type === 'video_campaign' && '📹 Vidéo'}
+                            {project.type === 'case_study' && '📊 Étude de cas'}
+                            {project.type === 'training' && '📚 Formation'}
+                            {project.type === 'audit_consulting' && '📊 Audit'}
+                            {project.type === 'infrastructure' && '🏗️ Infrastructure'}
+                            {project.type === 'presentation' && '📊 Présentation'}
+                          </div>
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="portfolio-content-advanced">
+                          <div className="portfolio-header">
+                            <h4 className="portfolio-title-advanced">{project.title}</h4>
+                            {project.year && (
+                              <span className="project-year">{project.year}</span>
+                            )}
+                          </div>
+                          
+                          {project.client && (
+                            <p className="project-client">Client: {project.client}</p>
+                          )}
+                          
+                          <p className="portfolio-description-advanced">{project.description}</p>
+                          
+                          {/* Tech Stack */}
+                          {project.tech_stack && project.tech_stack.length > 0 && (
+                            <div className="tech-stack">
+                              <h5 className="tech-title">Technologies:</h5>
+                              <div className="tech-tags">
+                                {project.tech_stack.map((tech, techIndex) => (
+                                  <span key={techIndex} className="tech-tag">{tech}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Tags */}
+                          {project.tags && project.tags.length > 0 && (
+                            <div className="project-tags">
+                              {project.tags.map((tag, tagIndex) => (
+                                <span key={tagIndex} className="project-tag">{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Metrics */}
+                          {project.metrics && Object.keys(project.metrics).length > 0 && (
+                            <div className="project-metrics">
+                              <h5 className="metrics-title">Résultats:</h5>
+                              <div className="metrics-list">
+                                {Object.entries(project.metrics).map(([metric, value], metricIndex) => (
+                                  <div key={metricIndex} className="metric-item">
+                                    <span className="metric-label">{metric}</span>
+                                    <span className="metric-value">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Action Links */}
+                          <div className="portfolio-actions">
+                            {project.link && (
+                              <a 
+                                href={project.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="portfolio-link primary"
+                              >
+                                🌐 Voir le projet
+                              </a>
+                            )}
+                            {project.github && (
+                              <a 
+                                href={project.github} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="portfolio-link secondary"
+                              >
+                                💻 Code source
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

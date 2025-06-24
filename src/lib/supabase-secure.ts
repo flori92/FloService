@@ -591,25 +591,64 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
             hourly_rate: 15000, // FCFA
             rating: 4.8,
             reviews_count: 145,
-            description: 'Experte en design graphique et identité visuelle pour entreprises africaines',
             portfolio: [
               {
                 title: 'Identité visuelle - Banque Atlantique CI',
-                image: 'https://images.unsplash.com/photo-1559329007-40df8bf73b84?w=400&h=300&fit=crop',
-                description: 'Création complète de l\'identité visuelle pour une institution bancaire ivoirienne'
+                type: 'design', // Type de projet
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1559329007-40df8bf73b84?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1559329007-40df8bf73b84?w=200&h=150&fit=crop'
+                },
+                description: 'Création complète de l\'identité visuelle pour une institution bancaire ivoirienne',
+                link: 'https://banqueatlantique.ci',
+                tags: ['Identité visuelle', 'Finance', 'Côte d\'Ivoire'],
+                year: 2023,
+                client: 'Banque Atlantique CI'
               },
               {
                 title: 'E-commerce - Mode Africaine Moderne',
-                image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
-                description: 'Plateforme de vente en ligne pour créateurs de mode africaine'
+                type: 'web_design',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&h=150&fit=crop'
+                },
+                description: 'Plateforme de vente en ligne pour créateurs de mode africaine',
+                link: 'https://modeafricaine.ci',
+                tags: ['E-commerce', 'Mode', 'UI/UX'],
+                year: 2023,
+                client: 'Mode Africaine Collective'
               },
               {
                 title: 'Application - AgriTech Abidjan',
-                image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop',
-                description: 'Interface utilisateur pour application d\'agriculture connectée'
+                type: 'mobile_app',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=200&h=150&fit=crop'
+                },
+                description: 'Interface utilisateur pour application d\'agriculture connectée',
+                link: 'https://agritech-abidjan.com',
+                tags: ['Mobile App', 'Agriculture', 'Tech'],
+                year: 2024,
+                client: 'AgriTech Solutions'
+              },
+              {
+                title: 'Motion Design - Campagne Publicité TV',
+                type: 'motion_graphics',
+                media: {
+                  type: 'video',
+                  url: 'https://player.vimeo.com/video/placeholder',
+                  thumbnail: 'https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?w=200&h=150&fit=crop'
+                },
+                description: 'Animation publicitaire pour campagne télévisée ivoirienne',
+                link: null,
+                tags: ['Motion Graphics', 'Publicité', 'Animation'],
+                year: 2024,
+                client: 'RTI Côte d\'Ivoire'
               }
             ],
-            certifications: ['Adobe Certified Expert', 'Google Africa Developer Scholarship'],
             skills: ['Photoshop', 'Illustrator', 'Figma', 'Branding Africain', 'UI/UX', 'Print Design']
           }]
         },
@@ -637,8 +676,51 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
             portfolio: [
               {
                 title: 'Plateforme Mobile Money - GhanaPay',
-                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-                description: 'Application complète de transfert d\'argent mobile pour le Ghana'
+                type: 'fintech_app',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1460925895917-f3ece451e9d8?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1460925895917-f3ece451e9d8?w=200&h=150&fit=crop'
+                },
+                description: 'Application complète de transfert d\'argent mobile pour le Ghana',
+                link: 'https://ghanapay.gh',
+                github: 'https://github.com/kwame-asante/ghanapay',
+                tech_stack: ['React Native', 'Node.js', 'MongoDB', 'MTN MoMo API'],
+                tags: ['Mobile Money', 'Fintech', 'Ghana'],
+                year: 2024,
+                client: 'GhanaPay Ltd'
+              },
+              {
+                title: 'E-learning Platform - EduGhana',
+                type: 'web_platform',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=200&h=150&fit=crop'
+                },
+                description: 'Plateforme d\'apprentissage en ligne pour étudiants ghanéens',
+                link: 'https://edughana.com',
+                github: 'https://github.com/kwame-asante/edughana',
+                tech_stack: ['Next.js', 'PostgreSQL', 'Prisma', 'Stripe'],
+                tags: ['Education', 'Web Platform', 'SaaS'],
+                year: 2023,
+                client: 'EduGhana Foundation'
+              },
+              {
+                title: 'API Documentation - PayTech Africa',
+                type: 'documentation',
+                media: {
+                  type: 'link',
+                  url: 'https://docs.paytech-africa.com',
+                  thumbnail: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=200&h=150&fit=crop'
+                },
+                description: 'Documentation complète d\'API pour services de paiement africains',
+                link: 'https://docs.paytech-africa.com',
+                github: 'https://github.com/kwame-asante/paytech-docs',
+                tech_stack: ['Gitbook', 'OpenAPI', 'Postman'],
+                tags: ['API', 'Documentation', 'Payments'],
+                year: 2024,
+                client: 'PayTech Africa'
               }
             ],
             skills: ['React', 'Node.js', 'TypeScript', 'Mobile Money API', 'PayStack', 'MongoDB']
@@ -668,8 +750,79 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
             portfolio: [
               {
                 title: 'Campagne - Teranga Bank Sénégal',
-                image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop',
-                description: 'Stratégie marketing digital pour banque sénégalaise'
+                type: 'marketing_campaign',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=200&h=150&fit=crop'
+                },
+                description: 'Stratégie marketing digital complète pour banque sénégalaise avec +150% d\'engagement social media',
+                link: 'https://case-study-teranga.sn',
+                tags: ['Banking', 'Social Media', 'Lead Generation'],
+                year: 2024,
+                client: 'Teranga Bank',
+                metrics: {
+                  engagement: '+150%',
+                  leads: '+85%',
+                  budget_roi: '400%'
+                }
+              },
+              {
+                title: 'Vidéo Publicitaire - Orange Money Senegal',
+                type: 'video_campaign',
+                media: {
+                  type: 'video',
+                  url: 'https://player.vimeo.com/video/orange-money',
+                  thumbnail: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=200&h=150&fit=crop'
+                },
+                description: 'Campagne vidéo publicitaire pour service de paiement mobile au Sénégal',
+                link: null,
+                tags: ['Video Marketing', 'Mobile Money', 'Télé'],
+                year: 2023,
+                client: 'Orange Sénégal',
+                metrics: {
+                  views: '2.5M+',
+                  reach: '800K',
+                  conversion: '+65%'
+                }
+              },
+              {
+                title: 'Étude de Cas - E-commerce Mode Africaine',
+                type: 'case_study',
+                media: {
+                  type: 'link',
+                  url: 'https://case-study-fashion.sn',
+                  thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&h=150&fit=crop'
+                },
+                description: 'Transformation digitale complète d\'une marque de mode africaine traditionnelle',
+                link: 'https://case-study-fashion.sn',
+                tags: ['E-commerce', 'Fashion', 'Digital Transformation'],
+                year: 2024,
+                client: 'Keur Fashion',
+                metrics: {
+                  sales_growth: '+300%',
+                  social_followers: '+500%',
+                  monthly_revenue: '50M FCFA'
+                }
+              },
+              {
+                title: 'Formation - Marketing Digital pour PME',
+                type: 'training',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=200&h=150&fit=crop'
+                },
+                description: 'Programme de formation en marketing digital pour 50+ PME sénégalaises',
+                link: 'https://formation-marketing-pme.sn',
+                tags: ['Formation', 'PME', 'Capacity Building'],
+                year: 2024,
+                client: 'Chambre de Commerce Dakar',
+                metrics: {
+                  participants: '150+',
+                  satisfaction: '95%',
+                  certified: '140'
+                }
               }
             ],
             skills: ['Facebook Ads', 'Google Ads', 'Content Marketing', 'Social Media', 'Analytics', 'Stratégie Digitale']
@@ -699,8 +852,80 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
             portfolio: [
               {
                 title: 'Formation - Orange Burkina Faso',
-                image: 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=300&fit=crop',
-                description: 'Formation en outils numériques pour équipes Orange BF'
+                type: 'training',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=200&h=150&fit=crop'
+                },
+                description: 'Formation complète en outils numériques et cybersécurité pour 200+ employés Orange Burkina Faso',
+                link: 'https://formation-orange.bf',
+                tags: ['Formation', 'Cybersécurité', 'Télécoms'],
+                year: 2024,
+                client: 'Orange Burkina Faso',
+                metrics: {
+                  participants: '200+',
+                  satisfaction: '98%',
+                  duration: '6 mois'
+                }
+              },
+              {
+                title: 'Audit IT - Ministère Agriculture BF',
+                type: 'audit_consulting',
+                media: {
+                  type: 'link',
+                  url: 'https://audit-report-agriculture.bf',
+                  thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=200&h=150&fit=crop'
+                },
+                description: 'Audit complet de l\'infrastructure IT et recommandations de modernisation',
+                link: 'https://audit-report-agriculture.bf',
+                tags: ['Audit', 'Infrastructure', 'Gouvernement'],
+                year: 2023,
+                client: 'Ministère de l\'Agriculture',
+                metrics: {
+                  systems_audited: '25+',
+                  security_score: '+85%',
+                  cost_savings: '30M FCFA'
+                }
+              },
+              {
+                title: 'Infrastructure Cloud - CORIS Bank',
+                type: 'infrastructure',
+                media: {
+                  type: 'image',
+                  url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=300&fit=crop',
+                  thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200&h=150&fit=crop'
+                },
+                description: 'Migration complète vers infrastructure cloud sécurisée pour banque burkinabée',
+                link: 'https://case-study-coris.bf',
+                tags: ['Cloud', 'Banking', 'Migration'],
+                year: 2024,
+                client: 'CORIS Bank International',
+                tech_stack: ['Microsoft Azure', 'VMware', 'Fortinet', 'Backup Solutions'],
+                metrics: {
+                  uptime: '99.9%',
+                  performance: '+40%',
+                  backup_efficiency: '+75%'
+                }
+              },
+              {
+                title: 'Présentation - Transformation Digitale PME',
+                type: 'presentation',
+                media: {
+                  type: 'video',
+                  url: 'https://player.vimeo.com/video/digital-transformation-bf',
+                  thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=200&h=150&fit=crop'
+                },
+                description: 'Conférence sur la transformation digitale des PME burkinabées au Forum TIC 2024',
+                link: null,
+                tags: ['Conférence', 'Transformation Digitale', 'PME'],
+                year: 2024,
+                client: 'Forum TIC Burkina Faso',
+                metrics: {
+                  audience: '500+',
+                  video_views: '15K+',
+                  media_coverage: '8 articles'
+                }
               }
             ],
             skills: ['Formation IT', 'Microsoft Office', 'Cybersécurité', 'Cloud Computing', 'Consulting', 'Gestion de Projet']

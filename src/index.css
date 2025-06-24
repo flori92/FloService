@@ -31,6 +31,376 @@
   @apply text-gray-600 text-sm;
 }
 
+/* Portfolio Avancé - Styles complets */
+.portfolio-grid-advanced {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.portfolio-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.portfolio-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Section Média */
+.portfolio-media {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+}
+
+.portfolio-image-advanced {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.portfolio-card:hover .portfolio-image-advanced {
+  transform: scale(1.05);
+}
+
+.video-wrapper {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.portfolio-video {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.link-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.link-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.link-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Badge Type de Projet */
+.project-type-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+/* Contenu Avancé */
+.portfolio-content-advanced {
+  padding: 1.5rem;
+}
+
+.portfolio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.portfolio-title-advanced {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.project-year {
+  background: #f7931e;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.project-client {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem 0;
+  font-style: italic;
+}
+
+.portfolio-description-advanced {
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Tech Stack */
+.tech-stack {
+  margin-bottom: 1rem;
+}
+
+.tech-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tech-tag {
+  background: #e5e7eb;
+  color: #374151;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+}
+
+.tech-stack .tech-item.cloud {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.tech-stack .tech-item.security {
+  @apply bg-red-100 text-red-800;
+}
+
+.tech-stack .tech-item.database {
+  @apply bg-green-100 text-green-800;
+}
+
+/* Tags Projet */
+.project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.project-tag {
+  background: linear-gradient(135deg, #f7931e, #ff6b35);
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Actions Portfolio */
+.portfolio-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.portfolio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.portfolio-actions .github-link {
+  @apply bg-gray-800 text-white;
+}
+
+.portfolio-actions .github-link:hover {
+  @apply bg-black;
+}
+
+.portfolio-link.primary {
+  background: #10b981;
+  color: white;
+}
+
+.portfolio-link.primary:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.portfolio-link.secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.portfolio-link.secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.portfolio-actions .external-link {
+  @apply transition-all duration-200 transform hover:scale-105;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .portfolio-grid-advanced {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .portfolio-card {
+    margin: 0 1rem;
+  }
+  
+  .portfolio-media {
+    height: 200px;
+  }
+  
+  .portfolio-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .portfolio-title-advanced {
+    margin-right: 0;
+  }
+  
+  .portfolio-actions {
+    flex-direction: column;
+  }
+  
+  .portfolio-link {
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-content-advanced {
+    padding: 1rem;
+  }
+  
+  .portfolio-title-advanced {
+    font-size: 1.1rem;
+  }
+  
+  .tech-tags, .project-tags {
+    gap: 0.3rem;
+  }
+  
+  .tech-tag, .project-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+/* Styles pour les métriques de performance */
+.project-metrics {
+  @apply mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg;
+}
+
+.metrics-title {
+  @apply text-sm font-semibold text-blue-900 mb-3;
+}
+
+.metrics-list {
+  @apply grid grid-cols-2 gap-3;
+}
+
+.metric-item {
+  @apply flex flex-col;
+}
+
+.metric-label {
+  @apply text-xs text-blue-600 uppercase tracking-wide font-medium;
+}
+
+.metric-value {
+  @apply text-sm font-bold text-blue-900;
+}
+
+.metric-value.important {
+  @apply animation-pulse;
+  animation: metric-highlight 2s ease-in-out infinite;
+}
+
+@keyframes metric-highlight {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Styles responsive pour métriques */
+@media (max-width: 768px) {
+  .metrics-list {
+    @apply grid-cols-1 gap-2;
+  }
+  
+  .project-metrics {
+    @apply mt-4 p-3;
+  }
+}
+
+/* Nouveaux badges pour types de projets étendus */
+.portfolio-grid .portfolio-card .project-type.marketing {
+  @apply bg-green-100 text-green-800;
+}
+
+.portfolio-grid .portfolio-card .project-type.video {
+  @apply bg-red-100 text-red-800;
+}
+
+.portfolio-grid .portfolio-card .project-type.case-study {
+  @apply bg-purple-100 text-purple-800;
+}
+
+.portfolio-grid .portfolio-card .project-type.training {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.portfolio-grid .portfolio-card .project-type.audit {
+  @apply bg-orange-100 text-orange-800;
+}
+
+.portfolio-grid .portfolio-card .project-type.infrastructure {
+  @apply bg-cyan-100 text-cyan-800;
+}
+
+.portfolio-grid .portfolio-card .project-type.presentation {
+  @apply bg-indigo-100 text-indigo-800;
+}
+
 /* Skills Tags */
 .skills-container {
   @apply flex flex-wrap gap-2 mt-2;
