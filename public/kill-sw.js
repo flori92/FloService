@@ -1,50 +1,74 @@
 // Service Worker KILLER - Force la suppression de tous les SW existants
 // Version: 2.0.0 - Suppression définitive
 
-console.log('[KILL-SW] Service Worker Killer activé - Suppression forcée');
+console.log('🚨 [KILLER SW] Démarrage du processus de nettoyage ultra-puissant');
 
-// Force la suppression immédiate
+// Installation immédiate et forcée
 self.addEventListener('install', (event) => {
-  console.log('[KILL-SW] Installation - Suppression immédiate de tous les caches');
+  console.log('⚡ [KILLER SW] Installation - Suppression MASSIVE des caches');
+  
+  // Force l'activation immédiate sans attendre
+  self.skipWaiting();
+  
   event.waitUntil(
-    Promise.all([
-      // Supprime TOUS les caches sans exception
-      caches.keys().then((cacheNames) => {
-        console.log('[KILL-SW] Caches trouvés:', cacheNames);
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            console.log('[KILL-SW] SUPPRESSION cache:', cacheName);
-            return caches.delete(cacheName);
-          })
-        );
-      }),
-      // Force l'activation immédiate
-      self.skipWaiting()
-    ])
+    caches.keys().then(cacheNames => {
+      console.log(`🗑️ [KILLER SW] ${cacheNames.length} caches détectés pour suppression`);
+      
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          console.log(`💥 [KILLER SW] Suppression cache: ${cacheName}`);
+          return caches.delete(cacheName);
+        })
+      ).then(() => {
+        console.log('✅ [KILLER SW] TOUS les caches supprimés avec succès');
+      });
+    })
   );
 });
 
+// Activation et auto-destruction
 self.addEventListener('activate', (event) => {
-  console.log('[KILL-SW] Activation - Nettoyage complet');
+  console.log('🔥 [KILLER SW] Activation - Prise de contrôle et auto-destruction');
+  
+  // Prend le contrôle immédiat de tous les clients
   event.waitUntil(
-    Promise.all([
-      // Re-supprime tout au cas où
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map(cacheName => caches.delete(cacheName))
-        );
-      }),
-      // Prend le contrôle immédiat
-      self.clients.claim(),
-      // Auto-destruction après nettoyage
-      self.registration.unregister().then(() => {
-        console.log('[KILL-SW] Service Worker killer auto-détruit avec succès');
-      })
-    ])
+    self.clients.claim().then(() => {
+      console.log('⚡ [KILLER SW] Contrôle des clients établi');
+      
+      // Auto-destruction programmée après nettoyage
+      setTimeout(() => {
+        console.log('💀 [KILLER SW] Début auto-destruction...');
+        
+        self.registration.unregister().then((success) => {
+          if (success) {
+            console.log('☠️ [KILLER SW] Auto-destruction réussie - Service Worker éliminé');
+            
+            // Notifier les clients qu'ils doivent se recharger pour éliminer complètement le SW
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  type: 'KILLER_FINISHED',
+                  message: 'Service Worker éliminé - Rechargement automatique nécessaire'
+                });
+              });
+            });
+          } else {
+            console.error('❌ [KILLER SW] Échec auto-destruction');
+          }
+        });
+      }, 1000); // 1 seconde pour être sûr que le nettoyage est terminé
+    })
   );
 });
 
-// AUCUN gestionnaire fetch - laisse tout passer
-// Pas d'interception = pas d'erreurs CSP
+// AUCUN gestionnaire fetch - Le killer n'intercepte RIEN
+// Toutes les requêtes passent directement au navigateur
+console.log('🚫 [KILLER SW] Aucun gestionnaire fetch - Interception désactivée');
 
-console.log('[KILL-SW] Service Worker Killer prêt - Auto-destruction programmée');
+// Ajout d'un gestionnaire pour recharger la page après auto-destruction
+self.addEventListener('message', (event) => {
+  if (event.data.type === 'KILLER_FINISHED') {
+    console.log('🔄 [KILLER SW] Rechargement automatique de la page...');
+    event.source.reload();
+  }
+});
