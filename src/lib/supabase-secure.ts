@@ -562,13 +562,23 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
       return {
         data: {
           id: userId,
-          nom: 'Utilisateur Test',
+          full_name: 'Prestataire Test',
+          nom: 'Prestataire Test', // pour compatibilité
           email: 'test@floservice.com',
           is_provider: true,
+          avatar_url: '/default-avatar.png',
+          business_name: 'Entreprise Test',
+          bio: 'Profil de test pour le développement de l\'application FloService',
+          city: 'Paris',
           provider_profiles: [{
             id: userId + '-provider',
-            specialites: ['Test'],
-            description: 'Profil de test pour le développement'
+            specialization: 'Développement Test',
+            specialites: ['Test'], // pour compatibilité
+            description: 'Profil de test pour le développement',
+            experience_years: 5,
+            hourly_rate: 50,
+            rating: 4.5,
+            reviews_count: 10
           }]
         },
         error: null
@@ -578,7 +588,7 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
     // Requête séparée pour éviter les problèmes de JOIN
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('id, nom, email, is_provider')
+      .select('id, nom, full_name, email, is_provider, avatar_url, business_name, bio, city')
       .eq('id', userId)
       .maybeSingle();
 
@@ -593,14 +603,31 @@ export const getProfileWithProviderData = async (userId: string): Promise<{
     }
 
     // Récupérer les données provider séparément
-    const { data: providerData } = await supabase
+    const { data: providerData, error: providerError } = await supabase
       .from('provider_profiles')
       .select('*')
       .eq('id', userId);
 
-    // Construire la réponse finale
+    // Ne pas lever d'erreur si les données provider ne sont pas trouvées (cas normal)
+    if (providerError) {
+      console.warn('[Profile] Pas de données provider trouvées pour:', userId, providerError.message);
+    }
+
+    // Mapper les données vers le format attendu par le composant avec gestion de type
+    const mappedProviderData = (providerData as any[])?.map((provider: any) => ({
+      id: provider.id || '',
+      specialization: provider.specialization || provider.specialites?.[0] || '',
+      experience_years: provider.experience_years || 0,
+      hourly_rate: provider.hourly_rate || 0,
+      rating: provider.rating || 0,
+      reviews_count: provider.reviews_count || 0,
+      description: provider.description || ''
+    })) || [];
+
+    // Construire la réponse finale avec mapping des champs
     const result = Object.assign({}, profileData, {
-      provider_profiles: providerData || []
+      full_name: (profileData as any).full_name || (profileData as any).nom || 'Utilisateur',
+      provider_profiles: mappedProviderData
     });
 
     return { data: result, error: null };
