@@ -18,14 +18,28 @@ export class UserService {
    * Valide et normalise un ID utilisateur
    */
   static normalizeUserId(userId: string): string {
-    if (!userId) throw new Error('ID utilisateur requis');
+    if (!userId) return userId;
     
-    // Si c'est un ID de test (commençant par test- ou tg-)
-    if (userId.startsWith('tg-')) {
-      return `${this.PREFIX_TEST_ID}${userId}`;
+    // Supprimer les espaces et mettre en minuscules
+    const cleaned = userId.trim().toLowerCase();
+    
+    // Si c'est un ID de test (commence par tg-)
+    if (cleaned.startsWith('tg-')) {
+      return `test_${cleaned.substring(3)}`;
     }
     
-    return userId;
+    // Si c'est un ID de prestataire avec préfixe
+    if (cleaned.startsWith('provider-')) {
+      return cleaned.replace(/-/g, '_');
+    }
+    
+    // Si c'est un ID de prestataire sans préfixe (format: bj-1)
+    if (/^[a-z]{2}-\d+$/.test(cleaned)) {
+      return `provider_${cleaned.replace('-', '_')}`;
+    }
+    
+    // Remplacer tous les tirets par des underscores pour la compatibilité
+    return cleaned.replace(/-/g, '_');
   }
 
   /**
@@ -133,6 +147,11 @@ export class UserService {
    * Vérifie si un ID est un ID de prestataire
    */
   static isProviderId(id: string): boolean {
-    return id.startsWith(this.PREFIX_PROVIDER_ID);
+    if (!id) return false;
+    return (
+      id.startsWith('provider_') || 
+      id.startsWith('provider-') ||
+      /^[a-z]{2}[-_]\d+$/.test(id)
+    );
   }
 }
