@@ -40,7 +40,9 @@ class BackendAdapter {
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return data;
     }
   }
@@ -120,7 +122,9 @@ class BackendAdapter {
       return await this.client.signOut();
     } else {
       const { error } = await this.client.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
     }
   }
   
@@ -133,7 +137,9 @@ class BackendAdapter {
       return await this.client.getCurrentUser();
     } else {
       const { data, error } = await this.client.auth.getUser();
-      if (error) return null;
+      if (error) {
+        return null;
+      }
       return data.user;
     }
   }
@@ -155,7 +161,9 @@ class BackendAdapter {
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return result;
     }
   }
@@ -176,7 +184,9 @@ class BackendAdapter {
         .eq('id', id)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return data;
     }
   }
@@ -199,7 +209,9 @@ class BackendAdapter {
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return result;
     }
   }
@@ -219,7 +231,9 @@ class BackendAdapter {
         .delete()
         .eq('id', id);
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
     }
   }
   
@@ -296,7 +310,9 @@ class BackendAdapter {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return data || [];
     }
   }
@@ -316,7 +332,9 @@ class BackendAdapter {
         .from(bucketId)
         .upload(path || `${Date.now()}_${file.name}`, file);
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       return data;
     }
   }
