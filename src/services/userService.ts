@@ -18,7 +18,9 @@ export class UserService {
    * Valide et normalise un ID utilisateur
    */
   static normalizeUserId(userId: string): string {
-    if (!userId) return userId;
+    if (!userId) {
+      return userId;
+    }
     
     // Supprimer les espaces et mettre en minuscules
     const cleaned = userId.trim().toLowerCase();
@@ -147,7 +149,9 @@ export class UserService {
    * Vérifie si un ID est un ID de prestataire
    */
   static isProviderId(id: string): boolean {
-    if (!id) return false;
+    if (!id) {
+      return false;
+    }
     return (
       id.startsWith('provider_') || 
       id.startsWith('provider-') ||

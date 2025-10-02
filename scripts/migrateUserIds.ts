@@ -99,7 +99,9 @@ class UserMigrationService {
       .select('id')
       .not('id', 'is', null);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
     if (!data || !Array.isArray(data)) {
       console.log('ℹ️ Aucun profil à migrer ou format de données inattendu');
       return;
@@ -115,11 +117,15 @@ class UserMigrationService {
         continue;
       }
       const oldId = profile.id;
-      if (!oldId) continue;
+      if (!oldId) {
+        continue;
+      }
       const newId = UserService.normalizeUserId(oldId);
 
       // Si l'ID n'a pas changé, on passe
-      if (oldId === newId) continue;
+      if (oldId === newId) {
+        continue;
+      }
 
       console.log(`🔄 Migration de ${oldId} vers ${newId}...`);
 
@@ -146,7 +152,9 @@ class UserMigrationService {
       .select('column_name')
       .eq('table_name', table);
 
-    if (columnsError) throw columnsError;
+    if (columnsError) {
+      throw columnsError;
+    }
     if (!columnsData || !Array.isArray(columnsData)) {
       console.warn(`Aucune colonne trouvée pour la table ${table}`);
       return;
@@ -183,12 +191,18 @@ class UserMigrationService {
 
     // Mettre à jour chaque valeur
     for (const item of values) {
-      if (!item) continue;
+      if (!item) {
+        continue;
+      }
       const oldId = item[column as keyof typeof item];
-      if (!oldId || typeof oldId !== 'string') continue;
+      if (!oldId || typeof oldId !== 'string') {
+        continue;
+      }
 
       const newId = UserService.normalizeUserId(oldId);
-      if (oldId === newId) continue;
+      if (oldId === newId) {
+        continue;
+      }
 
       // Mettre à jour les références
       const { error: updateError } = await supabase
