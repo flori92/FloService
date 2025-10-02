@@ -18,6 +18,7 @@ import { ConnectionError } from './components/ui/EmptyState';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Categories = lazy(() => import('./pages/Categories'));
@@ -214,6 +215,7 @@ function App() {
                   <Route path="/help" element={<HelpCenter />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
 
                   {/* Protected routes */}
                   <Route path="/dashboard" element={

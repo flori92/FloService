@@ -56,17 +56,57 @@ class BackendAdapter {
     if (this.isAppwrite) {
       return await this.client.signUp(email, password, name);
     } else {
+      console.log('[BackendAdapter] SignUp attempt with:', { email, nameProvided: !!name });
+      
       const { data, error } = await this.client.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: name
+            full_name: name,
+            nom: name // Pour compatibilité avec la structure profiles
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (error) {
+        console.error('[BackendAdapter] SignUp error:', error);
+        throw error;
+      }
+      
+      console.log('[BackendAdapter] SignUp success:', data);
+      return data;
+    }
+  }
+  
+  /**
+   * Authentification avec Google OAuth
+   * @returns {Promise<object>} - Données de session
+   */
+  async signInWithGoogle() {
+    if (this.isAppwrite) {
+      throw new Error('Google Auth non supporté avec Appwrite pour le moment');
+    } else {
+      console.log('[BackendAdapter] Tentative de connexion Google OAuth');
+      
+      const { data, error } = await this.client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
           }
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('[BackendAdapter] Google Auth error:', error);
+        throw error;
+      }
+      
+      console.log('[BackendAdapter] Google Auth initiated');
       return data;
     }
   }
