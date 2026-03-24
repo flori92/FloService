@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof -iTCP -sTCP:LISTEN -P -n)",
+      "Bash(sort -t: -k2 -n)",
+      "Bash(for dir:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/floriace/FloService/$dir/**)",
+      "Bash(done)",
+      "Bash(ls /Users/floriace/FloService/apps/web/next.config.*)",
+      "Bash(cat /Users/floriace/FloService/apps/web/next.config.*)",
+      "Bash(lsof -iTCP:3006 -sTCP:LISTEN)",
+      "Bash(lsof -iTCP:5173 -sTCP:LISTEN)",
+      "Bash(lsof -iTCP:8084 -sTCP:LISTEN)",
+      "Bash(ls /Users/floriace/FloService/apps/web/.env*)",
+      "Bash(ls /Users/floriace/FloService/apps/legacy-vite/.env*)",
+      "Bash(ls /Users/floriace/FloService/.env*)",
+      "Bash(pnpm --version)",
+      "Bash(pnpm install:*)",
+      "mcp__plugin_serena_serena__list_dir",
+      "Bash(wc -l /Users/floriace/FloService/*.html /Users/floriace/FloService/*.md /Users/floriace/FloService/*.js /Users/floriace/FloService/*.sql)",
+      "Bash(xargs ls:*)",
+      "Bash(head:*)",
+      "Bash(ls:*)",
+      "Bash(git -C /Users/floriace/FloService rm --cached FloService)",
+      "Bash(rm -f /Users/floriace/FloService/.gitmodules)",
+      "Bash(pnpm ls:*)",
+      "Bash(curl -s -o /dev/null -w \"Port 3000 \\(autre app\\): HTTP %{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"Port 8080 \\(nginx\\): HTTP %{http_code}\\\\n\" http://localhost:8080)",
+      "Bash(git:*)"
+    ]
+  }
+}
