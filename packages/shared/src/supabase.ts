@@ -68,25 +68,7 @@ const createFallbackClient = (): ExtendedSupabaseClient => {
 type FallbackSupabaseClient = ReturnType<typeof createFallbackClient>;
 
 // Type étendu pour inclure le stockage
-type ExtendedSupabaseClient = SupabaseClient<Database, 'public', {
-  Tables: { [key: string]: any };
-  Views: { [key: string]: any };
-  Functions: {
-    is_provider: { Args: { user_id?: string }; Returns: boolean };
-    check_invoice_permissions: { Args: { invoice_id: string }; Returns: boolean };
-    log_audit_action: {
-      Args: {
-        action: string;
-        table_name: string;
-        record_id: string;
-        old_data?: Json;
-        new_data?: Json;
-      };
-      Returns: undefined;
-    };
-    [key: string]: any;
-  };
-}> & {
+type ExtendedSupabaseClient = SupabaseClient<Database, 'public'> & {
   storage: StorageClient;
 };
 
@@ -133,7 +115,9 @@ export interface Database {
 }
 
 // Configuration de débogage
-const DEBUG = import.meta.env.VITE_DEBUG === 'true';
+const DEBUG = typeof process !== 'undefined'
+  ? process.env?.VITE_DEBUG === 'true' || process.env?.NEXT_PUBLIC_DEBUG === 'true'
+  : (globalThis as any).import?.meta?.env?.VITE_DEBUG === 'true';
 
 // Fonction utilitaire pour le logging
 const debugLog = (...args: any[]) => {
@@ -144,26 +128,29 @@ const debugLog = (...args: any[]) => {
 
 // Fonction sécurisée pour récupérer les variables d'environnement
 const getEnvVariable = (key: string, defaultValue: string): string => {
-  // Vérifier d'abord import.meta.env (Vite)
   debugLog(`Récupération de la variable d'environnement: ${key}`);
-  const viteValue = (import.meta as any).env?.[key];
-  if (viteValue) {
-    return viteValue;
+
+  // Next.js mapping: VITE_SUPABASE_* → NEXT_PUBLIC_SUPABASE_*
+  const nextKey = key.replace('VITE_', 'NEXT_PUBLIC_');
+
+  // process.env (Node.js / Next.js)
+  if (typeof process !== 'undefined' && process.env) {
+    const val = (process.env as any)[key] || (process.env as any)[nextKey];
+    if (val) return val;
   }
-  
-  // Vérifier ensuite process.env (Node.js/React)
-  const processValue = typeof process !== 'undefined' && process.env && (process.env as any)[key];
-  if (processValue) {
-    return processValue;
+
+  // import.meta.env (Vite) - wrapped to avoid TS errors in non-Vite envs
+  try {
+    const meta = (globalThis as any).import?.meta?.env;
+    if (meta?.[key]) return meta[key];
+  } catch { /* not in Vite */ }
+
+  // window.ENV (injection runtime)
+  if (typeof window !== 'undefined' && (window as any).ENV) {
+    const val = (window as any).ENV[key] || (window as any).ENV[nextKey];
+    if (val) return val;
   }
-  
-  // Vérifier window.ENV (injection runtime)
-  const windowValue = typeof window !== 'undefined' && window.ENV && window.ENV[key];
-  if (windowValue) {
-    return windowValue;
-  }
-  
-  // Retourner la valeur par défaut
+
   console.warn(`Variable d'environnement ${key} non trouvée, utilisation de la valeur par défaut`);
   return defaultValue;
 };
